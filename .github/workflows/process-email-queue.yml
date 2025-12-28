@@ -1,0 +1,23 @@
+name: Process Email Queue
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  send-emails:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Email Processing
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            ${{ secrets.SUPABASE_URL }}/functions/v1/send-emails
+        continue-on-error: true
+
+      - name: Log Result
+        if: always()
+        run: echo "Email queue processing triggered"

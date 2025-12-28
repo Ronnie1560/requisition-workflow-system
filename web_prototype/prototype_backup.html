@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FBCC Mission Trip Manager</title>
+
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F0F9FF;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Modern Card Shadow */
+        .card-shadow {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+
+        .card-shadow-hover:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 6px;
+            width: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 10px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* Print Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #printable-area,
+            #printable-area * {
+                visibility: visible;
+            }
+
+            #printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- CUSTOM HOOKS ---
+        const useStickyState = (defaultValue, key) => {
+            const [value, setValue] = useState(() => {
+                try {
+                    const stickyValue = window.localStorage.getItem(key);
+                    return stickyValue !== null ? JSON.parse(stickyValue) : defaultValue;
+                } catch (error) {
+                    return defaultValue;
+                }
+            });
+            useEffect(() => {
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) { }
+            }, [key, value]);
+            return [value, setValue];
+        };
+
+        // --- GLOBAL CONSTANTS (Initial Data) ---
+        const INITIAL_PARTNERS = [
+            { id: 'american_team', name: "🇺🇸 American Team (Logistics)", type: "Logistics" },
+            { id: 'new_life', name: "New Life Ministries", type: "Local Ministry", programs: ["Training", "Malnutrition"] },
+            { id: 'cross_healing', name: "Cross Healing Ministries", type: "Local Ministry", programs: ["Training"] },
+            { id: 'passion', name: "Passion Christian Ministry", type: "Local Ministry", programs: ["Sponsor A Child", "High School"] },
+            { id: 'hope_shine', name: "Hope Shine Uganda", type: "Local Ministry", programs: ["Night Life Workers", "Feeding"] },
+            { id: 'medical', name: "Medical Team (Lamwo)", type: "Medical", programs: ["Medical"] }
+        ];
+
+        const INITIAL_TRIPS = [
+            { id: 'june2025', name: 'June 2025 (Jinja/Kamuli)', status: 'Active' },
+            { id: 'nov2025', name: 'Nov 2025 (Gulu)', status: 'Planning' }
+        ];
+
+        const INITIAL_ITEMS = [
+            { id: 1, name: "Meat (1 Bull ~120kg)", unit: "Bull", defaultCost: 1500000 },
+            { id: 2, name: "Posho (Maize Flour)", unit: "Sacks", defaultCost: 120000 },
+            { id: 3, name: "Rice (Super)", unit: "Kg", defaultCost: 4500 },
+            { id: 4, name: "Bic Pens", unit: "Box of 50", defaultCost: 25000 },
+            { id: 5, name: "Bus Rental (Coaster)", unit: "Days", defaultCost: 450000 },
+            { id: 6, name: "Hotel Room", unit: "Night", defaultCost: 150000 },
+            { id: 901, desc: "Venue Rental / Contribution", unit: "Lumpsum", defaultCost: 200000 },
+            { id: 902, desc: "Refreshments (Water/Soda)", unit: "Crates", defaultCost: 25000 },
+            { id: 903, desc: "Lunch for Attendees", unit: "Plates", defaultCost: 5000 }
+        ];
+
+        // Initial stats for first load
+        const INITIAL_IMPACT_STATS = {
+            livesTouched: 950,
+            mercyBags: 350,
+            medicalOutreach: [
+                { id: 1, location: "Lamwo", count: 450, date: "2025-06-12", tripId: 'june2025' },
+                { id: 2, location: "Jinja", count: 320, date: "2025-06-15", tripId: 'june2025' },
+                { id: 3, location: "Village of Hope", count: 180, date: "2025-06-18", tripId: 'june2025' },
+            ]
+        };
+
+        const MOCK_TRIPS_HISTORICAL = [
+            { id: 'june2024', name: 'June 2024 (Kampala)', total: 15000000, breakdown: { Training: 5000000, Medical: 7000000, Logistics: 3000000 }, currency: 'UGX' },
+            { id: 'june2025', name: 'June 2025 (Jinja)', total: 18500000, breakdown: { Training: 6000000, Medical: 8500000, Logistics: 4000000 }, currency: 'UGX' },
+            { id: 'nov2025', name: 'Nov 2025 (Gulu) [Projected]', total: 21000000, breakdown: { Training: 7000000, Medical: 10000000, Logistics: 4000000 }, currency: 'UGX' }
+        ];
+
+        const MOCK_PASTORS = [
+            { id: 1, name: "Rev. Simon Peter", district: "Jinja", partner: "New Life Ministries", phone: "+256 772 123456", email: "simon@newlife.org", nin: "CM9001...", tripId: 'june2025' },
+            { id: 2, name: "Pst. Mary Grace", district: "Lamwo", partner: "Cross Healing Ministries", phone: "+256 701 987654", email: "mary@crosshealing.org", nin: "CF8002...", tripId: 'june2025' },
+            { id: 3, name: "Bishop John Okello", district: "Gulu", partner: "Passion Christian Ministry", phone: "+256 753 555666", email: "john@pcm.ug", nin: "CM7003...", tripId: 'nov2025' },
+            { id: 4, name: "Pst. David Mukasa", district: "Kampala", partner: "New Life Ministries", phone: "+256 782 111222", email: "david@newlife.org", nin: "CM6004...", tripId: 'june2025' },
+        ];
+
+        const UGX_RATE = 3700;
+
+        // --- Icons ---
+        const Icon = ({ children, className, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+        const Globe = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10z" /></Icon>;
+        const LayoutDashboard = (props) => <Icon {...props}><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></Icon>;
+        const Lock = (props) => <Icon {...props}><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></Icon>;
+        const Wifi = (props) => <Icon {...props}><path d="M5 12.55a11 11 0 0 1 14.08 0" /><path d="M1.42 9a16 16 0 0 1 21.16 0" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></Icon>;
+        const WifiOff = (props) => <Icon {...props}><line x1="1" y1="1" x2="23" y2="23" /><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55" /><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39" /><path d="M10.71 5.05A16 16 0 0 1 22.58 9" /><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88" /><path d="M8.53 16.11a6 6 0 0 1 6.95 0" /><line x1="12" y1="20" x2="12.01" y2="20" /></Icon>;
+        const Users = (props) => <Icon {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></Icon>;
+        const Heart = (props) => <Icon {...props}><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" /></Icon>;
+        const BookOpen = (props) => <Icon {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" /><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" /></Icon>;
+        const Stethoscope = (props) => <Icon {...props}><path d="M4.8 2.3A.3.3 0 0 1 5 2h14a.3.3 0 0 1 .2.3v3.4a3 3 0 0 1-3 3v0a3 3 0 0 1-3-3V2" /><path d="M8 5v0a3 3 0 0 1-3 3v0a3 3 0 0 1-3-3" /><path d="M12 8v6a4 4 0 0 1-4 4H5a2 2 0 0 0-2 2" /><circle cx="12" cy="19" r="2" /></Icon>;
+        const Calendar = (props) => <Icon {...props}><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></Icon>;
+        const DollarSign = (props) => <Icon {...props}><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></Icon>;
+        const Truck = (props) => <Icon {...props}><path d="M10 17h4V5H2v12h3" /><path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5" /><path d="M14 17h1" /><circle cx="7.5" cy="17.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" /></Icon>;
+        const FileText = (props) => <Icon {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /><line x1="10" y1="9" x2="8" y2="9" /></Icon>;
+        const MessageSquare = (props) => <Icon {...props}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></Icon>;
+        const PlusCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line x1="8" y1="12" x2="16" y2="12" /></Icon>;
+        const ChevronRight = (props) => <Icon {...props}><polyline points="9 18 15 12 9 6" /></Icon>;
+        const AlertCircle = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></Icon>;
+        const Save = (props) => <Icon {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></Icon>;
+        const Menu = (props) => <Icon {...props}><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="18" x2="20" y2="18" /></Icon>;
+        const X = (props) => <Icon {...props}><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></Icon>;
+        const BarChart = (props) => <Icon {...props}><line x1="12" y1="20" x2="12" y2="10" /><line x1="18" y1="20" x2="18" y2="4" /><line x1="6" y1="20" x2="6" y2="16" /></Icon>;
+        const TrendingUp = (props) => <Icon {...props}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></Icon>;
+        const Calculator = (props) => <Icon {...props}><rect x="4" y="2" width="16" height="20" rx="2" /><line x1="8" y1="6" x2="16" y2="6" /><line x1="16" y1="14" x2="16" y2="14" /><line x1="16" y1="10" x2="16" y2="10" /><line x1="8" y1="10" x2="8" y2="10" /><line x1="8" y1="14" x2="8" y2="14" /><line x1="12" y1="14" x2="12" y2="14" /><line x1="12" y1="10" x2="12" y2="10" /><line x1="12" y1="18" x2="12" y2="18" /><line x1="8" y1="18" x2="8" y2="18" /><line x1="16" y1="18" x2="16" y2="18" /></Icon>;
+        const PieChart = (props) => <Icon {...props}><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></Icon>;
+        const List = (props) => <Icon {...props}><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></Icon>;
+        const Briefcase = (props) => <Icon {...props}><rect x="2" y="7" width="20" height="14" rx="2" ry="2" /><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /></Icon>;
+        const Mail = (props) => <Icon {...props}><rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" /></Icon>;
+        const MessageCircle = (props) => <Icon {...props}><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></Icon>;
+        const Search = (props) => <Icon {...props}><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></Icon>;
+        const Filter = (props) => <Icon {...props}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></Icon>;
+        const UserPlus = (props) => <Icon {...props}><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></Icon>;
+        const Download = (props) => <Icon {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></Icon>;
+        const CheckCircle = (props) => <Icon {...props}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></Icon>;
+        const Send = (props) => <Icon {...props}><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></Icon>;
+        const ShoppingBag = (props) => <Icon {...props}><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></Icon>;
+        const Printer = (props) => <Icon {...props}><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect width="12" height="8" x="6" y="14" /></Icon>;
+        const FileSpreadsheet = (props) => <Icon {...props}><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" /><path d="M14 2v4a2 2 0 0 0 2 2h4" /><path d="M8 13h2" /><path d="M14 13h2" /><path d="M8 17h2" /><path d="M14 17h2" /></Icon>;
+        const Info = (props) => <Icon {...props}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></Icon>;
+
+        // --- COMPONENTS ---
+
+        const Toast = ({ message, type = 'success', onClose }) => (
+            <div className={`fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg flex items-center space-x-3 transition-all transform duration-300 z-50 ${type === 'success' ? 'bg-emerald-600 text-white' : 'bg-blue-600 text-white'}`}>
+                {type === 'success' ? <CheckCircle className="h-5 w-5" /> : <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>}
+                <span className="font-medium text-sm">{message}</span>
+                <button onClick={onClose} className="ml-auto hover:text-gray-200"><X className="h-4 w-4" /></button>
+            </div>
+        );
+
+        const MessageModal = ({ isOpen, onClose, recipient, type }) => {
+            const [message, setMessage] = useState('');
+            const [sending, setSending] = useState(false);
+            if (!isOpen) return null;
+            const handleSend = () => {
+                setSending(true);
+                setTimeout(() => {
+                    setSending(false);
+                    setMessage('');
+                    onClose(true);
+                }, 1500);
+            };
+            return (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in backdrop-blur-sm">
+                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-[#FAFAFA]">
+                            <h3 className="font-bold text-gray-800 flex items-center">
+                                {type === 'SMS' ? <MessageCircle className="h-5 w-5 mr-2 text-[#26A69A]" /> : <Mail className="h-5 w-5 mr-2 text-[#42A5F5]" />}
+                                Send {type} to {recipient.name}
+                            </h3>
+                            <button onClick={() => onClose(false)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div className="text-sm text-gray-500">To: <span className="font-medium text-gray-800">{type === 'SMS' ? recipient.phone : recipient.email}</span></div>
+                            <textarea className="w-full border border-gray-300 rounded-md p-3 text-sm focus:ring-[#26A69A] focus:border-[#26A69A] min-h-[120px]" placeholder={`Type your ${type} message here...`} value={message} onChange={(e) => setMessage(e.target.value)}></textarea>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+                            <button onClick={() => onClose(false)} className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800">Cancel</button>
+                            <button onClick={handleSend} disabled={sending || !message} className={`px-4 py-2 rounded-md text-sm font-medium text-white flex items-center ${sending || !message ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#26A69A] hover:bg-[#00897B]'}`}>
+                                {sending ? 'Sending...' : <><Send className="h-4 w-4 mr-2" /> Send Message</>}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Header = ({ activeView, setActiveView, isOffline, setIsOffline }) => (
+            <header className="bg-[#42A5F5] text-white shadow-lg sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center h-16">
+                        <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveView('public')}>
+                            <Globe className="h-6 w-6 text-white" />
+                            <div className="flex flex-col"><span className="font-bold text-xl tracking-tight leading-none">FBCC Missions</span><span className="text-[10px] text-blue-100 leading-none">Trip Manager v1.0</span></div>
+                        </div>
+                        <div className="hidden md:flex space-x-4">
+                            <button onClick={() => setActiveView('public')} className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeView === 'public' ? 'bg-[#26A69A] text-white shadow-md' : 'text-blue-50 hover:bg-white/10'}`}><LayoutDashboard className="h-4 w-4" /><span>Public Impact</span></button>
+                            <button onClick={() => setActiveView('admin')} className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeView === 'admin' ? 'bg-[#26A69A] text-white shadow-md' : 'text-blue-50 hover:bg-white/10'}`}><Lock className="h-4 w-4" /><span>Admin Portal</span></button>
+                        </div>
+                        <div className="flex items-center space-x-2 text-xs cursor-pointer bg-black/20 px-3 py-1.5 rounded-full border border-white/20 hover:bg-black/30 transition-colors" onClick={() => setIsOffline(!isOffline)} title="Toggle Connection Simulation">
+                            {isOffline ? <WifiOff className="h-3 w-3 text-red-200" /> : <Wifi className="h-3 w-3 text-green-200" />}
+                            <span className={isOffline ? "text-red-200 font-medium" : "text-green-200 font-medium"}>{isOffline ? "Offline Mode" : "Online"}</span>
+                        </div>
+                    </div>
+                </div>
+                <div className="md:hidden flex bg-[#1E88E5] border-t border-[#42A5F5]">
+                    <button onClick={() => setActiveView('public')} className={`flex-1 py-3 text-center text-sm font-medium ${activeView === 'public' ? 'text-white bg-[#26A69A]' : 'text-blue-200'}`}>Public</button>
+                    <button onClick={() => setActiveView('admin')} className={`flex-1 py-3 text-center text-sm font-medium ${activeView === 'admin' ? 'text-white bg-[#26A69A]' : 'text-blue-200'}`}>Admin</button>
+                </div>
+            </header>
+        );
+
+        const ImpactCard = ({ title, value, icon: Icon, color }) => (
+            <div className="bg-white overflow-hidden card-shadow card-shadow-hover rounded-lg border-l-4 border-[#26A69A] transition-all duration-200">
+                <div className="p-5"><div className="flex items-center"><div className={`flex-shrink-0 p-3 rounded-full bg-[#E0F2F1]`}><Icon className={`h-6 w-6 text-[#26A69A]`} /></div><div className="ml-5 w-0 flex-1"><dl><dt className="text-sm font-medium text-gray-500 truncate uppercase tracking-wider">{title}</dt><dd><div className="text-2xl font-bold text-gray-900 mt-1">{value}</div></dd></dl></div></div></div>
+            </div>
+        );
+
+        const PublicView = ({ pastors, bibleStats, mercyBagsStats, livesTouchedStats, medicalOutreachStats, partners, trips, mercyBagEntries }) => {
+            const [selectedTripFilter, setSelectedTripFilter] = useState('all');
+
+            const filteredMercyBags = useMemo(() => {
+                if (selectedTripFilter === 'all') return mercyBagEntries.reduce((acc, curr) => acc + curr.qty, 0);
+                return mercyBagEntries.filter(e => e.tripId === selectedTripFilter).reduce((acc, curr) => acc + curr.qty, 0);
+            }, [mercyBagEntries, selectedTripFilter]);
+
+            const calculatedLivesTouched = useMemo(() => {
+                const pastorCount = pastors ? pastors.length : 0;
+                const medicalCount = medicalOutreachStats.reduce((acc, curr) => acc + (Number(curr.count) || 0), 0);
+                return pastorCount + medicalCount + filteredMercyBags;
+            }, [pastors, medicalOutreachStats, filteredMercyBags]);
+
+
+            return (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fade-in">
+                    <div className="flex flex-col md:flex-row justify-between items-center">
+                        <div className="text-center md:text-left mb-4 md:mb-0"><h1 className="text-3xl font-bold text-slate-800">Mission Impact Report</h1><p className="mt-2 text-slate-600">Tracking our outreach and resource distribution across Uganda.</p></div>
+                        <div className="flex items-center space-x-2"><span className="text-sm font-medium text-gray-600">Filter by Trip:</span><select value={selectedTripFilter} onChange={(e) => setSelectedTripFilter(e.target.value)} className="block w-48 border border-gray-300 rounded-md p-2 text-sm focus:ring-[#26A69A] focus:border-[#26A69A]"><option value="all">All Missions</option>{trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <ImpactCard title="Lives Touched" value={`${calculatedLivesTouched}+`} icon={Heart} />
+                        <ImpactCard title="Pastors Trained" value={pastors ? pastors.length : 0} icon={Users} />
+                        <ImpactCard title="Bibles Distributed" value={bibleStats} icon={BookOpen} />
+                        <ImpactCard title="Mercy Bags" value={filteredMercyBags} icon={ShoppingBag} />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center"><Users className="h-5 w-5 mr-2 text-[#42A5F5]" /> Our Ministry Partners</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">{partners.filter(p => p.type !== 'Logistics').map(partner => (<div key={partner.id} className="bg-white rounded-xl card-shadow card-shadow-hover p-6 border border-white hover:border-[#26A69A] transition-all duration-200"><h3 className="text-lg font-bold text-slate-800 mb-3">{partner.name}</h3><div className="space-y-3"><p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Programs Supported</p><div className="flex flex-wrap gap-2">{partner.programs && partner.programs.length > 0 ? partner.programs.map(prog => (<span key={prog} className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#E0F2F1] text-[#00695C] border border-[#B2DFDB]">{prog}</span>)) : <span className="text-xs text-gray-400 italic">General Ministry Support</span>}</div></div></div>))}</div>
+                    </div>
+                    <div className="bg-white card-shadow rounded-lg overflow-hidden">
+                        <div className="px-6 py-5 border-b border-gray-200 bg-[#FAFAFA]"><h3 className="text-lg leading-6 font-medium text-gray-900 flex items-center gap-2"><Stethoscope className="h-5 w-5 text-[#26A69A]" /> Medical Outreach Log</h3></div>
+                        <ul className="divide-y divide-gray-200">{medicalOutreachStats.map((stat, idx) => (<li key={idx} className="px-6 py-4 hover:bg-[#F5F5F5] transition-colors"><div className="flex items-center justify-between"><div className="flex items-center"><div className="flex-shrink-0 h-10 w-10 rounded-full bg-[#E3F2FD] flex items-center justify-center"><span className="text-[#42A5F5] font-bold text-sm">{stat.location.substring(0, 2).toUpperCase()}</span></div><div className="ml-4"><div className="text-sm font-medium text-gray-900">{stat.location}</div><div className="text-sm text-gray-500 flex items-center mt-0.5"><Calendar className="flex-shrink-0 mr-1.5 h-3 w-3 text-gray-400" />{stat.date}</div></div></div><div className="flex-shrink-0 flex"><span className="px-3 py-1 inline-flex text-sm leading-5 font-semibold rounded-full bg-[#E0F2F1] text-[#00695C] border border-[#B2DFDB]">{stat.count} Patients</span></div></div></li>))}</ul>
+                    </div>
+                </div>
+            );
+        };
+
+        const CrudTable = ({ title, data, columns, onAdd, onEdit, onDelete }) => (
+            <div className="bg-white rounded-lg card-shadow border border-gray-200 overflow-hidden mb-8">
+                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+                    <button onClick={onAdd} className="flex items-center px-3 py-1.5 bg-[#26A69A] text-white text-sm font-medium rounded-md hover:bg-[#00897B] shadow-sm transition-all"><PlusCircle className="h-4 w-4 mr-1.5" /> Add New</button>
+                </div>
+                <div className="hidden md:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-[#E3F2FD]"><tr>{columns.map((col, idx) => (<th key={idx} className="px-6 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase tracking-wider">{col.label}</th>))}<th className="px-6 py-3 text-right text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Actions</th></tr></thead>
+                        <tbody className="bg-white divide-y divide-gray-200 text-sm">{data.map((item) => (<tr key={item.id} className="hover:bg-gray-50 transition-colors">{columns.map((col, idx) => (<td key={idx} className="px-6 py-4 whitespace-nowrap text-gray-700">{col.render ? col.render(item) : item[col.key]}</td>))}<td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"><button onClick={() => onEdit(item)} className="text-[#26A69A] hover:text-[#00897B] mr-3 transition-colors">Edit</button><button onClick={() => onDelete(item.id)} className="text-red-400 hover:text-red-600 transition-colors"><X className="h-4 w-4 inline" /></button></td></tr>))}{data.length === 0 && (<tr><td colSpan={columns.length + 1} className="px-6 py-12 text-center text-gray-500 italic flex flex-col items-center justify-center w-full"><Info className="h-8 w-8 mb-2 text-gray-300" />No records found.</td></tr>)}</tbody>
+                    </table>
+                </div>
+                <div className="md:hidden p-4 space-y-4">
+                    {data.length === 0 ? <div className="text-center text-gray-500 italic p-4 flex flex-col items-center"><Info className="h-8 w-8 mb-2 text-gray-300" />No records found.</div> :
+                        data.map(item => (
+                            <div key={item.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="font-bold text-gray-900">{item[columns[0].key]}</div>
+                                    <div className="flex space-x-2">
+                                        <button onClick={() => onEdit(item)} className="text-[#26A69A]"><FileText className="h-4 w-4" /></button>
+                                        <button onClick={() => onDelete(item.id)} className="text-red-400"><X className="h-4 w-4" /></button>
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    {columns.slice(1).map((col, idx) => (
+                                        <div key={idx} className="text-sm flex justify-between">
+                                            <span className="text-gray-500">{col.label}:</span>
+                                            <span className="font-medium text-gray-800">{col.render ? col.render(item) : item[col.key]}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                </div>
+            </div>
+        );
+
+        const SystemDataManager = ({ trips, setTrips, partners, setPartners, items, setItems, impactStats, setImpactStats }) => {
+            const [activeTab, setActiveTab] = useState('trips');
+            const [isModalOpen, setIsModalOpen] = useState(false);
+            const [editingItem, setEditingItem] = useState(null);
+            const [formData, setFormData] = useState({});
+
+            const openModal = (item = null) => {
+                setEditingItem(item);
+                if (item && activeTab === 'partners') {
+                    setFormData({ ...item, programsInput: item.programs ? item.programs.join(', ') : '' });
+                } else {
+                    setFormData(item || {});
+                }
+                setIsModalOpen(true);
+            };
+            const closeModal = () => { setIsModalOpen(false); setEditingItem(null); setFormData({}); };
+
+            const handleSave = () => {
+                const id = formData.id || Date.now().toString();
+                let newItem = { ...formData, id };
+
+                if (activeTab === 'trips') {
+                    if (!formData.name) return alert("Required");
+                    setTrips(prev => editingItem ? prev.map(i => i.id === newItem.id ? newItem : i) : [...prev, newItem]);
+                } else if (activeTab === 'partners') {
+                    if (!formData.name) return alert("Required");
+                    const programsArray = formData.programsInput ? formData.programsInput.split(',').map(s => s.trim()).filter(s => s.length > 0) : [];
+                    newItem = { ...newItem, programs: programsArray }; delete newItem.programsInput;
+                    setPartners(prev => editingItem ? prev.map(i => i.id === newItem.id ? newItem : i) : [...prev, newItem]);
+                } else if (activeTab === 'items') {
+                    if (!formData.name) return alert("Required");
+                    setItems(prev => editingItem ? prev.map(i => i.id === newItem.id ? newItem : i) : [...prev, newItem]);
+                } else if (activeTab === 'impact') {
+                    if (!formData.location) return alert("Required");
+                    const updatedMedical = editingItem
+                        ? impactStats.medicalOutreach.map(m => m.id === newItem.id ? { ...newItem, count: Number(newItem.count) } : m)
+                        : [...impactStats.medicalOutreach, { ...newItem, id: Date.now(), count: Number(newItem.count) }];
+                    setImpactStats({ ...impactStats, medicalOutreach: updatedMedical });
+                }
+                closeModal();
+            };
+
+            const handleDelete = (id) => {
+                if (!confirm("Are you sure?")) return;
+                if (activeTab === 'trips') setTrips(prev => prev.filter(i => i.id !== id));
+                if (activeTab === 'partners') setPartners(prev => prev.filter(i => i.id !== id));
+                if (activeTab === 'items') setItems(prev => prev.filter(i => i.id !== id));
+                if (activeTab === 'impact') setImpactStats(prev => ({ ...prev, medicalOutreach: prev.medicalOutreach.filter(m => m.id !== id) }));
+            };
+
+            const handleImpactStatChange = (field, val) => {
+                setImpactStats(prev => ({ ...prev, [field]: Number(val) }));
+            };
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="flex space-x-2 border-b border-gray-200 pb-1 overflow-x-auto no-scrollbar">
+                        <button onClick={() => setActiveTab('trips')} className={`px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors ${activeTab === 'trips' ? 'bg-white border-x border-t border-gray-200 text-[#26A69A]' : 'text-gray-500 hover:text-gray-700'}`}>1. Mission Trips</button>
+                        <button onClick={() => setActiveTab('partners')} className={`px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors ${activeTab === 'partners' ? 'bg-white border-x border-t border-gray-200 text-[#26A69A]' : 'text-gray-500 hover:text-gray-700'}`}>2. Ministry Partners</button>
+                        <button onClick={() => setActiveTab('items')} className={`px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors ${activeTab === 'items' ? 'bg-white border-x border-t border-gray-200 text-[#26A69A]' : 'text-gray-500 hover:text-gray-700'}`}>3. Item Catalog</button>
+                        <button onClick={() => setActiveTab('impact')} className={`px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap transition-colors ${activeTab === 'impact' ? 'bg-white border-x border-t border-gray-200 text-[#26A69A]' : 'text-gray-500 hover:text-gray-700'}`}>4. Impact Stats</button>
+                    </div>
+                    {activeTab === 'trips' && <CrudTable title="Manage Mission Trips" data={trips} columns={[{ key: 'name', label: 'Trip Name' }, { key: 'status', label: 'Status' }]} onAdd={() => openModal()} onEdit={openModal} onDelete={handleDelete} />}
+                    {activeTab === 'partners' && <CrudTable title="Manage Ministry Partners" data={partners} columns={[{ key: 'name', label: 'Organization Name' }, { key: 'type', label: 'Type' }]} onAdd={() => openModal()} onEdit={openModal} onDelete={handleDelete} />}
+                    {activeTab === 'items' && <CrudTable title="Item Catalog" data={items} columns={[{ key: 'name', label: 'Item Name' }, { key: 'unit', label: 'Default Unit' }, { key: 'defaultCost', label: 'Std. Cost', render: (i) => i.defaultCost.toLocaleString() }]} onAdd={() => openModal()} onEdit={openModal} onDelete={handleDelete} />}
+
+                    {activeTab === 'impact' && (
+                        <div className="space-y-8">
+                            <div className="bg-white rounded-lg card-shadow border border-gray-200 p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4">Global Counters</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="p-4 bg-gray-50 rounded border border-gray-200">
+                                        <label className="block text-sm font-medium text-gray-500 mb-1">Lives Touched (Auto-Calculated)</label>
+                                        <div className="text-2xl font-bold text-[#26A69A]">
+                                            Auto-Sum
+                                        </div>
+                                        <p className="text-xs text-gray-400 mt-1">Sum of Pastors + Mercy Bags + Patients</p>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Legacy Mercy Bags (Pre-System)</label>
+                                        <input type="number" className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={impactStats.mercyBags} onChange={e => handleImpactStatChange('mercyBags', e.target.value)} />
+                                        <p className="text-xs text-gray-500 mt-1">Only update this for historical data. New entries use the Mercy Bags tab.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <CrudTable
+                                title="Medical Outreach Log"
+                                data={impactStats.medicalOutreach}
+                                columns={[
+                                    { key: 'location', label: 'Location' },
+                                    { key: 'date', label: 'Date' },
+                                    { key: 'count', label: 'Patients Seen' }
+                                ]}
+                                onAdd={() => openModal()}
+                                onEdit={openModal}
+                                onDelete={handleDelete}
+                            />
+                        </div>
+                    )}
+
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl card-shadow">
+                                <h3 className="text-lg font-bold mb-4">{editingItem ? 'Edit' : 'Add New'} {activeTab === 'trips' ? 'Trip' : activeTab === 'partners' ? 'Partner' : activeTab === 'items' ? 'Item' : 'Outreach Log'}</h3>
+                                <div className="space-y-4">
+                                    {activeTab !== 'impact' && <div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Name / Description</label><input className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={formData.name || ''} onChange={e => setFormData({ ...formData, name: e.target.value })} /></div>}
+
+                                    {activeTab === 'trips' && <div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Status</label><select className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={formData.status || 'Planning'} onChange={e => setFormData({ ...formData, status: e.target.value })}><option>Planning</option><option>Active</option><option>Completed</option></select></div>}
+
+                                    {activeTab === 'partners' && (
+                                        <>
+                                            <div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Type</label><select className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={formData.type || 'Local Ministry'} onChange={e => setFormData({ ...formData, type: e.target.value })}><option>Local Ministry</option><option>Logistics</option><option>Medical</option></select></div>
+                                            <div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Programs Supported (Comma Separated)</label><input className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" placeholder="e.g. Feeding, Medical, Education" value={formData.programsInput || ''} onChange={e => setFormData({ ...formData, programsInput: e.target.value })} /><p className="text-xs text-gray-500">These will appear on the Public Impact Dashboard.</p></div>
+                                        </>
+                                    )}
+
+                                    {activeTab === 'items' && <><div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Default Unit</label><input className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={formData.unit || ''} onChange={e => setFormData({ ...formData, unit: e.target.value })} /></div><div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Default Unit Cost</label><input type="number" className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={formData.defaultCost || ''} onChange={e => setFormData({ ...formData, defaultCost: Number(e.target.value) })} /></div></>}
+
+                                    {activeTab === 'impact' && (
+                                        <>
+                                            <div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Location</label><input className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={formData.location || ''} onChange={e => setFormData({ ...formData, location: e.target.value })} /></div>
+                                            <div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Date</label><input type="date" className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={formData.date || ''} onChange={e => setFormData({ ...formData, date: e.target.value })} /></div>
+                                            <div className="space-y-2"><label className="block text-sm font-medium text-gray-700">Patients Count</label><input type="number" className="w-full border p-2 rounded focus:ring-[#26A69A] focus:border-[#26A69A]" value={formData.count || ''} onChange={e => setFormData({ ...formData, count: Number(e.target.value) })} /></div>
+                                        </>
+                                    )}
+                                </div>
+                                <div className="mt-6 flex justify-end space-x-3"><button onClick={closeModal} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button><button onClick={handleSave} className="px-4 py-2 bg-[#26A69A] text-white rounded hover:bg-[#00897B]">Save</button></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const BibleInventory = ({ bibleQty, setBibleQty }) => {
+            const [dialect, setDialect] = useState('Acholi');
+            // ...
+            return (
+                <div className="bg-white border border-[#B2DFDB] rounded-lg p-6 space-y-4 shadow-sm card-shadow">
+                    <div className="flex items-center justify-between border-b border-[#B2DFDB] pb-3"><h3 className="text-lg font-bold text-gray-900 flex items-center"><BookOpen className="h-5 w-5 mr-2 text-[#26A69A]" /> Bible Inventory Tracker</h3></div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div><label className="block text-xs font-semibold text-[#00695C] uppercase tracking-wider mb-1">Target Dialect</label><div className="relative"><select value={dialect} onChange={(e) => setDialect(e.target.value)} className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#26A69A] focus:border-[#26A69A] sm:text-sm rounded-md shadow-sm appearance-none bg-white"><option value="Acholi">Acholi (Northern)</option><option value="Lusoga">Lusoga (Eastern)</option><option value="Luganda">Luganda (Central)</option><option value="English">English (General)</option></select><div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500"><ChevronRight className="h-4 w-4 transform rotate-90" /></div></div></div>
+                        <div><label className="block text-xs font-semibold text-[#00695C] uppercase tracking-wider mb-1">Quantity to Allocate</label><input type="number" value={bibleQty} onChange={(e) => setBibleQty(Number(e.target.value))} className="shadow-sm focus:ring-[#26A69A] focus:border-[#26A69A] block w-full sm:text-sm border-gray-300 rounded-md p-2" /></div>
+                    </div>
+                    <div className="text-xs text-[#00695C] bg-[#E0F2F1] p-3 rounded border border-[#B2DFDB] flex items-start"><AlertCircle className="h-4 w-4 mr-2 flex-shrink-0" /><span><span className="font-bold">Logic Check:</span> Validating distribution region matches dialect <strong>"{dialect}"</strong>.</span></div>
+                </div>
+            );
+        }
+
+        // --- NEW: Mercy Bag Manager ---
+        const MercyBagManager = ({ trips, partners, mercyBagEntries, setMercyBagEntries }) => {
+            const [selectedTrip, setSelectedTrip] = useState(trips[0]?.id);
+            const [selectedPartner, setSelectedPartner] = useState(partners[0]?.id);
+            const [quantity, setQuantity] = useState('');
+
+            const handleSave = () => {
+                if (!quantity || Number(quantity) <= 0) return alert("Please enter a valid quantity.");
+
+                const newEntry = {
+                    id: Date.now(),
+                    tripId: selectedTrip,
+                    partnerId: selectedPartner,
+                    qty: Number(quantity),
+                    savedAt: new Date().toLocaleDateString()
+                };
+
+                setMercyBagEntries([newEntry, ...mercyBagEntries]);
+                setQuantity('');
+            };
+
+            const getTripName = (id) => trips.find(t => t.id === id)?.name || id;
+            const getPartnerName = (id) => partners.find(p => p.id === id)?.name || id;
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 border-t-4 border-t-[#26A69A] card-shadow">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">Register Mercy Bags Distributed</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Mission Trip</label>
+                                <select value={selectedTrip} onChange={(e) => setSelectedTrip(e.target.value)} className="block w-full border border-gray-300 rounded-md p-2 focus:ring-[#26A69A] focus:border-[#26A69A]">
+                                    {trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Ministry Partner</label>
+                                <select value={selectedPartner} onChange={(e) => setSelectedPartner(e.target.value)} className="block w-full border border-gray-300 rounded-md p-2 focus:ring-[#26A69A] focus:border-[#26A69A]">
+                                    {partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Quantity (Approved Budget)</label>
+                                <input type="number" className="block w-full border border-gray-300 rounded-md p-2 focus:ring-[#26A69A] focus:border-[#26A69A]" placeholder="e.g. 50" value={quantity} onChange={(e) => setQuantity(e.target.value)} />
+                            </div>
+                        </div>
+                        <div className="flex justify-end">
+                            <button onClick={handleSave} className="px-6 py-2 bg-[#26A69A] text-white rounded-md text-sm font-medium hover:bg-[#00897B] shadow-sm transition-colors flex items-center">
+                                <Save className="h-4 w-4 mr-2" /> Save Entry
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200 card-shadow">
+                        <div className="px-6 py-4 border-b border-gray-200 bg-[#FAFAFA] flex justify-between items-center">
+                            <h3 className="text-lg font-bold text-gray-900">Mercy Bag Distribution Log</h3>
+                            <span className="text-xs text-gray-500 flex items-center"><Lock className="h-3 w-3 mr-1" /> Entries are locked upon saving</span>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-[#E3F2FD]">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Date Saved</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Mission Trip</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Partner</th>
+                                        <th className="px-6 py-3 text-right text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Quantity</th>
+                                        <th className="px-6 py-3 text-center text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200 text-sm">
+                                    {mercyBagEntries.length === 0 ? (
+                                        <tr><td colSpan="5" className="px-6 py-8 text-center text-gray-500 italic">No distributions recorded yet.</td></tr>
+                                    ) : (
+                                        mercyBagEntries.map(entry => (
+                                            <tr key={entry.id} className="hover:bg-gray-50">
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-500">{entry.savedAt}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{getTripName(entry.tripId)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-gray-700">{getPartnerName(entry.partnerId)}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right font-bold text-[#26A69A]">{entry.qty}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                        <Lock className="h-3 w-3 mr-1" /> Locked
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const EnhancedPastorCRM = ({ pastors, setPastors, partners }) => {
+            const [viewMode, setViewMode] = useState('directory');
+            const [searchTerm, setSearchTerm] = useState('');
+            const [filterPartner, setFilterPartner] = useState('All');
+            // 'pastors' state moved up
+            const [modalOpen, setModalOpen] = useState(false);
+            const [currentRecipient, setCurrentRecipient] = useState(null);
+            const [messageType, setMessageType] = useState('SMS');
+            const [toast, setToast] = useState(null);
+            const [isExporting, setIsExporting] = useState(false);
+            const [newPastor, setNewPastor] = useState({ name: '', dob: '', phone: '', email: '', nin: '', district: 'Gulu', parish: '', village: '', partner: '' });
+
+            const filteredPastors = useMemo(() => pastors.filter(p => (p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.district.toLowerCase().includes(searchTerm.toLowerCase())) && (filterPartner === 'All' || p.partner === filterPartner)), [pastors, searchTerm, filterPartner]);
+            const initiateMessage = (type, pastor) => { setMessageType(type); setCurrentRecipient(pastor); setModalOpen(true); };
+            const handleModalClose = (success) => { setModalOpen(false); if (success) { setToast({ message: `${messageType} sent to ${currentRecipient.name}!`, type: 'success' }); setTimeout(() => setToast(null), 3000); } };
+            const handleSavePastor = () => { if (!newPastor.name || !newPastor.partner) { alert("Please fill in Name and Ministry Partner."); return; } setPastors([{ ...newPastor, id: Date.now() }, ...pastors]); setNewPastor({ name: '', dob: '', phone: '', email: '', nin: '', district: 'Gulu', parish: '', village: '', partner: '' }); setViewMode('directory'); setToast({ message: "Pastor Profile Saved!", type: 'success' }); setTimeout(() => setToast(null), 3000); };
+            const handleExportPDF = () => { setIsExporting(true); setTimeout(() => { setIsExporting(false); setToast({ message: "Exported to PDF.", type: 'success' }); setTimeout(() => setToast(null), 3000); }, 2000); };
+
+            return (
+                <div className="space-y-6 animate-fade-in relative">
+                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+                    <MessageModal isOpen={modalOpen} onClose={handleModalClose} recipient={currentRecipient} type={messageType} />
+                    <div className="flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+                        <div><h3 className="text-xl font-bold text-gray-900 flex items-center"><Users className="h-6 w-6 mr-2 text-[#42A5F5]" /> Pastor Registry & CRM</h3><p className="text-sm text-gray-500 mt-1">Manage registration, ministry affiliation, and communication.</p></div>
+                        <div className="mt-4 md:mt-0 flex space-x-3">
+                            {viewMode === 'directory' && <button onClick={handleExportPDF} disabled={isExporting} className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors bg-white text-gray-600 border border-gray-300 hover:bg-gray-50 shadow-sm`}>{isExporting ? <div className="animate-spin h-4 w-4 border-2 border-gray-500 border-t-transparent rounded-full mr-2"></div> : <Download className="h-4 w-4 mr-2" />}{isExporting ? "Generating..." : "Export PDF"}</button>}
+                            <button onClick={() => setViewMode('directory')} className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm ${viewMode === 'directory' ? 'bg-[#26A69A] text-white' : 'bg-white text-gray-600 border border-gray-300'}`}><List className="h-4 w-4 mr-2" /> Directory</button>
+                            <button onClick={() => setViewMode('register')} className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm ${viewMode === 'register' ? 'bg-[#26A69A] text-white' : 'bg-white text-gray-600 border border-gray-300'}`}><UserPlus className="h-4 w-4 mr-2" /> New Registration</button>
+                        </div>
+                    </div>
+                    {viewMode === 'directory' && (
+                        <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200 card-shadow">
+                            <div className="p-4 bg-gray-50 border-b border-gray-200 flex flex-col md:flex-row gap-4">
+                                <div className="relative flex-grow"><div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Search className="h-4 w-4 text-gray-400" /></div><input type="text" className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-[#26A69A] focus:border-[#26A69A] sm:text-sm" placeholder="Search pastors by name or district..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div>
+                                <div className="relative min-w-[250px]"><div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><Filter className="h-4 w-4 text-gray-400" /></div><select className="block w-full pl-10 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#26A69A] focus:border-[#26A69A] sm:text-sm rounded-md" value={filterPartner} onChange={(e) => setFilterPartner(e.target.value)}><option value="All">All Ministries</option>{partners.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></div>
+                            </div>
+
+                            {/* Responsive Table / Cards */}
+                            <div className="md:hidden p-4 space-y-4">
+                                {filteredPastors.map(pastor => (
+                                    <div key={pastor.id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <div className="font-bold text-gray-900">{pastor.name}</div>
+                                                <div className="text-xs text-gray-500 flex items-center mt-1"><Lock className="h-3 w-3 mr-1 text-gray-400" /> {pastor.nin}</div>
+                                            </div>
+                                            <div className="flex space-x-2">
+                                                <button onClick={() => initiateMessage('Email', pastor)} className="text-[#42A5F5]"><Mail className="h-5 w-5" /></button>
+                                                <button onClick={() => initiateMessage('SMS', pastor)} className="text-[#26A69A]"><MessageCircle className="h-5 w-5" /></button>
+                                            </div>
+                                        </div>
+                                        <div className="mt-2 space-y-1">
+                                            <div className="flex justify-between text-sm"><span className="text-gray-500">Ministry:</span> <span className="text-gray-800 font-medium">{pastor.partner}</span></div>
+                                            <div className="flex justify-between text-sm"><span className="text-gray-500">District:</span> <span className="text-gray-800">{pastor.district}</span></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="hidden md:block overflow-x-auto custom-scrollbar" id="printable-area">
+                                <table className="min-w-full divide-y divide-gray-200"><thead className="bg-[#E3F2FD]"><tr><th className="px-6 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Name / NIN</th><th className="px-6 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Ministry Partner</th><th className="px-6 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase tracking-wider">District</th><th className="px-6 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase tracking-wider">Actions</th></tr></thead><tbody className="bg-white divide-y divide-gray-200 text-sm">{filteredPastors.map((pastor) => (<tr key={pastor.id} className="hover:bg-gray-50 transition-colors"><td className="px-6 py-4 whitespace-nowrap"><div className="font-medium text-gray-900">{pastor.name}</div><div className="text-xs text-gray-500 flex items-center mt-1"><Lock className="h-3 w-3 mr-1 text-gray-400" /> {pastor.nin}</div></td><td className="px-6 py-4 whitespace-nowrap"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#E0F2F1] text-[#00695C]">{pastor.partner}</span></td><td className="px-6 py-4 whitespace-nowrap text-gray-500">{pastor.district}</td><td className="px-6 py-4 whitespace-nowrap text-sm font-medium"><div className="flex space-x-3"><button onClick={() => initiateMessage('Email', pastor)} className="text-gray-400 hover:text-[#42A5F5] transition-colors"><Mail className="h-5 w-5" /></button><button onClick={() => initiateMessage('SMS', pastor)} className="text-gray-400 hover:text-[#26A69A] transition-colors"><MessageCircle className="h-5 w-5" /></button></div></td></tr>))}{filteredPastors.length === 0 && (<tr><td colSpan="4" className="px-6 py-10 text-center text-gray-500 italic">No pastors found matching your filters.</td></tr>)}</tbody></table>
+                            </div>
+                        </div>
+                    )}
+                    {viewMode === 'register' && (
+                        <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200 card-shadow">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-gray-50"><h3 className="text-lg leading-6 font-medium text-gray-900">New Pastor Registration</h3><p className="mt-1 text-xs text-gray-500">Please complete all fields. NIN is required for government compliance.</p></div>
+                            <div className="p-6 space-y-6">
+                                <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+                                    <div className="sm:col-span-6 bg-[#E0F2F1] p-4 rounded-md border border-[#B2DFDB]"><label className="block text-sm font-bold text-[#00695C] mb-1">Affiliated Ministry Partner <span className="text-red-500">*</span></label>
+                                        {/* LOGIC UPDATE: Dynamic Registration Dropdown */}
+                                        <select className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#26A69A] focus:border-[#26A69A] sm:text-sm rounded-md shadow-sm" value={newPastor.partner} onChange={(e) => setNewPastor({ ...newPastor, partner: e.target.value })}>
+                                            <option value="">Select a Ministry...</option>
+                                            {partners.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
+                                        </select>
+                                    </div>
+                                    {/* ... other fields ... */}
+                                    <div className="sm:col-span-3"><label className="block text-sm font-medium text-gray-700">Full Name</label><div className="mt-1"><input type="text" className="shadow-sm focus:ring-[#26A69A] focus:border-[#26A69A] block w-full sm:text-sm border border-gray-300 rounded-md p-2" placeholder="Rev. John Doe" value={newPastor.name} onChange={(e) => setNewPastor({ ...newPastor, name: e.target.value })} /></div></div>
+                                    <div className="sm:col-span-3"><label className="block text-sm font-medium text-gray-700">Date of Birth</label><div className="mt-1"><input type="date" className="shadow-sm focus:ring-[#26A69A] focus:border-[#26A69A] block w-full sm:text-sm border border-gray-300 rounded-md p-2" value={newPastor.dob} onChange={(e) => setNewPastor({ ...newPastor, dob: e.target.value })} /></div></div>
+                                    <div className="sm:col-span-3"><label className="block text-sm font-medium text-gray-700">Phone Number</label><input type="tel" className="shadow-sm focus:ring-[#26A69A] focus:border-[#26A69A] block w-full sm:text-sm border border-gray-300 rounded-md p-2" placeholder="+256..." value={newPastor.phone} onChange={(e) => setNewPastor({ ...newPastor, phone: e.target.value })} /></div>
+                                    <div className="sm:col-span-3"><label className="block text-sm font-medium text-gray-700">Email Address</label><input type="email" className="shadow-sm focus:ring-[#26A69A] focus:border-[#26A69A] block w-full sm:text-sm border border-gray-300 rounded-md p-2" placeholder="pastor@example.com" value={newPastor.email} onChange={(e) => setNewPastor({ ...newPastor, email: e.target.value })} /></div>
+                                    <div className="sm:col-span-6 bg-red-50 p-4 rounded-md border border-red-100"><label className="flex items-center text-sm font-bold text-gray-800 mb-2"><Lock className="h-4 w-4 mr-1 text-red-600" /> NIN (National ID Number) <span className="ml-2 text-[10px] font-bold text-red-600 bg-white px-2 py-0.5 rounded-full border border-red-200 uppercase tracking-wide">PII Encrypted</span></label><input type="text" className="shadow-sm focus:ring-red-500 focus:border-red-500 block w-full sm:text-sm border border-red-200 rounded-md p-2 font-mono text-gray-700 placeholder-gray-400" placeholder="CM90023..." value={newPastor.nin} onChange={(e) => setNewPastor({ ...newPastor, nin: e.target.value })} /></div>
+                                    <div className="sm:col-span-2"><label className="block text-sm font-medium text-gray-700">District</label><select className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#26A69A] focus:border-[#26A69A] sm:text-sm rounded-md shadow-sm" value={newPastor.district} onChange={(e) => setNewPastor({ ...newPastor, district: e.target.value })}><option>Gulu</option><option>Lamwo</option><option>Jinja</option><option>Kampala</option><option>Wakiso</option></select></div>
+                                    <div className="sm:col-span-2"><label className="block text-sm font-medium text-gray-700">Parish/Town</label><input type="text" className="shadow-sm focus:ring-[#26A69A] focus:border-[#26A69A] block w-full sm:text-sm border border-gray-300 rounded-md p-2" value={newPastor.parish} onChange={(e) => setNewPastor({ ...newPastor, parish: e.target.value })} /></div>
+                                    <div className="sm:col-span-2"><label className="block text-sm font-medium text-gray-700">Village (LC1)</label><input type="text" className="shadow-sm focus:ring-[#26A69A] focus:border-[#26A69A] block w-full sm:text-sm border border-gray-300 rounded-md p-2" value={newPastor.village} onChange={(e) => setNewPastor({ ...newPastor, village: e.target.value })} /></div>
+                                </div>
+                            </div>
+                            <div className="px-6 py-4 bg-gray-50 text-right"><button onClick={handleSavePastor} type="button" className="inline-flex items-center justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#26A69A] hover:bg-[#00897B] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#26A69A] transition-colors"><Save className="h-4 w-4 mr-2" /> Save Pastor Profile</button></div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const MissionSummary = ({ budgets, partners, trips }) => {
+            const [currency, setCurrency] = useState('UGX');
+            const [selectedTripId, setSelectedTripId] = useState(trips[0]?.id);
+            const [isExporting, setIsExporting] = useState(false);
+            const [toast, setToast] = useState(null);
+
+            const formatMoney = (amount) => {
+                if (currency === 'USD') return `$${(amount / UGX_RATE).toFixed(0)}`;
+                return `${(amount / 1000000).toFixed(1)}M UGX`;
+            };
+            const toggleCurrency = () => setCurrency(prev => prev === 'UGX' ? 'USD' : 'UGX');
+
+            const filteredBudgets = budgets.filter(b => b.trip === selectedTripId);
+            const totalCost = filteredBudgets.reduce((acc, curr) => acc + curr.total, 0);
+            const currentTripName = trips.find(t => t.id === selectedTripId)?.name || "Unknown Mission";
+
+            const handleExportPDF = () => {
+                setIsExporting(true);
+                setTimeout(() => {
+                    setIsExporting(false);
+                    setToast({ message: "Mission Summary Report generated successfully.", type: 'success' });
+                    setTimeout(() => setToast(null), 3000);
+                }, 2000);
+            };
+
+            return (
+                <div className="space-y-6 animate-fade-in relative">
+                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-lg shadow-sm border border-gray-200 card-shadow">
+                        <div className="mb-4 md:mb-0">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center">
+                                <PieChart className="h-6 w-6 mr-2 text-[#42A5F5]" />
+                                Mission Summary
+                            </h3>
+                            <div className="flex items-center mt-2">
+                                <span className="text-sm text-gray-500 mr-2">Viewing Report For:</span>
+                                <select
+                                    value={selectedTripId}
+                                    onChange={(e) => setSelectedTripId(e.target.value)}
+                                    className="border-gray-300 rounded-md text-sm font-bold text-gray-800 focus:ring-[#26A69A] focus:border-[#26A69A] bg-gray-50 border py-1 px-2"
+                                >
+                                    {trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div className="flex space-x-3">
+                            <button
+                                onClick={handleExportPDF}
+                                disabled={isExporting}
+                                className="flex items-center space-x-2 text-sm bg-white text-gray-600 border border-gray-300 rounded-md px-3 py-2 hover:bg-gray-50 shadow-sm transition-colors"
+                            >
+                                {isExporting ? <div className="animate-spin h-4 w-4 border-2 border-gray-500 border-t-transparent rounded-full"></div> : <Download className="h-4 w-4" />}
+                                <span>{isExporting ? "Generating..." : "Download Report"}</span>
+                            </button>
+                            <button onClick={toggleCurrency} className="flex items-center space-x-2 text-sm bg-white text-[#26A69A] border border-[#26A69A] rounded-md px-3 py-2 hover:bg-[#E0F2F1] shadow-sm transition-colors">
+                                <DollarSign className="h-4 w-4" />
+                                <span className="font-medium">{currency}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200 card-shadow">
+                        <div className="px-6 py-4 border-b border-gray-200 bg-[#FAFAFA] flex justify-between items-center">
+                            <h4 className="font-bold text-gray-700">Consolidated Expenses: {currentTripName}</h4>
+                            <span className="text-xs text-gray-400 uppercase font-semibold bg-gray-100 px-2 py-1 rounded">Live Data</span>
+                        </div>
+                        <ul className="divide-y divide-gray-200">
+                            {filteredBudgets.length === 0 ? (
+                                <li className="px-6 py-12 text-center text-gray-500 italic flex flex-col items-center">
+                                    <Info className="h-8 w-8 text-gray-300 mb-2" />
+                                    No sub-budgets found for {currentTripName}.<br />
+                                    Go to "Partner Sub-Budgets" to create one.
+                                </li>
+                            ) : (
+                                filteredBudgets.map(budget => (
+                                    <li key={budget.id} className="px-6 py-4 hover:bg-[#F5F5F5] transition-colors">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <div className="text-sm font-bold text-gray-900">
+                                                    {partners.find(p => p.id === budget.partner)?.name || "Unknown Partner"}
+                                                </div>
+                                                <div className="text-sm text-gray-500">Sub-Budget ID: #{budget.id}</div>
+                                            </div>
+                                            <div className="text-sm font-bold text-gray-900">{formatMoney(budget.total)}</div>
+                                        </div>
+                                    </li>
+                                ))
+                            )}
+                            <li className="px-6 py-4 bg-gray-50 border-t-2 border-[#B2DFDB]">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-base font-bold text-gray-900 uppercase">Total Mission Budget</div>
+                                    <div className="text-lg font-bold text-[#26A69A]">{formatMoney(totalCost)}</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            );
+        };
+
+        const SubBudgetManager = ({ budgets, setBudgets, trips, partners, itemCatalog, appSettings }) => {
+            const [viewMode, setViewMode] = useState('list');
+            const [activeBudget, setActiveBudget] = useState(null);
+
+            // --- View Details State ---
+            const [viewDetailsBudget, setViewDetailsBudget] = useState(null);
+
+            // --- Editor State ---
+            const [selectedTrip, setSelectedTrip] = useState(trips[0]?.id);
+            const [selectedPartner, setSelectedPartner] = useState(partners[0]?.id);
+            const [currency, setCurrency] = useState('UGX');
+            const [showActuals, setShowActuals] = useState(false);
+            const [items, setItems] = useState([]);
+            const [editingLineId, setEditingLineId] = useState(null);
+            const [tempEditItem, setTempEditItem] = useState({});
+
+            const getPartnerName = (id) => { const p = partners.find(p => p.id === id); return p ? p.name : <span className="text-red-500 flex items-center"><AlertCircle className="h-3 w-3 mr-1" /> Deleted Partner</span>; };
+            const getTripName = (id) => { const t = trips.find(t => t.id === id); return t ? t.name : "Unknown Trip"; };
+
+            // --- LOGIC UPDATE: Added Generic Fallback for New Partners ---
+            const getInitialItems = (partnerId) => {
+                // Find the partner object to check its type (optional logic enhancement)
+                const partnerType = partners.find(p => p.id === partnerId)?.type;
+
+                if (partnerId === "american_team" || partnerType === "Logistics") {
+                    return [
+                        { id: 101, desc: "Hotel Accommodation (Entebbe)", unit: "Rooms/Night", qty: 10, unitCost: 350000, actualUnitCost: 0, comments: [] },
+                        { id: 102, desc: "Bus Rental (Coaster)", unit: "Days", qty: 10, unitCost: 450000, actualUnitCost: 0, comments: [] },
+                        { id: 103, desc: "Airport Transfers", unit: "Trips", qty: 2, unitCost: 200000, actualUnitCost: 0, comments: [] }
+                    ];
+                }
+                else if (partnerId === "new_life" || partnerId === "cross_healing") {
+                    return [
+                        { id: 201, desc: "Meat (1 Bull ~120kg)", unit: "Bull", qty: 1, unitCost: 1500000, actualUnitCost: 0, comments: [] },
+                        { id: 202, desc: "Posho (Maize Flour)", unit: "Sacks", qty: 5, unitCost: 120000, actualUnitCost: 0, comments: ["Buy from Jinja"] },
+                        { id: 203, desc: "Firewood", unit: "Truck", qty: 1, unitCost: 300000, actualUnitCost: 0, comments: [] }
+                    ];
+                }
+                else {
+                    // GENERIC TEMPLATE for any new partner added via System Data
+                    return [
+                        { id: 901, desc: "Venue Rental / Contribution", unit: "Lumpsum", qty: 1, unitCost: 200000, actualUnitCost: 0, comments: [] },
+                        { id: 902, desc: "Refreshments (Water/Soda)", unit: "Crates", qty: 5, unitCost: 25000, actualUnitCost: 0, comments: [] },
+                        { id: 903, desc: "Lunch for Attendees", unit: "Plates", qty: 100, unitCost: 5000, actualUnitCost: 0, comments: [] }
+                    ];
+                }
+            };
+            // ... rest of SubBudgetManager ...
+            useEffect(() => {
+                if (viewMode === 'editor') {
+                    if (activeBudget) {
+                        const budgetToEdit = budgets.find(b => b.id === activeBudget);
+                        if (budgetToEdit && budgetToEdit.items) {
+                            setItems(budgetToEdit.items);
+                        } else {
+                            setItems(getInitialItems(selectedPartner));
+                        }
+                    } else if (items.length === 0) {
+                        setItems(getInitialItems(selectedPartner));
+                    }
+                }
+            }, [viewMode, activeBudget]);
+
+            const handleCreateNew = () => { setActiveBudget(null); setSelectedTrip(trips[0]?.id); setSelectedPartner(partners[0]?.id); setItems(getInitialItems(partners[0]?.id)); setViewMode('editor'); setEditingLineId(null); };
+
+            const handleEditBudget = (budget) => {
+                setActiveBudget(budget.id);
+                setSelectedTrip(budget.trip);
+                setSelectedPartner(budget.partner);
+                setViewMode('editor');
+                setEditingLineId(null);
+            };
+
+            const handleViewDetails = (budget) => {
+                const itemsToView = budget.items || getInitialItems(budget.partner);
+                setViewDetailsBudget({ ...budget, items: itemsToView });
+            };
+
+            const handleSaveBudget = () => {
+                if (items.length === 0) { alert("Please add at least one line item."); return; }
+                const total = items.reduce((acc, curr) => acc + (curr.qty * curr.unitCost), 0);
+
+                if (activeBudget) {
+                    setBudgets(budgets.map(b => b.id === activeBudget ? { ...b, trip: selectedTrip, partner: selectedPartner, total, items: items, lastUpdated: "Just now" } : b));
+                } else {
+                    const newBudget = { id: Date.now(), trip: selectedTrip, partner: selectedPartner, total, items: items, lastUpdated: "Just now" };
+                    setBudgets([newBudget, ...budgets]);
+                }
+                setViewMode('list'); setActiveBudget(null); setEditingLineId(null);
+            };
+
+            const handleAddItem = () => {
+                const newItem = { id: Date.now(), desc: "New Item", unit: "Pcs", qty: 1, unitCost: 0, actualUnitCost: 0, comments: [] };
+                setItems([...items, newItem]);
+                setEditingLineId(newItem.id);
+                setTempEditItem(newItem);
+            };
+
+            const handleEditLine = (item) => { setEditingLineId(item.id); setTempEditItem(item); };
+            const handleSaveLine = () => { setItems(items.map(i => i.id === tempEditItem.id ? tempEditItem : i)); setEditingLineId(null); };
+            const handleDeleteLine = (id) => { if (confirm("Remove this line item?")) setItems(items.filter(i => i.id !== id)); };
+
+            return (
+                <div className="space-y-6 animate-fade-in relative">
+                    {/* View Details Modal */}
+                    {viewDetailsBudget && (
+                        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in backdrop-blur-sm p-4">
+                            <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+                                <div className="px-6 py-4 border-b border-gray-200 bg-[#FAFAFA] flex justify-between items-center">
+                                    <h3 className="text-lg font-bold text-gray-900">Budget Details: {getPartnerName(viewDetailsBudget.partner)}</h3>
+                                    <button onClick={() => setViewDetailsBudget(null)} className="text-gray-400 hover:text-gray-600"><X className="h-6 w-6" /></button>
+                                </div>
+                                <div className="p-6 overflow-y-auto">
+                                    <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                                        <div><span className="text-gray-500">Mission Trip:</span> <span className="font-medium block">{getTripName(viewDetailsBudget.trip)}</span></div>
+                                        <div><span className="text-gray-500">Total Budget:</span> <span className="font-medium block text-[#26A69A] font-bold text-lg">{viewDetailsBudget.total.toLocaleString()} {currency}</span></div>
+                                    </div>
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-[#E3F2FD]">
+                                            <tr>
+                                                <th className="px-4 py-2 text-left text-xs font-medium text-[#42A5F5] uppercase">Description</th>
+                                                <th className="px-4 py-2 text-right text-xs font-medium text-[#42A5F5] uppercase">Qty</th>
+                                                <th className="px-4 py-2 text-right text-xs font-medium text-[#42A5F5] uppercase">Unit Cost</th>
+                                                <th className="px-4 py-2 text-right text-xs font-medium text-[#42A5F5] uppercase">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 text-sm">
+                                            {viewDetailsBudget.items.map((item, idx) => (
+                                                <tr key={idx}>
+                                                    <td className="px-4 py-2">{item.desc}</td>
+                                                    <td className="px-4 py-2 text-right">{item.qty} {item.unit}</td>
+                                                    <td className="px-4 py-2 text-right">{item.unitCost.toLocaleString()}</td>
+                                                    <td className="px-4 py-2 text-right font-medium">{(item.qty * item.unitCost).toLocaleString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end">
+                                    <button onClick={() => setViewDetailsBudget(null)} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {viewMode === 'list' && (
+                        <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200 card-shadow">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-[#FAFAFA] flex justify-between items-center">
+                                <div><h3 className="text-lg font-bold text-gray-900">Partner Sub-Budgets</h3><p className="text-xs text-gray-500">Manage individual budgets for each ministry partner.</p></div>
+                                <button onClick={handleCreateNew} className="flex items-center px-3 py-1.5 bg-[#26A69A] text-white text-sm font-medium rounded-md hover:bg-[#00897B] shadow-sm transition-all"><PlusCircle className="h-4 w-4 mr-1.5" /> Create New</button>
+                            </div>
+                            <ul className="divide-y divide-gray-200">
+                                {budgets.length === 0 ? <li className="px-6 py-12 text-center text-gray-500 italic flex flex-col items-center"><Info className="h-8 w-8 mb-2 text-gray-300" />No budgets created yet. Click "Create New" to start.</li> :
+                                    budgets.map(budget => (
+                                        <li key={budget.id} className="px-6 py-4 hover:bg-[#F5F5F5] transition-colors">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center">
+                                                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-[#E0F2F1] flex items-center justify-center"><Briefcase className="h-5 w-5 text-[#00695C]" /></div>
+                                                    <div className="ml-4">
+                                                        <div className="text-sm font-bold text-gray-900">{getPartnerName(budget.partner)}</div>
+                                                        <div className="text-xs text-gray-500">{getTripName(budget.trip)} • Last updated: {budget.lastUpdated}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center space-x-4">
+                                                    <div className="text-right hidden sm:block"><div className="text-sm font-bold text-gray-900">{budget.total.toLocaleString()} {currency}</div><div className="text-xs text-gray-500">Total Budget</div></div>
+                                                    <div className="flex space-x-2">
+                                                        <button onClick={() => handleViewDetails(budget)} className="p-1 text-blue-400 hover:text-blue-600" title="View Details"><FileText className="h-5 w-5" /></button>
+                                                        <button onClick={() => handleEditBudget(budget)} className="p-1 text-[#26A69A] hover:text-[#00897B]" title="Edit Budget"><FileSpreadsheet className="h-5 w-5" /></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {viewMode === 'editor' && (
+                        <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200 card-shadow">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-[#FAFAFA] flex justify-between items-center">
+                                <h3 className="text-lg font-bold text-gray-900">{activeBudget ? 'Edit Budget' : 'New Budget Worksheet'}</h3>
+                                <button onClick={() => setViewMode('list')} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+                            </div>
+                            <div className="p-6 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded border border-gray-200">
+                                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Mission Trip</label><select value={selectedTrip} onChange={(e) => setSelectedTrip(e.target.value)} className="block w-full border border-gray-300 rounded-md p-2 focus:ring-[#26A69A] focus:border-[#26A69A]">{trips.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}</select></div>
+                                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Ministry Partner</label><select value={selectedPartner} onChange={(e) => setSelectedPartner(e.target.value)} className="block w-full border border-gray-300 rounded-md p-2 focus:ring-[#26A69A] focus:border-[#26A69A]">{partners.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <h4 className="font-bold text-gray-800">Line Items</h4>
+                                    <div className="flex items-center space-x-3">
+                                        <label className="flex items-center space-x-2 text-sm text-gray-600 cursor-pointer"><input type="checkbox" checked={showActuals} onChange={(e) => setShowActuals(e.target.checked)} className="rounded text-[#26A69A] focus:ring-[#26A69A]" /><span>Show Actuals</span></label>
+                                        <button onClick={handleAddItem} className="flex items-center px-3 py-1.5 bg-blue-50 text-blue-600 text-sm font-medium rounded hover:bg-blue-100 border border-blue-200"><PlusCircle className="h-4 w-4 mr-1.5" /> Add Item</button>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto border rounded-lg">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-[#E3F2FD]">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-[#42A5F5] uppercase w-1/3">Description</th>
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-[#42A5F5] uppercase w-24">Qty / Unit</th>
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-[#42A5F5] uppercase w-32">Unit Cost</th>
+                                                {showActuals && <th className="px-4 py-3 text-right text-xs font-medium text-[#42A5F5] uppercase w-32">Actual Cost</th>}
+                                                <th className="px-4 py-3 text-right text-xs font-medium text-[#42A5F5] uppercase w-32">Total</th>
+                                                <th className="px-4 py-3 text-center text-xs font-medium text-[#42A5F5] uppercase w-20">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200 text-sm">
+                                            {items.map(item => (
+                                                <tr key={item.id} className={editingLineId === item.id ? "bg-blue-50" : "hover:bg-gray-50"}>
+                                                    {editingLineId === item.id ? (
+                                                        <>
+                                                            <td className="px-4 py-2"><input className="w-full border p-1 rounded text-sm" value={tempEditItem.desc} onChange={e => setTempEditItem({ ...tempEditItem, desc: e.target.value })} /></td>
+                                                            <td className="px-4 py-2 text-right"><div className="flex items-center justify-end space-x-1"><input type="number" className="w-16 border p-1 rounded text-sm text-right" value={tempEditItem.qty} onChange={e => setTempEditItem({ ...tempEditItem, qty: Number(e.target.value) })} /><input className="w-16 border p-1 rounded text-sm" value={tempEditItem.unit} onChange={e => setTempEditItem({ ...tempEditItem, unit: e.target.value })} /></div></td>
+                                                            <td className="px-4 py-2 text-right"><input type="number" className="w-full border p-1 rounded text-sm text-right" value={tempEditItem.unitCost} onChange={e => setTempEditItem({ ...tempEditItem, unitCost: Number(e.target.value) })} /></td>
+                                                            {showActuals && <td className="px-4 py-2 text-right"><input type="number" className="w-full border p-1 rounded text-sm text-right" value={tempEditItem.actualUnitCost} onChange={e => setTempEditItem({ ...tempEditItem, actualUnitCost: Number(e.target.value) })} /></td>}
+                                                            <td className="px-4 py-2 text-right font-medium">{(tempEditItem.qty * tempEditItem.unitCost).toLocaleString()}</td>
+                                                            <td className="px-4 py-2 text-center"><button onClick={handleSaveLine} className="text-[#26A69A] hover:text-[#00897B] mr-2"><CheckCircle className="h-4 w-4" /></button><button onClick={() => setEditingLineId(null)} className="text-gray-400 hover:text-gray-600"><X className="h-4 w-4" /></button></td>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <td className="px-4 py-3 font-medium text-gray-900">{item.desc}</td>
+                                                            <td className="px-4 py-3 text-right text-gray-500">{item.qty} {item.unit}</td>
+                                                            <td className="px-4 py-3 text-right text-gray-500">{item.unitCost.toLocaleString()}</td>
+                                                            {showActuals && <td className="px-4 py-3 text-right text-gray-500">{item.actualUnitCost.toLocaleString()}</td>}
+                                                            <td className="px-4 py-3 text-right font-bold text-gray-900">{(item.qty * item.unitCost).toLocaleString()}</td>
+                                                            <td className="px-4 py-3 text-center"><button onClick={() => handleEditLine(item)} className="text-blue-400 hover:text-blue-600 mr-2"><FileText className="h-4 w-4" /></button><button onClick={() => handleDeleteLine(item.id)} className="text-red-400 hover:text-red-600"><X className="h-4 w-4" /></button></td>
+                                                        </>
+                                                    )}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot className="bg-gray-50 font-bold">
+                                            <tr>
+                                                <td colSpan={showActuals ? 4 : 3} className="px-4 py-3 text-right text-gray-900 uppercase">Total Budget</td>
+                                                <td className="px-4 py-3 text-right text-[#26A69A] text-lg">{items.reduce((acc, curr) => acc + (curr.qty * curr.unitCost), 0).toLocaleString()}</td>
+                                                <td></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                                <div className="flex justify-end space-x-3 border-t border-gray-200 pt-4">
+                                    <button onClick={() => setViewMode('list')} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                                    <button onClick={handleSaveBudget} className="px-6 py-2 bg-[#26A69A] text-white rounded hover:bg-[#00897B] shadow-sm font-medium flex items-center"><Save className="h-4 w-4 mr-2" /> Save Budget</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const HistoricalReports = ({ historicalData }) => {
+            const [selectedReport, setSelectedReport] = useState(null);
+            const [isExporting, setIsExporting] = useState(false);
+
+            const handleExport = () => { setIsExporting(true); setTimeout(() => setIsExporting(false), 2000); };
+
+            return (
+                <div className="space-y-6 animate-fade-in">
+                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 card-shadow">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center"><BarChart className="h-6 w-6 mr-2 text-[#42A5F5]" /> Historical Financial Reports</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {historicalData.map(report => (
+                                <div key={report.id} className="bg-white border border-gray-200 rounded-lg p-5 hover:border-[#26A69A] transition-colors cursor-pointer shadow-sm" onClick={() => setSelectedReport(report)}>
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="font-bold text-gray-800">{report.name}</div>
+                                        <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">Audited</span>
+                                    </div>
+                                    <div className="text-2xl font-bold text-[#26A69A] mb-1">{report.total.toLocaleString()} {report.currency}</div>
+                                    <div className="text-xs text-gray-500">Click to view breakdown</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    {selectedReport && (
+                        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-lg animate-fade-in card-shadow">
+                            <div className="px-6 py-4 bg-[#FAFAFA] border-b border-gray-200 flex justify-between items-center">
+                                <h4 className="font-bold text-gray-800">Report Details: {selectedReport.name}</h4>
+                                <div className="flex space-x-2">
+                                    <button onClick={handleExport} className="text-sm bg-white border border-gray-300 px-3 py-1 rounded hover:bg-gray-50 flex items-center">{isExporting ? "Exporting..." : <><Download className="h-4 w-4 mr-1" /> Export Excel</>}</button>
+                                    <button onClick={() => setSelectedReport(null)} className="text-gray-400 hover:text-gray-600"><X className="h-5 w-5" /></button>
+                                </div>
+                            </div>
+                            <div className="p-6">
+                                <div className="h-64 flex items-end justify-around space-x-2 border-b border-gray-200 pb-4 mb-4">
+                                    {Object.entries(selectedReport.breakdown).map(([cat, val], idx) => (
+                                        <div key={cat} className="flex flex-col items-center w-full group">
+                                            <div className="w-full bg-[#E0F2F1] rounded-t-md relative group-hover:bg-[#B2DFDB] transition-colors" style={{ height: `${(val / selectedReport.total) * 100}%` }}>
+                                                <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{val.toLocaleString()}</div>
+                                            </div>
+                                            <div className="mt-2 text-xs font-medium text-gray-600 text-center">{cat}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 text-sm">
+                                    {Object.entries(selectedReport.breakdown).map(([cat, val]) => (
+                                        <div key={cat} className="flex justify-between border-b border-gray-100 py-2">
+                                            <span className="text-gray-600">{cat}</span>
+                                            <span className="font-bold text-gray-900">{val.toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                    <div className="flex justify-between border-t border-gray-300 py-2 mt-2 font-bold text-lg">
+                                        <span>Total</span>
+                                        <span className="text-[#26A69A]">{selectedReport.total.toLocaleString()} {selectedReport.currency}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const SettingsPanel = ({ settings, setSettings }) => {
+            const handleChange = (key, val) => setSettings(prev => ({ ...prev, [key]: val }));
+            return (
+                <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
+                    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 card-shadow">
+                        <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center border-b pb-4"><Lock className="h-6 w-6 mr-2 text-gray-400" /> System Configuration</h3>
+                        <div className="space-y-6">
+                            <div className="flex items-center justify-between">
+                                <div><h4 className="font-medium text-gray-900">Lock Budget Edits</h4><p className="text-sm text-gray-500">Prevent changes to approved budgets.</p></div>
+                                <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={settings.lockBudgets} onChange={e => handleChange('lockBudgets', e.target.checked)} /><div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#B2DFDB] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#26A69A]"></div></label>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div><h4 className="font-medium text-gray-900">Enable Offline Mode Simulation</h4><p className="text-sm text-gray-500">Test app behavior without network.</p></div>
+                                <label className="relative inline-flex items-center cursor-pointer"><input type="checkbox" className="sr-only peer" checked={settings.offlineMode} onChange={e => handleChange('offlineMode', e.target.checked)} /><div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#B2DFDB] rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#26A69A]"></div></label>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div><h4 className="font-medium text-gray-900">Default Currency</h4><p className="text-sm text-gray-500">Set the base currency for reports.</p></div>
+                                <select value={settings.defaultCurrency} onChange={(e) => handleChange('defaultCurrency', e.target.value)} className="border border-gray-300 rounded-md text-sm p-2 focus:ring-[#26A69A] focus:border-[#26A69A]"><option>UGX</option><option>USD</option></select>
+                            </div>
+                            <div className="pt-4 border-t border-gray-200">
+                                <button className="text-red-600 text-sm font-medium hover:text-red-800 flex items-center"><AlertCircle className="h-4 w-4 mr-2" /> Reset System Data</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AdminDashboard = ({ activeTab, setActiveTab, children }) => {
+            return (
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+                    <div className="mb-8">
+                        <h1 className="text-3xl font-bold text-slate-800">Admin Portal</h1>
+                        <p className="mt-2 text-slate-600">Manage mission logistics, budgets, and system data.</p>
+                    </div>
+                    <div className="flex flex-col lg:flex-row gap-8">
+                        <aside className="w-full lg:w-64 flex-shrink-0">
+                            <nav className="space-y-1">
+                                {[
+                                    { id: 'system', label: 'System Data', icon: LayoutDashboard },
+                                    { id: 'budgets', label: 'Partner Budgets', icon: Calculator },
+                                    { id: 'pastors', label: 'Pastor Registry', icon: Users },
+                                    { id: 'mercy', label: 'Mercy Bags', icon: ShoppingBag },
+                                    { id: 'reports', label: 'Financial Reports', icon: BarChart },
+                                    { id: 'settings', label: 'Settings', icon: Lock },
+                                ].map((item) => (
+                                    <button key={item.id} onClick={() => setActiveTab(item.id)} className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${activeTab === item.id ? 'bg-[#26A69A] text-white shadow-md transform translate-x-1' : 'text-gray-600 hover:bg-white hover:shadow-sm'}`}>
+                                        <item.icon className={`mr-3 h-5 w-5 ${activeTab === item.id ? 'text-white' : 'text-gray-400'}`} />
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </nav>
+                            <div className="mt-8 bg-[#E3F2FD] rounded-lg p-4 border border-[#BBDEFB]">
+                                <h4 className="text-sm font-bold text-[#1565C0] flex items-center"><Info className="h-4 w-4 mr-1" /> Pro Tip</h4>
+                                <p className="text-xs text-[#1E88E5] mt-1">Use the "System Data" tab to add new Trips or Partners before creating budgets for them.</p>
+                            </div>
+                        </aside>
+                        <main className="flex-1 min-w-0">
+                            {children}
+                        </main>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeView, setActiveView] = useState('public'); // 'public' or 'admin'
+            const [adminTab, setAdminTab] = useState('system');
+            const [isOffline, setIsOffline] = useState(false);
+
+            // --- STATE MANAGEMENT ---
+            const [pastors, setPastors] = useStickyState(MOCK_PASTORS, 'fbcc_pastors');
+            const [bibleQty, setBibleQty] = useStickyState(50, 'fbcc_bible_qty');
+            const [partners, setPartners] = useStickyState(INITIAL_PARTNERS, 'fbcc_partners');
+            const [trips, setTrips] = useStickyState(INITIAL_TRIPS, 'fbcc_trips');
+            const [items, setItems] = useStickyState(INITIAL_ITEMS, 'fbcc_items');
+            const [budgets, setBudgets] = useStickyState([], 'fbcc_budgets');
+            const [impactStats, setImpactStats] = useStickyState(INITIAL_IMPACT_STATS, 'fbcc_impact');
+            const [mercyBagEntries, setMercyBagEntries] = useStickyState([], 'fbcc_mercy_bags');
+            const [appSettings, setAppSettings] = useStickyState({ lockBudgets: false, offlineMode: false, defaultCurrency: 'UGX' }, 'fbcc_settings');
+
+            useEffect(() => { if (isOffline) console.log("App is now in Offline Mode"); }, [isOffline]);
+
+            return (
+                <div className="min-h-screen bg-[#F0F9FF] pb-12">
+                    <Header activeView={activeView} setActiveView={setActiveView} isOffline={isOffline} setIsOffline={setIsOffline} />
+
+                    {activeView === 'public' ? (
+                        <PublicView
+                            pastors={pastors}
+                            bibleStats={bibleQty}
+                            mercyBagsStats={impactStats.mercyBags}
+                            livesTouchedStats={impactStats.livesTouched}
+                            medicalOutreachStats={impactStats.medicalOutreach}
+                            partners={partners}
+                            trips={trips}
+                            mercyBagEntries={mercyBagEntries}
+                        />
+                    ) : (
+                        <AdminDashboard activeTab={adminTab} setActiveTab={setAdminTab}>
+                            {adminTab === 'system' && <SystemDataManager trips={trips} setTrips={setTrips} partners={partners} setPartners={setPartners} items={items} setItems={setItems} impactStats={impactStats} setImpactStats={setImpactStats} />}
+                            {adminTab === 'budgets' && <SubBudgetManager budgets={budgets} setBudgets={setBudgets} trips={trips} partners={partners} itemCatalog={items} appSettings={appSettings} />}
+                            {adminTab === 'pastors' && <EnhancedPastorCRM pastors={pastors} setPastors={setPastors} partners={partners} />}
+                            {adminTab === 'mercy' && <MercyBagManager trips={trips} partners={partners} mercyBagEntries={mercyBagEntries} setMercyBagEntries={setMercyBagEntries} />}
+                            {adminTab === 'reports' && <HistoricalReports historicalData={MOCK_TRIPS_HISTORICAL} />}
+                            {adminTab === 'settings' && <SettingsPanel settings={appSettings} setSettings={setAppSettings} />}
+                            {adminTab === 'inventory' && <BibleInventory bibleQty={bibleQty} setBibleQty={setBibleQty} />}
+                        </AdminDashboard>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
