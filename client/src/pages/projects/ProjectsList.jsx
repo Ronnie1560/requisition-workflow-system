@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Plus, Folder, Search, Filter, Calendar, DollarSign, Users } from 'lucide-react'
@@ -10,23 +10,21 @@ const ProjectsList = () => {
   const navigate = useNavigate()
   const { profile } = useAuth()
 
-  const [projects, setProjects] = useState([])
+  const [allProjects, setAllProjects] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({
-    is_active: true,
-    search: ''
-  })
+  const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState(true)
 
   useEffect(() => {
     loadProjects()
-  }, [filters.is_active])
+  }, [statusFilter])
 
   const loadProjects = async () => {
     setLoading(true)
     try {
-      const { data, error } = await getAllProjects(filters)
+      const { data, error } = await getAllProjects({ is_active: statusFilter })
       if (error) throw error
-      setProjects(data || [])
+      setAllProjects(data || [])
     } catch (err) {
       logger.error('Error loading projects:', err)
     } finally {
@@ -34,12 +32,23 @@ const ProjectsList = () => {
     }
   }
 
-  const handleSearch = (e) => {
-    e.preventDefault()
-    loadProjects()
-  }
+  // Real-time filtering using useMemo
+  const filteredProjects = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return allProjects
+    }
 
-  const filteredProjects = projects
+    const query = searchQuery.toLowerCase().trim()
+
+    return allProjects.filter((project) => {
+      // Search in code, name, and description
+      const matchesCode = project.code?.toLowerCase().includes(query)
+      const matchesName = project.name?.toLowerCase().includes(query)
+      const matchesDescription = project.description?.toLowerCase().includes(query)
+
+      return matchesCode || matchesName || matchesDescription
+    })
+  }, [allProjects, searchQuery])
 
   // Check if user can create projects (admins only)
   const canCreateProject = profile?.role === 'super_admin'
@@ -84,42 +93,59 @@ const ProjectsList = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
-          <p className="text-sm text-gray-600 mb-1">Total Projects</p>
-          <p className="text-2xl font-bold text-gray-900">{projects.length}</p>
+          <p className="text-sm text-gray-600 mb-1">
+            {searchQuery ? 'Filtered Results' : 'Total Projects'}
+          </p>
+          <p className="text-2xl font-bold text-gray-900">{filteredProjects.length}</p>
+          {searchQuery && (
+            <p className="text-xs text-gray-500 mt-1">of {allProjects.length} total</p>
+          )}
         </div>
         <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Active</p>
           <p className="text-2xl font-bold text-green-600">
-            {projects.filter(p => p.is_active).length}
+            {filteredProjects.filter(p => p.is_active).length}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Inactive</p>
           <p className="text-2xl font-bold text-gray-500">
-            {projects.filter(p => !p.is_active).length}
+            {filteredProjects.filter(p => !p.is_active).length}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow p-6 border border-gray-200">
           <p className="text-sm text-gray-600 mb-1">Total Budget</p>
           <p className="text-2xl font-bold text-indigo-600">
-            {formatCurrency(projects.reduce((sum, p) => sum + (p.budget || 0), 0))}
+            {formatCurrency(filteredProjects.reduce((sum, p) => sum + (p.budget || 0), 0))}
           </p>
         </div>
       </div>
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow border border-gray-200 p-4 mb-6">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
-          {/* Search */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Real-time Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Search by code or name..."
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              placeholder="Search by code, name, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+              autoComplete="off"
             />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                title="Clear search"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
           </div>
 
           {/* Status Filter */}
@@ -127,8 +153,8 @@ const ProjectsList = () => {
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <select
-                value={filters.is_active}
-                onChange={(e) => setFilters({ ...filters, is_active: e.target.value === 'true' })}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value === 'true')}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none appearance-none"
               >
                 <option value="true">Active Only</option>
@@ -136,14 +162,14 @@ const ProjectsList = () => {
               </select>
             </div>
           </div>
+        </div>
 
-          <button
-            type="submit"
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            Search
-          </button>
-        </form>
+        {/* Search hint */}
+        {searchQuery && (
+          <p className="mt-2 text-xs text-gray-500">
+            Showing {filteredProjects.length} result{filteredProjects.length !== 1 ? 's' : ''} for "{searchQuery}"
+          </p>
+        )}
       </div>
 
       {/* Projects Grid */}
@@ -158,11 +184,19 @@ const ProjectsList = () => {
             <Folder className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <p className="text-gray-600 mb-2">No projects found</p>
             <p className="text-sm text-gray-500 mb-6">
-              {filters.search
-                ? 'Try adjusting your search'
+              {searchQuery
+                ? `No results for "${searchQuery}". Try a different search term.`
                 : 'Create your first project to get started'}
             </p>
-            {canCreateProject && !filters.search && (
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 mb-4"
+              >
+                Clear Search
+              </button>
+            )}
+            {canCreateProject && !searchQuery && (
               <button
                 onClick={() => navigate('/projects/create')}
                 className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
