@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { logger } from '../utils/logger'
 import { useOrganizationSettings, clearOrganizationSettingsCache } from '../hooks/useOrganizationSettings'
+import { useInactivityTimeout } from '../hooks/useInactivityTimeout'
+import InactivityWarningModal from '../components/auth/InactivityWarningModal'
 
 const AuthContext = createContext({})
 
@@ -58,6 +60,35 @@ export const AuthProvider = ({ children }) => {
   // Use cached organization settings hook
   const { orgSettings } = useOrganizationSettings()
   const organizationName = orgSettings?.organization_name || 'Your Organization Name'
+
+  // Handle automatic logout due to inactivity
+  const handleInactivityLogout = async () => {
+    logger.warn('Auto-logout due to inactivity')
+    await signOut()
+  }
+
+  // Set up inactivity timeout (only when user is logged in)
+  const {
+    showWarning,
+    remainingSeconds,
+    resetTimer,
+    pauseTimer,
+    resumeTimer
+  } = useInactivityTimeout(handleInactivityLogout, {
+    timeoutMinutes: 30,      // 30 minutes of inactivity
+    warningMinutes: 2,       // Show warning 2 minutes before logout
+    enabled: !!user          // Only enable when user is logged in
+  })
+
+  // Handle "Stay Logged In" from warning modal
+  const handleStayLoggedIn = () => {
+    resetTimer()
+  }
+
+  // Handle manual logout from warning modal
+  const handleLogoutFromWarning = async () => {
+    await signOut()
+  }
 
   useEffect(() => {
     let mounted = true
@@ -279,8 +310,24 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     isAuthenticated: !!user,
     isAdmin: profile?.role === 'super_admin',
-    userRole: profile?.role
+    userRole: profile?.role,
+    // Inactivity timeout controls
+    pauseInactivityTimer: pauseTimer,
+    resumeInactivityTimer: resumeTimer,
+    resetInactivityTimer: resetTimer
   }
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+
+      {/* Inactivity Warning Modal */}
+      <InactivityWarningModal
+        isOpen={showWarning}
+        remainingSeconds={remainingSeconds}
+        onStayLoggedIn={handleStayLoggedIn}
+        onLogout={handleLogoutFromWarning}
+      />
+    </AuthContext.Provider>
+  )
 }
