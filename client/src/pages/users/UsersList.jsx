@@ -9,9 +9,10 @@ import {
   Edit,
   UserCheck,
   UserX,
-  Shield
+  Shield,
+  Mail
 } from 'lucide-react'
-import { getAllUsers, getUserStats, toggleUserStatus } from '../../services/api/users'
+import { getAllUsers, getUserStats, toggleUserStatus, resendInvitation } from '../../services/api/users'
 import { formatDate } from '../../utils/formatters'
 import { USER_ROLES, ROLE_LABELS } from '../../utils/constants'
 import { logger } from '../../utils/logger'
@@ -23,6 +24,7 @@ const UsersList = () => {
   const [users, setUsers] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [resendingInvitation, setResendingInvitation] = useState(null)
   const [filters, setFilters] = useState({
     role: '',
     is_active: true,
@@ -69,6 +71,23 @@ const UsersList = () => {
     } else {
       loadUsers()
       loadStats()
+    }
+  }
+
+  const handleResendInvitation = async (userId, email, fullName) => {
+    if (!window.confirm(`Resend invitation to ${fullName} (${email})?`)) {
+      return
+    }
+
+    setResendingInvitation(userId)
+    const { data, error } = await resendInvitation(userId, email)
+    setResendingInvitation(null)
+
+    if (error) {
+      logger.error('Error resending invitation:', error)
+      alert(`Failed to resend invitation: ${error.message}`)
+    } else {
+      alert(`Invitation resent successfully to ${email}`)
     }
   }
 
@@ -295,6 +314,18 @@ const UsersList = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => handleResendInvitation(user.id, user.email, user.full_name)}
+                          disabled={resendingInvitation === user.id}
+                          className="text-blue-600 hover:text-blue-900 disabled:text-gray-400 disabled:cursor-not-allowed"
+                          title="Resend invitation email"
+                        >
+                          {resendingInvitation === user.id ? (
+                            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                          ) : (
+                            <Mail className="w-4 h-4" />
+                          )}
+                        </button>
                         <button
                           onClick={() => navigate(`/users/${user.id}`)}
                           className="text-indigo-600 hover:text-indigo-900"

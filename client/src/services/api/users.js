@@ -181,6 +181,44 @@ export const inviteUser = async (inviteData) => {
   }
 }
 
+/**
+ * Resend invitation to an existing user (sends password reset email)
+ */
+export const resendInvitation = async (userId, email) => {
+  try {
+    // Get the current session token
+    const { data: { session } } = await supabase.auth.getSession()
+
+    if (!session) {
+      throw new Error('No active session. Please log in again.')
+    }
+
+    // Call the Edge Function to resend invitation
+    const { data, error } = await supabase.functions.invoke('resend-invitation', {
+      body: {
+        userId,
+        email
+      }
+    })
+
+    // Handle edge function errors - they come in data.error when status is non-2xx
+    if (error) {
+      logger.error('Edge function error:', error)
+      throw new Error(error.message || 'Failed to resend invitation')
+    }
+
+    // Check if the response contains an error (edge function returns JSON with error field)
+    if (data?.error) {
+      throw new Error(data.error)
+    }
+
+    return { data, error: null }
+  } catch (error) {
+    logger.error('Error resending invitation:', error)
+    return { data: null, error }
+  }
+}
+
 // =====================================================
 // UPDATE OPERATIONS
 // =====================================================
