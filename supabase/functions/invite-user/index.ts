@@ -182,6 +182,8 @@ serve(async (req) => {
       }
 
       // Generate password reset link
+      // NOTE: Link expiration is configured in Supabase Dashboard -> Auth Settings -> Email Templates
+      // Set "Recovery" email template token expiration to 86400 seconds (24 hours)
       const { data: resetData, error: resetError } = await supabaseAdmin.auth.admin.generateLink({
         type: 'recovery',
         email: email,
