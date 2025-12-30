@@ -565,7 +565,7 @@ const CreateRequisition = () => {
             </div>
 
             {/* Description */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description
               </label>
@@ -573,14 +573,14 @@ const CreateRequisition = () => {
                 name="description"
                 value={formData.description}
                 onChange={handleChange}
-                rows={3}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                rows={4}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
                 placeholder="Provide details about this requisition..."
               />
             </div>
 
             {/* Justification */}
-            <div className="md:col-span-2">
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Justification
               </label>
@@ -588,8 +588,8 @@ const CreateRequisition = () => {
                 name="justification"
                 value={formData.justification}
                 onChange={handleChange}
-                rows={3}
-                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                rows={4}
+                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none"
                 placeholder="Why is this requisition needed?"
               />
             </div>
@@ -661,6 +661,43 @@ const CreateRequisition = () => {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Action Buttons (Bottom) */}
+        <div className="border-t pt-6 flex justify-end items-center gap-3">
+          <button
+            onClick={() => setShowTemplateModal(true)}
+            disabled={lineItems.length === 0}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Save current requisition as a reusable template"
+          >
+            <FileText className="w-5 h-5" />
+            Save as Template
+          </button>
+          <button
+            onClick={() => handleSaveDraft(false)}
+            disabled={saving || !isDraft}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <Loader className="w-5 h-5 animate-spin" />
+            ) : (
+              <Save className="w-5 h-5" />
+            )}
+            Save Draft
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading || !isDraft || !requisitionId}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <Loader className="w-5 h-5 animate-spin" />
+            ) : (
+              <Send className="w-5 h-5" />
+            )}
+            Submit for Review
+          </button>
         </div>
       </div>
 
