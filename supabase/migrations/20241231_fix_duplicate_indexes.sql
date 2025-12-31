@@ -9,13 +9,18 @@
 -- Drop idx_user_assignments_project (duplicate)
 DROP INDEX IF EXISTS idx_user_assignments_project;
 
--- Verify: Check for remaining duplicate indexes
+-- Drop duplicate index on notifications
+-- Keep idx_notifications_user_id (more descriptive name)
+-- Drop idx_notifications_user (less descriptive)
+DROP INDEX IF EXISTS idx_notifications_user;
+
+-- Verify: Check for remaining indexes
 SELECT
-  schemaname,
   tablename,
-  indexname,
-  indexdef
+  COUNT(*) as index_count,
+  string_agg(indexname, ', ' ORDER BY indexname) as indexes
 FROM pg_indexes
 WHERE schemaname = 'public'
-  AND tablename = 'user_project_assignments'
-ORDER BY indexname;
+  AND tablename IN ('user_project_assignments', 'notifications')
+GROUP BY tablename
+ORDER BY tablename;
