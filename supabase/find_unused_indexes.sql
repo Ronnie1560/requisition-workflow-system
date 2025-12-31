@@ -5,8 +5,8 @@
 
 SELECT
   schemaname,
-  tablename,
-  indexname,
+  relname as tablename,
+  indexrelname as indexname,
   idx_scan as index_scans,
   pg_size_pretty(pg_relation_size(indexrelid)) as index_size,
   CASE
