@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import ErrorBoundary, { SectionErrorBoundary, withErrorBoundary } from './ErrorBoundary'
 
 // Mock logger
@@ -15,6 +15,11 @@ vi.mock('../../utils/logger', () => ({
     info: vi.fn(),
     debug: vi.fn()
   }
+}))
+
+// Mock Sentry to provide predictable eventId
+vi.mock('../../lib/sentry.js', () => ({
+  captureException: vi.fn(() => 'TEST-ERROR-ID-123')
 }))
 
 // Component that throws an error
@@ -57,14 +62,17 @@ describe('ErrorBoundary', () => {
       expect(screen.getByText('We encountered an unexpected error')).toBeInTheDocument()
     })
 
-    it('shows error ID in fallback UI', () => {
+    it('shows error ID in fallback UI', async () => {
       render(
         <ErrorBoundary>
           <ThrowingComponent />
         </ErrorBoundary>
       )
 
-      expect(screen.getByText(/Error ID:/)).toBeInTheDocument()
+      // Wait for async componentDidCatch to set eventId
+      await waitFor(() => {
+        expect(screen.getByText(/Error ID:/)).toBeInTheDocument()
+      })
     })
 
     it('shows Try Again button', () => {
@@ -138,7 +146,7 @@ describe('ErrorBoundary', () => {
   })
 
   describe('Error Callbacks', () => {
-    it('calls onError callback when error occurs', () => {
+    it('calls onError callback when error occurs', async () => {
       const onError = vi.fn()
 
       render(
@@ -147,10 +155,13 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       )
 
-      expect(onError).toHaveBeenCalledWith(
-        expect.any(Error),
-        expect.objectContaining({ componentStack: expect.any(String) })
-      )
+      // Wait for async componentDidCatch to call onError
+      await waitFor(() => {
+        expect(onError).toHaveBeenCalledWith(
+          expect.any(Error),
+          expect.objectContaining({ componentStack: expect.any(String) })
+        )
+      })
     })
   })
 
@@ -246,13 +257,16 @@ describe('withErrorBoundary HOC', () => {
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
   })
 
-  it('passes props to error boundary', () => {
+  it('passes props to error boundary', async () => {
     const onError = vi.fn()
     const WrappedThrowing = withErrorBoundary(ThrowingComponent, { onError })
 
     render(<WrappedThrowing />)
 
-    expect(onError).toHaveBeenCalled()
+    // Wait for async componentDidCatch
+    await waitFor(() => {
+      expect(onError).toHaveBeenCalled()
+    })
   })
 
   it('sets correct displayName', () => {

@@ -16,6 +16,18 @@ const mockOrgSettings = {
   app_base_url: 'https://test.app'
 }
 
+// Mock env module first (supabase imports this)
+vi.mock('../../lib/env', () => ({
+  getEnv: () => ({
+    VITE_SUPABASE_URL: 'https://test.supabase.co',
+    VITE_SUPABASE_ANON_KEY: 'test-anon-key',
+    MODE: 'test',
+    PROD: false,
+    DEV: true
+  }),
+  validateEnv: vi.fn()
+}))
+
 // Mock the supabase client before importing the hook
 vi.mock('../../lib/supabase', () => {
   const mockSingle = vi.fn().mockResolvedValue({
