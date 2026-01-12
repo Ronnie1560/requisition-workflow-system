@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useOrganization } from '../../context/OrganizationContext'
 import NotificationCenter from '../notifications/NotificationCenter'
 import ToastContainer from '../notifications/ToastContainer'
+import OrganizationSwitcher from '../organizations/OrganizationSwitcher'
 import {
   Menu,
   X,
@@ -20,13 +22,15 @@ import {
   CreditCard,
   Box,
   Sliders,
-  BarChart3
+  BarChart3,
+  Building2
 } from 'lucide-react'
 
 const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { profile, signOut } = useAuth()
+  const { currentOrg, canManageOrg } = useOrganization()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -40,14 +44,18 @@ const MainLayout = () => {
     { name: 'Receipts', href: '/receipts', icon: Receipt },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
     { name: 'Users', href: '/users', icon: Users, adminOnly: true },
+    { name: 'Organization', href: '/settings/organization', icon: Building2, orgAdmin: true },
     { name: 'System Settings', href: '/admin/system-settings', icon: Sliders, adminOnly: true },
     { name: 'Settings', href: '/settings', icon: Settings }
   ]
 
-  // Filter navigation based on user role
+  // Filter navigation based on user role and org permissions
   const filteredNavigation = navigation.filter(item => {
     if (item.adminOnly) {
       return profile?.role === 'super_admin'
+    }
+    if (item.orgAdmin) {
+      return canManageOrg
     }
     return true
   })
@@ -182,6 +190,11 @@ const MainLayout = () => {
           } md:translate-x-0 fixed md:static inset-y-0 left-0 z-20 w-64 bg-white border-r border-gray-200 pt-16 transition-transform duration-300 ease-in-out`}
         >
           <nav className="h-full overflow-y-auto p-4">
+            {/* Organization Switcher */}
+            <div className="mb-4">
+              <OrganizationSwitcher />
+            </div>
+            
             <ul className="space-y-2">
               {filteredNavigation.map((item) => {
                 const Icon = item.icon

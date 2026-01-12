@@ -1,79 +1,141 @@
-import * as XLSX from 'xlsx'
+// Lazy load ExcelJS only when needed (saves ~300KB from initial bundle)
+// import ExcelJS from 'exceljs' // Removed - now loaded dynamically
+
 import { formatDate, formatCurrency } from './formatters'
 import { STATUS_LABELS } from './constants'
 import { logger } from './logger'
 
 /**
  * Excel Export Utilities
- * Functions to export data to Excel files
+ * Functions to export data to Excel files using ExcelJS
+ *
+ * Note: ExcelJS is lazy-loaded to reduce initial bundle size
  */
+
+/**
+ * Lazy load ExcelJS library
+ * @returns {Promise<typeof import('exceljs')>}
+ */
+const loadExcelJS = async () => {
+  try {
+    const module = await import('exceljs')
+    return module.default
+  } catch (error) {
+    logger.error('Failed to load ExcelJS:', error)
+    throw new Error('Could not load Excel export functionality. Please try again.')
+  }
+}
+
+/**
+ * Helper to trigger file download in browser
+ */
+const downloadExcelFile = async (workbook, filename) => {
+  const buffer = await workbook.xlsx.writeBuffer()
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+}
+
+/**
+ * Apply header styling to a worksheet
+ */
+const styleHeaderRow = (worksheet) => {
+  const headerRow = worksheet.getRow(1)
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } }
+  headerRow.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FF2563EB' } // Blue-600
+  }
+  headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+  headerRow.height = 24
+}
 
 /**
  * Export requisitions to Excel
  */
-export const exportRequisitionsToExcel = (requisitions, filename = 'Requisitions') => {
+export const exportRequisitionsToExcel = async (requisitions, filename = 'Requisitions') => {
   try {
-    // Prepare data for export
-    const data = requisitions.map(req => ({
-      'Requisition Number': req.requisition_number || 'DRAFT',
-      'Title': req.title,
-      'Project': req.project?.name || '',
-      'Expense Account': req.expense_account?.name || '',
-      'Status': STATUS_LABELS[req.status] || req.status,
-      'Submitted By': req.submitted_by_user?.full_name || '',
-      'Submitted Date': req.submitted_at ? formatDate(req.submitted_at) : '',
-      'Required By': req.required_by ? formatDate(req.required_by) : '',
-      'Total Amount': req.total_amount || 0,
-      'Description': req.description || '',
-      'Justification': req.justification || '',
-      'Delivery Location': req.delivery_location || '',
-      'Supplier Preference': req.supplier_preference || '',
-      'Created Date': formatDate(req.created_at),
-      'Updated Date': formatDate(req.updated_at)
-    }))
+    // Lazy load ExcelJS (saves ~300KB from initial bundle)
+    const ExcelJS = await loadExcelJS()
 
-    // Create worksheet
-    const ws = XLSX.utils.json_to_sheet(data)
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'PCM Requisition System'
+    workbook.created = new Date()
 
-    // Set column widths
-    const colWidths = [
-      { wch: 18 }, // Requisition Number
-      { wch: 30 }, // Title
-      { wch: 25 }, // Project
-      { wch: 20 }, // Expense Account
-      { wch: 15 }, // Status
-      { wch: 20 }, // Submitted By
-      { wch: 15 }, // Submitted Date
-      { wch: 15 }, // Required By
-      { wch: 15 }, // Total Amount
-      { wch: 40 }, // Description
-      { wch: 40 }, // Justification
-      { wch: 25 }, // Delivery Location
-      { wch: 25 }, // Supplier Preference
-      { wch: 15 }, // Created Date
-      { wch: 15 }  // Updated Date
+    const worksheet = workbook.addWorksheet('Requisitions')
+
+    // Define columns
+    worksheet.columns = [
+      { header: 'Requisition Number', key: 'requisition_number', width: 18 },
+      { header: 'Title', key: 'title', width: 30 },
+      { header: 'Project', key: 'project', width: 25 },
+      { header: 'Expense Account', key: 'expense_account', width: 20 },
+      { header: 'Status', key: 'status', width: 15 },
+      { header: 'Submitted By', key: 'submitted_by', width: 20 },
+      { header: 'Submitted Date', key: 'submitted_date', width: 15 },
+      { header: 'Required By', key: 'required_by', width: 15 },
+      { header: 'Total Amount', key: 'total_amount', width: 15 },
+      { header: 'Description', key: 'description', width: 40 },
+      { header: 'Justification', key: 'justification', width: 40 },
+      { header: 'Delivery Location', key: 'delivery_location', width: 25 },
+      { header: 'Supplier Preference', key: 'supplier_preference', width: 25 },
+      { header: 'Created Date', key: 'created_date', width: 15 },
+      { header: 'Updated Date', key: 'updated_date', width: 15 }
     ]
-    ws['!cols'] = colWidths
+
+    // Add data rows
+    requisitions.forEach(req => {
+      worksheet.addRow({
+        requisition_number: req.requisition_number || 'DRAFT',
+        title: req.title,
+        project: req.project?.name || '',
+        expense_account: req.expense_account?.name || '',
+        status: STATUS_LABELS[req.status] || req.status,
+        submitted_by: req.submitted_by_user?.full_name || '',
+        submitted_date: req.submitted_at ? formatDate(req.submitted_at) : '',
+        required_by: req.required_by ? formatDate(req.required_by) : '',
+        total_amount: req.total_amount || 0,
+        description: req.description || '',
+        justification: req.justification || '',
+        delivery_location: req.delivery_location || '',
+        supplier_preference: req.supplier_preference || '',
+        created_date: formatDate(req.created_at),
+        updated_date: formatDate(req.updated_at)
+      })
+    })
+
+    // Style header row
+    styleHeaderRow(worksheet)
 
     // Format currency column
-    const range = XLSX.utils.decode_range(ws['!ref'])
-    for (let row = range.s.r + 1; row <= range.e.r; row++) {
-      const cellAddress = XLSX.utils.encode_cell({ r: row, c: 8 }) // Total Amount column
-      if (ws[cellAddress]) {
-        ws[cellAddress].z = '"$"#,##0.00'
-      }
-    }
+    worksheet.getColumn('total_amount').numFmt = '"$"#,##0.00'
 
-    // Create workbook
-    const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Requisitions')
+    // Add alternating row colors
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber > 1 && rowNumber % 2 === 0) {
+        row.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFF3F4F6' } // Gray-100
+        }
+      }
+    })
 
     // Generate filename with timestamp
     const timestamp = new Date().toISOString().split('T')[0]
     const fullFilename = `${filename}_${timestamp}.xlsx`
 
-    // Save file
-    XLSX.writeFile(wb, fullFilename)
+    // Download file
+    await downloadExcelFile(workbook, fullFilename)
 
     return { success: true }
   } catch (error) {
@@ -85,76 +147,105 @@ export const exportRequisitionsToExcel = (requisitions, filename = 'Requisitions
 /**
  * Export requisition details (including line items) to Excel
  */
-export const exportRequisitionDetailsToExcel = (requisition) => {
+export const exportRequisitionDetailsToExcel = async (requisition) => {
   try {
-    const wb = XLSX.utils.book_new()
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'PCM Requisition System'
+    workbook.created = new Date()
 
     // Sheet 1: Requisition Header
-    const headerData = [
-      ['Requisition Number', requisition.requisition_number || 'DRAFT'],
-      ['Title', requisition.title],
-      ['Project', requisition.project?.name || ''],
-      ['Expense Account', requisition.expense_account?.name || ''],
-      ['Status', STATUS_LABELS[requisition.status] || requisition.status],
-      ['Submitted By', requisition.submitted_by_user?.full_name || ''],
-      ['Submitted Date', requisition.submitted_at ? formatDate(requisition.submitted_at) : ''],
-      ['Required By', requisition.required_by ? formatDate(requisition.required_by) : ''],
-      ['Total Amount', formatCurrency(requisition.total_amount)],
-      ['Description', requisition.description || ''],
-      ['Justification', requisition.justification || ''],
-      ['Delivery Location', requisition.delivery_location || ''],
-      ['Supplier Preference', requisition.supplier_preference || '']
+    const headerSheet = workbook.addWorksheet('Requisition Details')
+    
+    headerSheet.columns = [
+      { header: 'Field', key: 'field', width: 25 },
+      { header: 'Value', key: 'value', width: 50 }
     ]
 
-    const wsHeader = XLSX.utils.aoa_to_sheet(headerData)
-    wsHeader['!cols'] = [{ wch: 20 }, { wch: 50 }]
-    XLSX.utils.book_append_sheet(wb, wsHeader, 'Requisition Details')
+    const headerData = [
+      { field: 'Requisition Number', value: requisition.requisition_number || 'DRAFT' },
+      { field: 'Title', value: requisition.title },
+      { field: 'Project', value: requisition.project?.name || '' },
+      { field: 'Expense Account', value: requisition.expense_account?.name || '' },
+      { field: 'Status', value: STATUS_LABELS[requisition.status] || requisition.status },
+      { field: 'Submitted By', value: requisition.submitted_by_user?.full_name || '' },
+      { field: 'Submitted Date', value: requisition.submitted_at ? formatDate(requisition.submitted_at) : '' },
+      { field: 'Required By', value: requisition.required_by ? formatDate(requisition.required_by) : '' },
+      { field: 'Total Amount', value: formatCurrency(requisition.total_amount) },
+      { field: 'Description', value: requisition.description || '' },
+      { field: 'Justification', value: requisition.justification || '' },
+      { field: 'Delivery Location', value: requisition.delivery_location || '' },
+      { field: 'Supplier Preference', value: requisition.supplier_preference || '' }
+    ]
+
+    headerData.forEach(row => headerSheet.addRow(row))
+    styleHeaderRow(headerSheet)
+
+    // Style field column
+    headerSheet.getColumn('field').font = { bold: true }
+    headerSheet.getColumn('field').fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFF3F4F6' }
+    }
 
     // Sheet 2: Line Items
     if (requisition.requisition_items && requisition.requisition_items.length > 0) {
-      const itemsData = requisition.requisition_items.map(item => ({
-        'Line #': item.line_number,
-        'Item Code': item.item?.code || '',
-        'Item Name': item.item?.name || item.item_description,
-        'Description': item.item_description || '',
-        'Quantity': item.quantity,
-        'UOM': item.uom?.name || '',
-        'Unit Price': item.unit_price,
-        'Total Price': item.total_price,
-        'Notes': item.notes || ''
-      }))
+      const itemsSheet = workbook.addWorksheet('Line Items')
 
-      const wsItems = XLSX.utils.json_to_sheet(itemsData)
-      wsItems['!cols'] = [
-        { wch: 8 },  // Line #
-        { wch: 15 }, // Item Code
-        { wch: 30 }, // Item Name
-        { wch: 40 }, // Description
-        { wch: 10 }, // Quantity
-        { wch: 10 }, // UOM
-        { wch: 12 }, // Unit Price
-        { wch: 12 }, // Total Price
-        { wch: 30 }  // Notes
+      itemsSheet.columns = [
+        { header: 'Line #', key: 'line_number', width: 8 },
+        { header: 'Item Code', key: 'item_code', width: 15 },
+        { header: 'Item Name', key: 'item_name', width: 30 },
+        { header: 'Description', key: 'description', width: 40 },
+        { header: 'Quantity', key: 'quantity', width: 10 },
+        { header: 'UOM', key: 'uom', width: 10 },
+        { header: 'Unit Price', key: 'unit_price', width: 12 },
+        { header: 'Total Price', key: 'total_price', width: 12 },
+        { header: 'Notes', key: 'notes', width: 30 }
       ]
 
-      // Format currency columns
-      const range = XLSX.utils.decode_range(wsItems['!ref'])
-      for (let row = range.s.r + 1; row <= range.e.r; row++) {
-        const unitPriceCell = XLSX.utils.encode_cell({ r: row, c: 6 })
-        const totalPriceCell = XLSX.utils.encode_cell({ r: row, c: 7 })
-        if (wsItems[unitPriceCell]) wsItems[unitPriceCell].z = '"$"#,##0.00'
-        if (wsItems[totalPriceCell]) wsItems[totalPriceCell].z = '"$"#,##0.00'
-      }
+      requisition.requisition_items.forEach(item => {
+        itemsSheet.addRow({
+          line_number: item.line_number,
+          item_code: item.item?.code || '',
+          item_name: item.item?.name || item.item_description,
+          description: item.item_description || '',
+          quantity: item.quantity,
+          uom: item.uom?.name || '',
+          unit_price: item.unit_price,
+          total_price: item.total_price,
+          notes: item.notes || ''
+        })
+      })
 
-      XLSX.utils.book_append_sheet(wb, wsItems, 'Line Items')
+      styleHeaderRow(itemsSheet)
+
+      // Format currency columns
+      itemsSheet.getColumn('unit_price').numFmt = '"$"#,##0.00'
+      itemsSheet.getColumn('total_price').numFmt = '"$"#,##0.00'
+
+      // Add total row
+      const totalRow = itemsSheet.addRow({
+        line_number: '',
+        item_code: '',
+        item_name: '',
+        description: '',
+        quantity: '',
+        uom: '',
+        unit_price: 'TOTAL:',
+        total_price: requisition.total_amount,
+        notes: ''
+      })
+      totalRow.font = { bold: true }
+      totalRow.getCell('total_price').numFmt = '"$"#,##0.00'
     }
 
     // Generate filename
     const reqNumber = requisition.requisition_number || 'DRAFT'
     const filename = `Requisition_${reqNumber}.xlsx`
 
-    // Save file
-    XLSX.writeFile(wb, filename)
+    // Download file
+    await downloadExcelFile(workbook, filename)
 
     return { success: true }
   } catch (error) {
@@ -166,77 +257,123 @@ export const exportRequisitionDetailsToExcel = (requisition) => {
 /**
  * Export budget summary to Excel
  */
-export const exportBudgetSummaryToExcel = (projectName, budgetSummary, expenseBreakdown) => {
+export const exportBudgetSummaryToExcel = async (projectName, budgetSummary, expenseBreakdown) => {
   try {
-    const wb = XLSX.utils.book_new()
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'PCM Requisition System'
+    workbook.created = new Date()
 
     // Sheet 1: Budget Summary
-    const summaryData = [
-      ['Project', projectName],
-      [''],
-      ['Total Budget', budgetSummary.total_budget],
-      ['Spent Amount', budgetSummary.spent_amount],
-      ['Pending Amount', budgetSummary.pending_amount],
-      ['Under Review Amount', budgetSummary.under_review_amount],
-      ['Available Budget', budgetSummary.available_budget],
-      ['Utilization %', budgetSummary.utilization_percentage]
+    const summarySheet = workbook.addWorksheet('Budget Summary')
+
+    summarySheet.columns = [
+      { header: 'Metric', key: 'metric', width: 25 },
+      { header: 'Value', key: 'value', width: 20 }
     ]
 
-    const wsSummary = XLSX.utils.aoa_to_sheet(summaryData)
-    wsSummary['!cols'] = [{ wch: 25 }, { wch: 20 }]
+    const summaryData = [
+      { metric: 'Project', value: projectName },
+      { metric: '', value: '' },
+      { metric: 'Total Budget', value: budgetSummary.total_budget },
+      { metric: 'Spent Amount', value: budgetSummary.spent_amount },
+      { metric: 'Pending Amount', value: budgetSummary.pending_amount },
+      { metric: 'Under Review Amount', value: budgetSummary.under_review_amount },
+      { metric: 'Available Budget', value: budgetSummary.available_budget },
+      { metric: 'Utilization %', value: `${budgetSummary.utilization_percentage}%` }
+    ]
 
-    // Format currency cells
-    const currencyRows = [2, 3, 4, 5, 6] // rows with currency values (0-indexed)
-    currencyRows.forEach(row => {
-      const cellAddress = XLSX.utils.encode_cell({ r: row, c: 1 })
-      if (wsSummary[cellAddress]) {
-        wsSummary[cellAddress].z = '"$"#,##0.00'
-      }
-    })
+    summaryData.forEach(row => summarySheet.addRow(row))
+    styleHeaderRow(summarySheet)
 
-    XLSX.utils.book_append_sheet(wb, wsSummary, 'Budget Summary')
+    // Format currency cells (rows 3-7)
+    for (let i = 3; i <= 7; i++) {
+      const cell = summarySheet.getCell(`B${i}`)
+      cell.numFmt = '"$"#,##0.00'
+    }
 
     // Sheet 2: Expense Breakdown
     if (expenseBreakdown && expenseBreakdown.length > 0) {
-      const breakdownData = expenseBreakdown.map(item => ({
-        'Expense Account': item.expense_account_name,
-        'Spent': item.total_spent,
-        'Pending': item.total_pending,
-        'Total Committed': item.total_committed
-      }))
+      const breakdownSheet = workbook.addWorksheet('Expense Breakdown')
 
-      const wsBreakdown = XLSX.utils.json_to_sheet(breakdownData)
-      wsBreakdown['!cols'] = [
-        { wch: 30 }, // Expense Account
-        { wch: 15 }, // Spent
-        { wch: 15 }, // Pending
-        { wch: 18 }  // Total Committed
+      breakdownSheet.columns = [
+        { header: 'Expense Account', key: 'expense_account', width: 30 },
+        { header: 'Spent', key: 'spent', width: 15 },
+        { header: 'Pending', key: 'pending', width: 15 },
+        { header: 'Total Committed', key: 'total_committed', width: 18 }
       ]
 
-      // Format currency columns
-      const range = XLSX.utils.decode_range(wsBreakdown['!ref'])
-      for (let row = range.s.r + 1; row <= range.e.r; row++) {
-        for (let col = 1; col <= 3; col++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col })
-          if (wsBreakdown[cellAddress]) {
-            wsBreakdown[cellAddress].z = '"$"#,##0.00'
-          }
-        }
-      }
+      expenseBreakdown.forEach(item => {
+        breakdownSheet.addRow({
+          expense_account: item.expense_account_name,
+          spent: item.total_spent,
+          pending: item.total_pending,
+          total_committed: item.total_committed
+        })
+      })
 
-      XLSX.utils.book_append_sheet(wb, wsBreakdown, 'Expense Breakdown')
+      styleHeaderRow(breakdownSheet)
+
+      // Format currency columns
+      breakdownSheet.getColumn('spent').numFmt = '"$"#,##0.00'
+      breakdownSheet.getColumn('pending').numFmt = '"$"#,##0.00'
+      breakdownSheet.getColumn('total_committed').numFmt = '"$"#,##0.00'
     }
 
     // Generate filename
     const timestamp = new Date().toISOString().split('T')[0]
     const filename = `Budget_${projectName.replace(/\s+/g, '_')}_${timestamp}.xlsx`
 
-    // Save file
-    XLSX.writeFile(wb, filename)
+    // Download file
+    await downloadExcelFile(workbook, filename)
 
     return { success: true }
   } catch (error) {
     logger.error('Error exporting budget summary:', error)
+    return { success: false, error }
+  }
+}
+
+/**
+ * Export generic data to Excel
+ */
+export const exportToExcel = async (data, columns, sheetName = 'Data', filename = 'Export') => {
+  try {
+    const workbook = new ExcelJS.Workbook()
+    workbook.creator = 'PCM Requisition System'
+    workbook.created = new Date()
+
+    const worksheet = workbook.addWorksheet(sheetName)
+
+    // Set columns
+    worksheet.columns = columns.map(col => ({
+      header: col.header,
+      key: col.key,
+      width: col.width || 15
+    }))
+
+    // Add data rows
+    data.forEach(row => worksheet.addRow(row))
+
+    // Style header
+    styleHeaderRow(worksheet)
+
+    // Apply number formatting
+    columns.forEach(col => {
+      if (col.numFmt) {
+        worksheet.getColumn(col.key).numFmt = col.numFmt
+      }
+    })
+
+    // Generate filename with timestamp
+    const timestamp = new Date().toISOString().split('T')[0]
+    const fullFilename = `${filename}_${timestamp}.xlsx`
+
+    // Download file
+    await downloadExcelFile(workbook, fullFilename)
+
+    return { success: true }
+  } catch (error) {
+    logger.error('Error exporting to Excel:', error)
     return { success: false, error }
   }
 }

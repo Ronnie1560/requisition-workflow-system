@@ -1,3 +1,5 @@
+import { memo } from 'react'
+import PropTypes from 'prop-types'
 import { useNotifications } from '../../context/NotificationContext'
 import { X, CheckCircle, AlertCircle, AlertTriangle, Info } from 'lucide-react'
 
@@ -99,4 +101,18 @@ const Toast = ({ toast, onClose }) => {
   )
 }
 
-export default ToastContainer
+Toast.propTypes = {
+  toast: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    type: PropTypes.oneOf(['success', 'error', 'warning', 'info']),
+    title: PropTypes.string.isRequired,
+    message: PropTypes.string,
+    duration: PropTypes.number
+  }).isRequired,
+  onClose: PropTypes.func.isRequired
+}
+
+// Memoize individual Toast for performance
+const MemoizedToast = memo(Toast)
+
+export default memo(ToastContainer)

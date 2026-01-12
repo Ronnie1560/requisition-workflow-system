@@ -1,14 +1,15 @@
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@passionchristianministries.org'
 const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://pcm-requisition.vercel.app'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': APP_BASE_URL,
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests

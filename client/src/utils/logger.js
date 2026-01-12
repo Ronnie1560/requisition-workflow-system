@@ -3,6 +3,7 @@
  *
  * Prevents console statements in production and provides
  * structured logging with different log levels.
+ * Integrates with Sentry for production error tracking.
  *
  * Usage:
  *   import { logger } from '../utils/logger'
@@ -12,7 +13,22 @@
  *   logger.debug('Debug information')
  */
 
+// Lazy import Sentry to avoid circular dependencies
+let sentryModule = null
+const getSentry = async () => {
+  if (!sentryModule) {
+    try {
+      sentryModule = await import('../lib/sentry.js')
+    } catch (error) {
+      // Sentry not available, continue without it
+      console.warn('Sentry not available for error tracking')
+    }
+  }
+  return sentryModule
+}
+
 const isDevelopment = import.meta.env.MODE === 'development'
+const isProduction = import.meta.env.MODE === 'production'
 
 /**
  * Log levels
@@ -35,17 +51,40 @@ const formatMessage = (level, message, ...args) => {
 
 /**
  * Log error message
- * Always logs errors even in production (to external service if configured)
+ * Always logs errors and sends to Sentry in production
  */
 const error = (message, ...args) => {
-  // In production, you might want to send to error tracking service
-  // e.g., Sentry, LogRocket, etc.
+  // Log to console in development
   if (isDevelopment) {
     console.error(...formatMessage(LogLevel.ERROR, message, ...args))
   } else {
-    // In production, send to error tracking service
-    // For now, still log to console but could be disabled
+    // In production, log simplified message
     console.error(message, ...args)
+  }
+
+  // Send to Sentry in production
+  if (isProduction) {
+    // Extract error object if present
+    const errorObj = args.find(arg => arg instanceof Error)
+    const additionalContext = args.filter(arg => !(arg instanceof Error))
+
+    // Use dynamic import to avoid initialization issues
+    getSentry().then(sentry => {
+      if (sentry && sentry.captureException) {
+        if (errorObj) {
+          // Capture the error with context
+          sentry.captureException(errorObj, {
+            message,
+            extra: additionalContext.length > 0 ? { context: additionalContext } : {}
+          })
+        } else {
+          // No error object, capture as message
+          sentry.captureMessage(`${message} ${JSON.stringify(args)}`, 'error')
+        }
+      }
+    }).catch(() => {
+      // Sentry not available, already logged to console
+    })
   }
 }
 

@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { AlertTriangle } from 'lucide-react'
 
 /**
@@ -92,6 +93,13 @@ const InactivityWarningModal = ({ isOpen, remainingSeconds, onStayLoggedIn, onLo
       </div>
     </div>
   )
+}
+
+InactivityWarningModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  remainingSeconds: PropTypes.number.isRequired,
+  onStayLoggedIn: PropTypes.func.isRequired,
+  onLogout: PropTypes.func.isRequired
 }
 
 export default InactivityWarningModal

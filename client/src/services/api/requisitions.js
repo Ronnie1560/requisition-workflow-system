@@ -1,9 +1,11 @@
-import { supabase } from '../../lib/supabase'
+import { supabase, withRetry } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
 
 /**
  * Requisitions API Service
  * Handles all requisition-related database operations
+ *
+ * Note: All API calls use withRetry for automatic retry on network failures
  */
 
 // =====================================================
@@ -15,34 +17,36 @@ import { logger } from '../../utils/logger'
  */
 export const getUserRequisitions = async (userId, filters = {}) => {
   try {
-    let query = supabase
-      .from('requisitions')
-      .select(`
-        *,
-        project:projects(id, code, name, budget, spent_amount),
-        expense_account:expense_accounts(id, code, name),
-        requisition_items(
-          id,
-          item_id,
-          quantity,
-          unit_price,
-          total_price,
-          item:items(id, code, name),
-          uom:uom_types(id, code, name)
-        )
-      `)
-      .eq('submitted_by', userId)
-      .order('created_at', { ascending: false })
+    const { data, error } = await withRetry(async () => {
+      let query = supabase
+        .from('requisitions')
+        .select(`
+          *,
+          project:projects(id, code, name, budget, spent_amount),
+          expense_account:expense_accounts(id, code, name),
+          requisition_items(
+            id,
+            item_id,
+            quantity,
+            unit_price,
+            total_price,
+            item:items(id, code, name),
+            uom:uom_types(id, code, name)
+          )
+        `)
+        .eq('submitted_by', userId)
+        .order('created_at', { ascending: false })
 
-    // Apply filters
-    if (filters.status) {
-      query = query.eq('status', filters.status)
-    }
-    if (filters.project_id) {
-      query = query.eq('project_id', filters.project_id)
-    }
+      // Apply filters
+      if (filters.status) {
+        query = query.eq('status', filters.status)
+      }
+      if (filters.project_id) {
+        query = query.eq('project_id', filters.project_id)
+      }
 
-    const { data, error } = await query
+      return await query
+    })
 
     if (error) throw error
     return { data, error: null }

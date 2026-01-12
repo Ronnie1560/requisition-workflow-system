@@ -1,5 +1,6 @@
 import { formatCurrency, formatDate } from './formatters'
 import { getOrganizationSettings } from '../services/api/systemSettings'
+import { logger } from './logger'
 
 // ============================================================================
 // Organization Name Helper
@@ -22,15 +23,15 @@ const ensureOrganizationName = async (organizationName) => {
 
   // Otherwise, try to fetch fresh data from the API
   try {
-    console.log('[requisitionExport] Organization name not loaded, fetching from API...')
+    logger.debug('[requisitionExport] Organization name not loaded, fetching from API...')
     const { data, error } = await getOrganizationSettings()
     
     if (!error && data?.organization_name) {
-      console.log('[requisitionExport] Successfully fetched organization name:', data.organization_name)
+      logger.debug('[requisitionExport] Successfully fetched organization name:', data.organization_name)
       return data.organization_name
     }
   } catch (e) {
-    console.warn('[requisitionExport] Could not fetch organization settings:', e)
+    logger.warn('[requisitionExport] Could not fetch organization settings:', e)
   }
 
   // Fallback to whatever was passed (or default)

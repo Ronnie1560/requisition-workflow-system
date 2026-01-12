@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, memo } from 'react'
 import { useNotifications } from '../../context/NotificationContext'
 import {
   Bell,
@@ -229,4 +229,4 @@ const NotificationItem = ({ notification, onMarkAsRead, onDelete }) => {
   )
 }
 
-export default NotificationCenter
+export default memo(NotificationCenter)

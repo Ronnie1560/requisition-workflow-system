@@ -1,83 +1,99 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { NotificationProvider } from './context/NotificationContext'
+import { OrganizationProvider } from './context/OrganizationContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import MainLayout from './components/layout/MainLayout'
+import ErrorBoundary from './components/common/ErrorBoundary'
+import PageLoader from './components/common/PageLoader'
 
-// Auth pages
+// Auth pages - loaded eagerly for fast initial load
 import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import ForgotPassword from './pages/auth/ForgotPassword'
 import ResetPassword from './pages/auth/ResetPassword'
 
-// Dashboard
+// Dashboard - loaded eagerly as it's the main landing page
 import Dashboard from './pages/dashboard/DashboardEnhanced'
 
+// Lazy-loaded pages for code splitting
+// Organizations
+const CreateOrganization = lazy(() => import('./pages/organizations/CreateOrganization'))
+const OrganizationSettings = lazy(() => import('./pages/organizations/OrganizationSettings'))
+
 // Requisitions
-import RequisitionsList from './pages/requisitions/RequisitionsList'
-import CreateRequisition from './pages/requisitions/CreateRequisition'
-import RequisitionDetail from './pages/requisitions/RequisitionDetail'
-import TemplatesManagement from './pages/requisitions/TemplatesManagement'
+const RequisitionsList = lazy(() => import('./pages/requisitions/RequisitionsList'))
+const CreateRequisition = lazy(() => import('./pages/requisitions/CreateRequisition'))
+const RequisitionDetail = lazy(() => import('./pages/requisitions/RequisitionDetail'))
+const TemplatesManagement = lazy(() => import('./pages/requisitions/TemplatesManagement'))
 
 // Users
-import UsersList from './pages/users/UsersList'
-import InviteUser from './pages/users/InviteUser'
-import UserDetail from './pages/users/UserDetail'
+const UsersList = lazy(() => import('./pages/users/UsersList'))
+const InviteUser = lazy(() => import('./pages/users/InviteUser'))
+const UserDetail = lazy(() => import('./pages/users/UserDetail'))
 
 // Projects
-import ProjectsList from './pages/projects/ProjectsList'
-import CreateProject from './pages/projects/CreateProject'
-import ProjectDetail from './pages/projects/ProjectDetail'
+const ProjectsList = lazy(() => import('./pages/projects/ProjectsList'))
+const CreateProject = lazy(() => import('./pages/projects/CreateProject'))
+const ProjectDetail = lazy(() => import('./pages/projects/ProjectDetail'))
 
 // Expense Accounts
-import ExpenseAccountsList from './pages/expense-accounts/ExpenseAccountsList'
-import CreateExpenseAccount from './pages/expense-accounts/CreateExpenseAccount'
-import ExpenseAccountDetail from './pages/expense-accounts/ExpenseAccountDetail'
+const ExpenseAccountsList = lazy(() => import('./pages/expense-accounts/ExpenseAccountsList'))
+const CreateExpenseAccount = lazy(() => import('./pages/expense-accounts/CreateExpenseAccount'))
+const ExpenseAccountDetail = lazy(() => import('./pages/expense-accounts/ExpenseAccountDetail'))
 
 // Items
-import ItemsList from './pages/items/ItemsList'
-import CreateItem from './pages/items/CreateItem'
-import ItemDetail from './pages/items/ItemDetail'
+const ItemsList = lazy(() => import('./pages/items/ItemsList'))
+const CreateItem = lazy(() => import('./pages/items/CreateItem'))
+const ItemDetail = lazy(() => import('./pages/items/ItemDetail'))
 
 // Settings
-import UserSettings from './pages/settings/UserSettings'
-import SystemSettings from './pages/settings/SystemSettings'
+const UserSettings = lazy(() => import('./pages/settings/UserSettings'))
+const SystemSettings = lazy(() => import('./pages/settings/SystemSettings'))
 
-// Reports
-import ReportsEnhanced from './pages/reports/ReportsEnhanced'
+// Reports - heavy component, good candidate for lazy loading
+const ReportsEnhanced = lazy(() => import('./pages/reports/ReportsEnhanced'))
 
 // Connection Test (for testing)
-import ConnectionTest from './pages/ConnectionTest'
+const ConnectionTest = lazy(() => import('./pages/ConnectionTest'))
 
 function App() {
   return (
-    <AuthProvider>
-      <NotificationProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/connection-test" element={<ConnectionTest />} />
+    <ErrorBoundary>
+      <AuthProvider>
+        <OrganizationProvider>
+          <NotificationProvider>
+            <BrowserRouter>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/connection-test" element={<ConnectionTest />} />
 
-            {/* Protected routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <MainLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
+                  {/* Protected routes */}
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <MainLayout />
+                      </ProtectedRoute>
+                    }
+                  >
+                    <Route index element={<Navigate to="/dashboard" replace />} />
+                    <Route path="dashboard" element={<Dashboard />} />
 
-              {/* Requisitions routes */}
-              <Route path="requisitions" element={<RequisitionsList />} />
-              <Route path="requisitions/create" element={<CreateRequisition />} />
-              <Route path="requisitions/edit/:id" element={<CreateRequisition />} />
+                    {/* Organization routes */}
+                    <Route path="organizations/new" element={<CreateOrganization />} />
+                    <Route path="settings/organization" element={<OrganizationSettings />} />
+
+                    {/* Requisitions routes */}
+                    <Route path="requisitions" element={<RequisitionsList />} />
+                  <Route path="requisitions/create" element={<CreateRequisition />} />
+                  <Route path="requisitions/edit/:id" element={<CreateRequisition />} />
               <Route path="requisitions/templates" element={<TemplatesManagement />} />
               <Route path="requisitions/:id" element={<RequisitionDetail />} />
 
@@ -124,10 +140,13 @@ function App() {
 
             {/* Catch all - redirect to dashboard */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
+          </Routes>
+        </Suspense>
       </BrowserRouter>
-      </NotificationProvider>
-    </AuthProvider>
+          </NotificationProvider>
+        </OrganizationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

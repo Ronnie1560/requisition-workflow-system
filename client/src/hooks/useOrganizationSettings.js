@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getOrganizationSettings } from '../services/api/systemSettings'
+import { logger } from '../utils/logger'
 
 // ============================================================================
 // In-memory cache for organization settings
@@ -60,16 +61,16 @@ export const useOrganizationSettings = () => {
           if (isFresh) {
             setLoading(false)
             setError(null)
-            console.log('[useOrganizationSettings] Using fresh cache (instant load)')
+            logger.debug('[useOrganizationSettings] Using fresh cache (instant load)')
             return cachedSettings
           }
-          console.log('[useOrganizationSettings] Using stale cache, refreshing in background')
+          logger.debug('[useOrganizationSettings] Using stale cache, refreshing in background')
         }
       }
 
       // Deduplicate: if request is already pending, wait for it instead of making new request
       if (pendingRequest) {
-        console.log('[useOrganizationSettings] Reusing pending request (deduplication)')
+        logger.debug('[useOrganizationSettings] Reusing pending request (deduplication)')
         const result = await pendingRequest
         if (isMountedRef.current) {
           setOrgSettings(result)
@@ -81,10 +82,10 @@ export const useOrganizationSettings = () => {
 
       // Create new request (background refresh if we showed stale cache)
       if (!hasCache) {
-        console.log('[useOrganizationSettings] No cache, fetching fresh data from API')
+        logger.debug('[useOrganizationSettings] No cache, fetching fresh data from API')
         setLoading(true)
       } else {
-        console.log('[useOrganizationSettings] Refreshing stale cache in background')
+        logger.debug('[useOrganizationSettings] Refreshing stale cache in background')
       }
       setError(null)
 
@@ -111,7 +112,7 @@ export const useOrganizationSettings = () => {
 
       return data
     } catch (err) {
-      console.error('[useOrganizationSettings] Error fetching organization settings:', err)
+      logger.error('[useOrganizationSettings] Error fetching organization settings:', err)
       pendingRequest = null // Clear pending request on error
 
       if (isMountedRef.current) {
@@ -141,7 +142,7 @@ export const useOrganizationSettings = () => {
   useEffect(() => {
     const timer = setInterval(() => {
       if (!isCacheValid()) {
-        console.log('[useOrganizationSettings] Cache expired, scheduling refresh')
+        logger.debug('[useOrganizationSettings] Cache expired, scheduling refresh')
         // Cache has expired, but don't fetch automatically unless component mounts again
         // This prevents unnecessary requests in the background
       }
@@ -152,7 +153,7 @@ export const useOrganizationSettings = () => {
 
   // Return function to manually refresh data
   const refresh = useCallback(() => {
-    console.log('[useOrganizationSettings] Manual refresh triggered')
+    logger.debug('[useOrganizationSettings] Manual refresh triggered')
     return fetchSettings(true) // Force refresh
   }, [fetchSettings])
 
@@ -167,7 +168,7 @@ export const useOrganizationSettings = () => {
 
 // Bonus: Utility to clear cache manually
 export const clearOrganizationSettingsCache = () => {
-  console.log('[useOrganizationSettings] Clearing cache manually')
+  logger.debug('[useOrganizationSettings] Clearing cache manually')
   cachedSettings = null
   cacheTimestamp = null
   pendingRequest = null

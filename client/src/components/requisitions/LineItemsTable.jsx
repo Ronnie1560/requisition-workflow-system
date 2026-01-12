@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import PropTypes from 'prop-types'
 import { Plus, Trash2, AlertTriangle, Search } from 'lucide-react'
 import { getAllItemsForRequisition, getUomTypes, calculatePriceVariance, isPriceVarianceHigh } from '../../services/api/requisitions'
@@ -355,4 +355,4 @@ LineItemsTable.defaultProps = {
   disabled: false
 }
 
-export default LineItemsTable
+export default memo(LineItemsTable)

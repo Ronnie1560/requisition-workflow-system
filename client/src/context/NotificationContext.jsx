@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
@@ -184,4 +185,8 @@ export const NotificationProvider = ({ children }) => {
       {children}
     </NotificationContext.Provider>
   )
+}
+
+NotificationProvider.propTypes = {
+  children: PropTypes.node.isRequired
 }

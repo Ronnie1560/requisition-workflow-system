@@ -1,6 +1,8 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, memo } from 'react'
+import PropTypes from 'prop-types'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { AlertCircle, ExternalLink } from 'lucide-react'
+import { logger } from '../../utils/logger'
 
 const SpendingByProjectEnhanced = ({
   data = [],
@@ -16,12 +18,12 @@ const SpendingByProjectEnhanced = ({
   const safeData = useMemo(() => {
     try {
       if (!data) {
-        console.warn('SpendingByProjectEnhanced: data prop is null or undefined')
+        logger.warn('SpendingByProjectEnhanced: data prop is null or undefined')
         return []
       }
 
       if (!Array.isArray(data)) {
-        console.warn('SpendingByProjectEnhanced: data prop is not an array', typeof data)
+        logger.warn('SpendingByProjectEnhanced: data prop is not an array', typeof data)
         return []
       }
 
@@ -33,7 +35,7 @@ const SpendingByProjectEnhanced = ({
       return data.map((row, index) => {
         try {
           if (!row || typeof row !== 'object') {
-            console.warn(`SpendingByProjectEnhanced: Row ${index} is invalid`, row)
+            logger.warn(`SpendingByProjectEnhanced: Row ${index} is invalid`, row)
             return null
           }
 
@@ -54,12 +56,12 @@ const SpendingByProjectEnhanced = ({
             _original: row
           }
         } catch (rowError) {
-          console.error(`SpendingByProjectEnhanced: Error processing row ${index}:`, rowError)
+          logger.error(`SpendingByProjectEnhanced: Error processing row ${index}:`, rowError)
           return null
         }
       }).filter(row => row !== null) // Remove failed rows
     } catch (error) {
-      console.error('SpendingByProjectEnhanced: Error validating data:', error)
+      logger.error('SpendingByProjectEnhanced: Error validating data:', error)
       return []
     }
   }, [data])
@@ -87,7 +89,7 @@ const SpendingByProjectEnhanced = ({
         onSort(newSortConfig)
       }
     } catch (error) {
-      console.error('SpendingByProjectEnhanced: Error in handleSort:', error)
+      logger.error('SpendingByProjectEnhanced: Error in handleSort:', error)
     }
   }
 
@@ -124,7 +126,7 @@ const SpendingByProjectEnhanced = ({
 
       return sorted
     } catch (error) {
-      console.error('SpendingByProjectEnhanced: Error in sorting:', error)
+      logger.error('SpendingByProjectEnhanced: Error in sorting:', error)
       return safeData
     }
   }, [safeData, localSortConfig])
@@ -153,7 +155,7 @@ const SpendingByProjectEnhanced = ({
         averageUtilization: (safeData.reduce((sum, row) => sum + (Number(row.budgetUtilization) || 0), 0) / safeData.length).toFixed(2)
       }
     } catch (error) {
-      console.error('SpendingByProjectEnhanced: Error calculating totals:', error)
+      logger.error('SpendingByProjectEnhanced: Error calculating totals:', error)
       return {
         totalRequisitions: 0,
         totalBudget: 0,
@@ -179,7 +181,7 @@ const SpendingByProjectEnhanced = ({
         approved: Number(project.approvedAmount) || 0
       }))
     } catch (error) {
-      console.error('SpendingByProjectEnhanced: Error preparing chart data:', error)
+      logger.error('SpendingByProjectEnhanced: Error preparing chart data:', error)
       return []
     }
   }, [safeData])
@@ -211,7 +213,7 @@ const SpendingByProjectEnhanced = ({
         onDrillDown(title, requisitions)
       }
     } catch (error) {
-      console.error('SpendingByProjectEnhanced: Error in handleProjectClick:', error)
+      logger.error('SpendingByProjectEnhanced: Error in handleProjectClick:', error)
     }
   }
 
@@ -418,7 +420,7 @@ const SpendingByProjectEnhanced = ({
                   </tr>
                 )
               } catch (rowError) {
-                console.error(`SpendingByProjectEnhanced: Error rendering row ${index}:`, rowError)
+                logger.error(`SpendingByProjectEnhanced: Error rendering row ${index}:`, rowError)
                 return null
               }
             })}
@@ -429,4 +431,32 @@ const SpendingByProjectEnhanced = ({
   )
 }
 
-export default SpendingByProjectEnhanced
+SpendingByProjectEnhanced.propTypes = {
+  data: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    projectId: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+    projectCode: PropTypes.string,
+    projectName: PropTypes.string,
+    totalRequisitions: PropTypes.number,
+    totalAmount: PropTypes.number,
+    projectBudget: PropTypes.number,
+    approvedAmount: PropTypes.number,
+    budgetUtilization: PropTypes.number,
+    requisitions: PropTypes.array
+  })),
+  onSort: PropTypes.func,
+  sortConfig: PropTypes.shape({
+    key: PropTypes.string,
+    direction: PropTypes.oneOf(['asc', 'desc'])
+  }),
+  onDrillDown: PropTypes.func
+}
+
+SpendingByProjectEnhanced.defaultProps = {
+  data: [],
+  onSort: null,
+  sortConfig: null,
+  onDrillDown: null
+}
+
+export default memo(SpendingByProjectEnhanced)

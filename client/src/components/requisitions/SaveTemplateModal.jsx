@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import PropTypes from 'prop-types'
 import { X, Save } from 'lucide-react'
 
 const SaveTemplateModal = ({ isOpen, onClose, onSave, currentData }) => {
@@ -117,6 +118,20 @@ const SaveTemplateModal = ({ isOpen, onClose, onSave, currentData }) => {
       </div>
     </div>
   )
+}
+
+SaveTemplateModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
+  currentData: PropTypes.shape({
+    project_account_id: PropTypes.string,
+    items: PropTypes.array
+  })
+}
+
+SaveTemplateModal.defaultProps = {
+  currentData: null
 }
 
 export default SaveTemplateModal

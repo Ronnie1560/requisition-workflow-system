@@ -1,0 +1,49 @@
+{
+  "$schema": "https://unpkg.com/bundle-size-budget@latest/schema.json",
+  "budgets": [
+    {
+      "path": "dist/assets/index-*.js",
+      "maxSize": "150KB",
+      "compression": "gzip"
+    },
+    {
+      "path": "dist/assets/vendor-react-*.js",
+      "maxSize": "50KB",
+      "compression": "gzip"
+    },
+    {
+      "path": "dist/assets/vendor-supabase-*.js",
+      "maxSize": "100KB",
+      "compression": "gzip"
+    },
+    {
+      "path": "dist/assets/vendor-charts-*.js",
+      "maxSize": "150KB",
+      "compression": "gzip"
+    },
+    {
+      "path": "dist/assets/vendor-pdf-*.js",
+      "maxSize": "200KB",
+      "compression": "gzip"
+    },
+    {
+      "path": "dist/assets/vendor-excel-*.js",
+      "maxSize": "300KB",
+      "compression": "gzip"
+    },
+    {
+      "path": "dist/assets/vendor-ui-*.js",
+      "maxSize": "50KB",
+      "compression": "gzip"
+    },
+    {
+      "path": "dist/**/*.css",
+      "maxSize": "50KB",
+      "compression": "gzip"
+    }
+  ],
+  "ci": {
+    "failOnBudgetExceeded": true,
+    "trackBundleSize": true
+  }
+}

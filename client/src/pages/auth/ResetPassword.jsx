@@ -88,8 +88,24 @@ const ResetPassword = () => {
   }
 
   const validateForm = () => {
+    // Enhanced password requirements
     if (formData.password.length < 8) {
       setError('Password must be at least 8 characters long')
+      return false
+    }
+
+    if (!/[a-z]/.test(formData.password)) {
+      setError('Password must contain at least one lowercase letter')
+      return false
+    }
+
+    if (!/[A-Z]/.test(formData.password)) {
+      setError('Password must contain at least one uppercase letter')
+      return false
+    }
+
+    if (!/\d/.test(formData.password)) {
+      setError('Password must contain at least one number')
       return false
     }
 
@@ -145,8 +161,17 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Watermark Logo */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <img
+          src="/pcm-icon.svg"
+          alt="PCM Logo"
+          className="w-96 h-96 opacity-[0.10] select-none"
+        />
+      </div>
+
+      <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">

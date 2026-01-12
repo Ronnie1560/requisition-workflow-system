@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import PropTypes from 'prop-types'
 import { X, FileText, Loader, Search, Calendar } from 'lucide-react'
 import { getUserTemplates } from '../../services/api/templates'
 import { useAuth } from '../../context/AuthContext'
@@ -172,6 +173,12 @@ const TemplateSelectionModal = ({ isOpen, onClose, onSelect }) => {
       </div>
     </div>
   )
+}
+
+TemplateSelectionModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired
 }
 
 export default TemplateSelectionModal

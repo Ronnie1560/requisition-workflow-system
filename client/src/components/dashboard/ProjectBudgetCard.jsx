@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, memo } from 'react'
+import PropTypes from 'prop-types'
 import {
   DollarSign,
   TrendingUp,
@@ -210,4 +211,13 @@ const ProjectBudgetCard = ({ projectId, projectName }) => {
   )
 }
 
-export default ProjectBudgetCard
+ProjectBudgetCard.propTypes = {
+  projectId: PropTypes.string.isRequired,
+  projectName: PropTypes.string
+}
+
+ProjectBudgetCard.defaultProps = {
+  projectName: 'Project'
+}
+
+export default memo(ProjectBudgetCard)

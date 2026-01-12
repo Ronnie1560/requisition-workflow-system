@@ -2,8 +2,24 @@ import { useState, useEffect } from 'react'
 import { Calendar, Download, Mail, Clock, CheckCircle, AlertCircle, Play } from 'lucide-react'
 import { logger } from '../../utils/logger'
 import { exportToCSV } from '../../services/api/reports'
-import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+// Lazy load jsPDF only when needed (saves ~100KB from initial bundle)
+// import jsPDF from 'jspdf' // Removed - now loaded dynamically
+// import 'jspdf-autotable' // Removed - now loaded dynamically
+
+/**
+ * Lazy load jsPDF library with autotable plugin
+ * @returns {Promise<typeof import('jspdf')>}
+ */
+const loadJsPDF = async () => {
+  try {
+    const jsPDFModule = await import('jspdf')
+    await import('jspdf-autotable')
+    return jsPDFModule.default
+  } catch (error) {
+    logger.error('Failed to load jsPDF:', error)
+    throw new Error('Could not load PDF export functionality. Please try again.')
+  }
+}
 
 const ExportSchedulerSettings = () => {
   const [saving, setSaving] = useState(false)
@@ -116,7 +132,8 @@ const ExportSchedulerSettings = () => {
           ]
         )
       } else {
-        // Create a sample PDF export
+        // Create a sample PDF export - lazy load jsPDF (saves ~100KB from initial bundle)
+        const jsPDF = await loadJsPDF()
         const doc = new jsPDF()
 
         doc.setFontSize(18)

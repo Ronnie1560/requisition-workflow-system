@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, useRef } from 'react'
+import PropTypes from 'prop-types'
 import { supabase } from '../lib/supabase'
 import { logger } from '../utils/logger'
 import { useOrganizationSettings, clearOrganizationSettingsCache } from '../hooks/useOrganizationSettings'
@@ -330,4 +331,8 @@ export const AuthProvider = ({ children }) => {
       />
     </AuthContext.Provider>
   )
+}
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired
 }

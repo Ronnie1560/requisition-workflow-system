@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import PropTypes from 'prop-types'
 import { Upload, File, X, AlertCircle, Loader } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { uploadAttachment, deleteAttachment } from '../../services/api/requisitions'
@@ -234,6 +235,16 @@ const FileUpload = ({ requisitionId, disabled }) => {
       )}
     </div>
   )
+}
+
+FileUpload.propTypes = {
+  requisitionId: PropTypes.string,
+  disabled: PropTypes.bool
+}
+
+FileUpload.defaultProps = {
+  requisitionId: null,
+  disabled: false
 }
 
 export default FileUpload
