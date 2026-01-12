@@ -158,7 +158,7 @@ export const getOrganizationMembers = async (orgId) => {
         joined_at,
         user:users(id, full_name, email, avatar_url, role)
       `)
-      .eq('org_id', orgId)
+      .eq('organization_id', orgId)
       .order('role', { ascending: true })
 
     if (error) throw error
@@ -279,7 +279,7 @@ export const getOrganizationStats = async (orgId) => {
       supabase
         .from('organization_members')
         .select('id', { count: 'exact', head: true })
-        .eq('org_id', orgId),
+        .eq('organization_id', orgId),
       supabase
         .from('projects')
         .select('id', { count: 'exact', head: true })
