@@ -86,9 +86,10 @@ export const createOrganization = async (orgData) => {
   try {
     // Use the database function for creation
     const { data, error } = await supabase.rpc('create_organization', {
-      org_name: orgData.name,
-      org_slug: orgData.slug,
-      org_email: orgData.email || null
+      p_name: orgData.name,
+      p_slug: orgData.slug,
+      p_email: orgData.email || null,
+      p_plan: orgData.plan || 'free'
     })
 
     if (error) throw error
@@ -175,9 +176,9 @@ export const inviteUserToOrganization = async (orgId, email, role = 'member') =>
   try {
     // Use the database function for invitation
     const { data, error } = await supabase.rpc('invite_user_to_org', {
-      org_id: orgId,
-      user_email: email,
-      member_role: role
+      p_org_id: orgId,
+      p_email: email,
+      p_role: role
     })
 
     if (error) throw error
