@@ -1,21 +1,24 @@
-import { test as setup, expect } from '@playwright/test'
+import { test as setup } from '@playwright/test'
 import path from 'path'
 import fs from 'fs'
+import { fileURLToPath } from 'url'
 
 /**
  * Authentication State Setup
  * Creates authenticated state for tests that need logged-in user
  */
 
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 const authFile = path.join(__dirname, '../.auth/user.json')
 
 // Test credentials - replace with actual test account
-const TEST_EMAIL = process.env.PLAYWRIGHT_TEST_EMAIL || 'test@example.com'
-const TEST_PASSWORD = process.env.PLAYWRIGHT_TEST_PASSWORD || 'testpassword123'
+const TEST_EMAIL = globalThis.process?.env?.PLAYWRIGHT_TEST_EMAIL || 'test@example.com'
+const TEST_PASSWORD = globalThis.process?.env?.PLAYWRIGHT_TEST_PASSWORD || 'testpassword123'
 
 setup('authenticate', async ({ page }) => {
   // Skip auth setup if no credentials provided
-  if (!process.env.PLAYWRIGHT_TEST_EMAIL) {
+  if (!globalThis.process?.env?.PLAYWRIGHT_TEST_EMAIL) {
     console.log('Skipping auth setup - no test credentials provided')
     return
   }

@@ -61,8 +61,8 @@ test.describe('Error Handling', () => {
   test('should show 404 page for non-existent routes', async ({ page }) => {
     await page.goto('/this-route-does-not-exist-12345')
     
-    // Should show 404 message or redirect
-    const notFoundText = page.locator('text=404, text=not found, text=page not found').first()
+    // Should show 404 message or redirect (variable prefixed with _ to indicate intentionally unused)
+    const _notFoundText = page.locator('text=404, text=not found, text=page not found').first()
     const body = page.locator('body')
     
     // Either show 404 or redirect

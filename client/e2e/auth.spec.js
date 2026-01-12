@@ -58,9 +58,9 @@ test.describe('Authentication Flow', () => {
     // Wait for login form
     await page.waitForSelector('form', { timeout: 10000 })
     
-    // Check for accessible labels
-    const emailLabel = page.locator('label:has-text("email"), label:has-text("Email")')
-    const passwordLabel = page.locator('label:has-text("password"), label:has-text("Password")')
+    // Check for accessible labels (variables prefixed with _ to indicate intentionally unused)
+    const _emailLabel = page.locator('label:has-text("email"), label:has-text("Email")')
+    const _passwordLabel = page.locator('label:has-text("password"), label:has-text("Password")')
     
     // At least one form field should be accessible
     const formFields = page.locator('input')

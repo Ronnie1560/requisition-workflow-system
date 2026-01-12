@@ -69,8 +69,8 @@ test.describe('Loading States', () => {
     
     await page.goto('/')
     
-    // Look for loading indicators
-    const loadingIndicators = page.locator(
+    // Look for loading indicators (variable prefixed with _ to indicate intentionally unused)
+    const _loadingIndicators = page.locator(
       '[aria-busy="true"], .loading, .spinner, [data-loading], text=Loading'
     )
     
@@ -87,7 +87,7 @@ test.describe('Dark Mode Support', () => {
     
     // Check if dark mode is applied (if supported)
     const body = page.locator('body')
-    const backgroundColor = await body.evaluate(el => 
+    const _backgroundColor = await body.evaluate(el => 
       getComputedStyle(el).backgroundColor
     )
     
