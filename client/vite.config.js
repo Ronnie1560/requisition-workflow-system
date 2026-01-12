@@ -32,8 +32,11 @@ export default defineConfig({
     },
     // Enable source maps for production debugging
     sourcemap: true,
-    // Chunk size warning limit (500kb)
-    chunkSizeWarningLimit: 500
+    // Chunk size warning limit (1000kb = 1MB)
+    // Increased to accommodate lazy-loaded libraries:
+    // - ExcelJS: ~938 KB (only loads on Excel export)
+    // - jsPDF: ~417 KB (only loads on PDF export)
+    chunkSizeWarningLimit: 1000
   },
   // Optimize dependencies
   optimizeDeps: {
