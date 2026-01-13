@@ -122,9 +122,16 @@ export const getUserById = async (userId) => {
  */
 export const getUserStats = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      logger.warn('No organization selected for getUserStats')
+      return { data: { total: 0, active: 0, inactive: 0, byRole: { submitter: 0, reviewer: 0, approver: 0, store_manager: 0, super_admin: 0 } }, error: null }
+    }
+
     const { data, error } = await supabase
       .from('users')
       .select('role, is_active')
+      .eq('org_id', orgId)
 
     if (error) throw error
 
