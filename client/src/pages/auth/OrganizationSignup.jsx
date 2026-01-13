@@ -216,11 +216,10 @@ export default function OrganizationSignup() {
 
       // Handle edge function invocation error
       if (signupError) {
-        // Try to extract error message from context if available
-        const errorMessage = signupError.context?.body 
-          ? JSON.parse(signupError.context.body)?.error 
-          : signupError.message
-        throw new Error(errorMessage || 'Failed to create organization')
+        // The error message is typically in signupError.message
+        // For FunctionsHttpError, the actual error might be in the response data
+        logger.error('Edge Function error:', signupError)
+        throw new Error(signupError.message || 'Failed to create organization')
       }
 
       // Handle error returned in data
