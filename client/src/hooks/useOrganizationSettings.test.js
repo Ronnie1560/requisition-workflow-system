@@ -57,6 +57,22 @@ vi.mock('../../lib/supabase', () => {
   }
 })
 
+// Mock the systemSettings API to prevent actual fetch calls
+vi.mock('../services/api/systemSettings', () => ({
+  getOrganizationSettings: vi.fn().mockResolvedValue({
+    data: {
+      id: 'org-1',
+      organization_name: 'Test Organization',
+      address_line1: '123 Test St',
+      city: 'Test City',
+      logo_url: null,
+      app_base_url: 'https://test.app'
+    },
+    error: null
+  }),
+  updateOrganizationSettings: vi.fn().mockResolvedValue({ data: {}, error: null })
+}))
+
 // Import after mocking
 import { useOrganizationSettings } from './useOrganizationSettings.js'
 

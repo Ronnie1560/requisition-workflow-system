@@ -8,6 +8,11 @@
  * - Supabase client mock
  */
 
+// Set up mock environment variables BEFORE any imports that might need them
+// Note: VITE_SUPABASE_ANON_KEY must start with 'eyJ' to pass JWT validation
+process.env.VITE_SUPABASE_URL = 'https://mock-project.supabase.co'
+process.env.VITE_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vY2siLCJyb2xlIjoiYW5vbiIsImlhdCI6MTYwMDAwMDAwMCwiZXhwIjoxOTAwMDAwMDAwfQ.mock-signature'
+
 import '@testing-library/jest-dom'
 import { vi, beforeAll, afterEach, afterAll } from 'vitest'
 
