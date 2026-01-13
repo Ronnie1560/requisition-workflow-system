@@ -139,6 +139,15 @@ serve(async (req) => {
 
     // Create user profile
     if (authData.user) {
+      // Get the inviting user's organization
+      const { data: inviterProfile } = await supabaseAdmin
+        .from('users')
+        .select('org_id')
+        .eq('id', user.id)
+        .single()
+
+      const orgId = inviterProfile?.org_id
+
       const { error: profileError } = await supabaseAdmin
         .from('users')
         .insert({
@@ -147,6 +156,7 @@ serve(async (req) => {
           full_name: fullName,
           role: role,
           is_active: true,
+          org_id: orgId, // Assign to same org as inviter
         })
 
       if (profileError) {
@@ -160,6 +170,31 @@ serve(async (req) => {
             status: 500,
           }
         )
+      }
+
+      // Add user to organization_members table
+      if (orgId) {
+        // Map user role to org member role
+        const orgMemberRole = role === 'super_admin' ? 'admin' : 
+                              role === 'approver' ? 'admin' : 
+                              role === 'reviewer' ? 'admin' : 'member'
+        
+        const { error: memberError } = await supabaseAdmin
+          .from('organization_members')
+          .insert({
+            organization_id: orgId,
+            user_id: authData.user.id,
+            role: orgMemberRole,
+            invited_by: user.id,
+            invited_at: new Date().toISOString(),
+            accepted_at: new Date().toISOString(), // Pre-accept since admin invited them
+            is_active: true,
+          })
+
+        if (memberError) {
+          console.error('Organization membership error:', memberError)
+          // Don't fail the whole operation if membership fails - DB trigger should handle it
+        }
       }
 
       // Assign to projects if specified

@@ -226,37 +226,17 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const signUp = async (email, password, fullName) => {
-    try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            full_name: fullName
-          }
-        }
-      })
-
-      if (authError) throw authError
-
-      // Create user profile
-      if (authData.user) {
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: authData.user.id,
-            email: authData.user.email,
-            full_name: fullName,
-            role: 'submitter' // Default role
-          })
-
-        if (profileError) throw profileError
-      }
-
-      return { data: authData, error: null }
-    } catch (error) {
-      return { data: null, error }
+  /**
+   * @deprecated Self-registration is disabled.
+   * New users must be invited by an organization administrator via the invite-user Edge Function.
+   * This function is kept for backwards compatibility with tests only.
+   */
+  const signUp = async () => {
+    // Self-registration is disabled for security
+    // Users must be invited by an organization admin
+    return { 
+      data: null, 
+      error: new Error('Self-registration is disabled. Please contact your organization administrator for an invitation.') 
     }
   }
 

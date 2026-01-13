@@ -1,125 +1,15 @@
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { UserPlus, Mail, ArrowLeft, Shield, Building2 } from 'lucide-react'
 
+/**
+ * Register Page - Invitation Only for Team Members
+ * 
+ * Individual self-registration is disabled for security and data isolation.
+ * Team members must be invited by an organization administrator.
+ * 
+ * However, users can create a NEW ORGANIZATION via /signup-organization
+ */
 const Register = () => {
-  const navigate = useNavigate()
-  const { signUp } = useAuth()
-
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  })
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
-
-  // Password strength calculation
-  const calculatePasswordStrength = (password) => {
-    let strength = 0
-    if (password.length >= 8) strength++
-    if (password.length >= 12) strength++
-    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++
-    if (/\d/.test(password)) strength++
-    if (/[^a-zA-Z\d]/.test(password)) strength++
-    return strength
-  }
-
-  const passwordStrength = calculatePasswordStrength(formData.password)
-  const strengthLabels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong']
-  const strengthColors = [
-    'bg-red-500',
-    'bg-orange-500',
-    'bg-yellow-500',
-    'bg-blue-500',
-    'bg-green-500'
-  ]
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    })
-    setError('') // Clear error when user types
-  }
-
-  const validateForm = () => {
-    if (!formData.fullName.trim()) {
-      setError('Please enter your full name')
-      return false
-    }
-
-    if (!formData.email.trim()) {
-      setError('Please enter your email address')
-      return false
-    }
-
-    // Enhanced password requirements
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return false
-    }
-
-    if (!/[a-z]/.test(formData.password)) {
-      setError('Password must contain at least one lowercase letter')
-      return false
-    }
-
-    if (!/[A-Z]/.test(formData.password)) {
-      setError('Password must contain at least one uppercase letter')
-      return false
-    }
-
-    if (!/\d/.test(formData.password)) {
-      setError('Password must contain at least one number')
-      return false
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match')
-      return false
-    }
-
-    return true
-  }
-
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setSuccess(false)
-
-    if (!validateForm()) {
-      return
-    }
-
-    setLoading(true)
-
-    try {
-      const { error } = await signUp(
-        formData.email,
-        formData.password,
-        formData.fullName
-      )
-
-      if (error) {
-        setError(error.message)
-      } else {
-        setSuccess(true)
-        // Redirect to dashboard after 2 seconds
-        setTimeout(() => {
-          navigate('/dashboard')
-        }, 2000)
-      }
-    } catch {
-      setError('An unexpected error occurred. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Watermark Logo */}
@@ -135,218 +25,77 @@ const Register = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <UserPlus className="w-8 h-8 text-white" />
+            <Shield className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Create Account
+            Join the System
           </h1>
           <p className="text-gray-600">
-            Join PCM Requisition System
+            PCM Requisition System
           </p>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+        {/* Create Organization Option */}
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6 mb-6">
+          <div className="flex items-start gap-3">
+            <Building2 className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-sm font-medium text-red-800">
-                Registration failed
+              <h3 className="font-semibold text-indigo-900 mb-2">
+                Create a New Organization
               </h3>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Success Message */}
-        {success && (
-          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-            <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-medium text-green-800">
-                Account created successfully!
-              </h3>
-              <p className="text-sm text-green-700 mt-1">
-                Redirecting to dashboard...
+              <p className="text-indigo-800 text-sm leading-relaxed mb-4">
+                Start fresh with your own organization. You&apos;ll be the owner and can invite your team.
               </p>
+              <Link
+                to="/signup-organization"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors text-sm"
+              >
+                <Building2 className="w-4 h-4" />
+                Create Organization
+              </Link>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Register Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Full Name Field */}
-          <div>
-            <label
-              htmlFor="fullName"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Full Name
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                id="fullName"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                placeholder="John Doe"
-                autoComplete="name"
-              />
-            </div>
-          </div>
-
-          {/* Email Field */}
-          <div>
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Email Address
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                placeholder="you@example.com"
-                autoComplete="email"
-              />
-            </div>
-          </div>
-
-          {/* Password Field */}
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Password
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                placeholder="••••••••"
-                autoComplete="new-password"
-              />
-            </div>
-
-            {/* Password Strength Indicator */}
-            {formData.password && (
-              <div className="mt-2">
-                <div className="flex gap-1 mb-1">
-                  {[...Array(5)].map((_, index) => (
-                    <div
-                      key={index}
-                      className={`h-1 flex-1 rounded transition-colors ${
-                        index < passwordStrength
-                          ? strengthColors[passwordStrength - 1]
-                          : 'bg-gray-200'
-                      }`}
-                    ></div>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-600">
-                  Strength:{' '}
-                  <span
-                    className={`font-medium ${
-                      passwordStrength >= 3 ? 'text-green-600' : 'text-orange-600'
-                    }`}
-                  >
-                    {strengthLabels[passwordStrength] || 'Very Weak'}
-                  </span>
+        {/* Join Existing Organization */}
+        <div className="bg-gray-50 rounded-lg p-6 mb-6">
+          <div className="flex items-start gap-3">
+            <UserPlus className="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-gray-800 mb-2">
+                Join an Existing Organization
+              </h3>
+              <p className="text-gray-600 text-sm leading-relaxed mb-3">
+                To join an existing organization, you need an invitation from your administrator.
+              </p>
+              <div className="flex items-start gap-2">
+                <Mail className="w-4 h-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-gray-500">
+                  When invited, you&apos;ll receive an email with a link to set your password.
                 </p>
               </div>
-            )}
-            {!formData.password && (
-              <p className="mt-1 text-xs text-gray-500">
-                Must be at least 6 characters long
-              </p>
-            )}
-          </div>
-
-          {/* Confirm Password Field */}
-          <div>
-            <label
-              htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-2"
-            >
-              Confirm Password
-            </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"
-                placeholder="••••••••"
-                autoComplete="new-password"
-              />
             </div>
           </div>
+        </div>
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading || success}
-            className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        {/* Already have an account */}
+        <div className="text-center">
+          <p className="text-sm text-gray-600 mb-4">
+            Already have an account?
+          </p>
+          <Link
+            to="/login"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
-            {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Creating account...
-              </>
-            ) : success ? (
-              <>
-                <CheckCircle className="w-5 h-5" />
-                Account created!
-              </>
-            ) : (
-              <>
-                <UserPlus className="w-5 h-5" />
-                Create Account
-              </>
-            )}
-          </button>
-        </form>
+            <ArrowLeft className="w-4 h-4" />
+            Go to Login
+          </Link>
+        </div>
 
-        {/* Sign In Link */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link
-              to="/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Sign in
-            </Link>
+        {/* Contact info */}
+        <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <p className="text-xs text-gray-500">
+            Need help? Contact your organization administrator or IT support.
           </p>
         </div>
       </div>
