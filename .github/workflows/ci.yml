@@ -55,19 +55,17 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm run test:run
-
       - name: Run tests with coverage
         run: npm run test:coverage
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
-        if: always()
+        continue-on-error: true
         with:
           files: ./client/coverage/lcov.info
           fail_ci_if_error: false
           verbose: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   build:
     name: Build
