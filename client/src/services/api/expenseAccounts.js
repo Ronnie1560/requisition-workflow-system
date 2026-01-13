@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Expense Accounts API Service
@@ -11,12 +12,18 @@ import { logger } from '../../utils/logger'
  */
 export const getAllExpenseAccounts = async (filters = {}) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('expense_accounts')
       .select(`
         *,
         project:projects(id, code, name, is_active)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('code', { ascending: true })
 
     // Apply filters
@@ -52,6 +59,11 @@ export const getAllExpenseAccounts = async (filters = {}) => {
  */
 export const getExpenseAccountById = async (accountId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('expense_accounts')
       .select(`
@@ -59,6 +71,7 @@ export const getExpenseAccountById = async (accountId) => {
         project:projects(id, code, name, description, budget, is_active)
       `)
       .eq('id', accountId)
+      .eq('org_id', orgId) // Filter by current organization
       .single()
 
     if (error) throw error

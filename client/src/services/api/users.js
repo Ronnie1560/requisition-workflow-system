@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Users API Service
@@ -32,6 +33,11 @@ export const clearUsersCache = () => {
  */
 export const getAllUsers = async (filters = {}, forceRefresh = false) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Return cached data if valid and no filters applied
     const hasFilters = filters.role || filters.is_active !== undefined || filters.search
     if (!forceRefresh && !hasFilters && isUsersCacheValid()) {
@@ -42,6 +48,7 @@ export const getAllUsers = async (filters = {}, forceRefresh = false) => {
     let query = supabase
       .from('users_with_assignments')
       .select('*')
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Apply filters
@@ -81,6 +88,11 @@ export const getAllUsers = async (filters = {}, forceRefresh = false) => {
  */
 export const getUserById = async (userId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('users')
       .select(`
@@ -94,6 +106,7 @@ export const getUserById = async (userId) => {
         )
       `)
       .eq('id', userId)
+      .eq('org_id', orgId) // Filter by current organization
       .single()
 
     if (error) throw error

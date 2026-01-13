@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Items API Service
@@ -15,9 +16,15 @@ import { logger } from '../../utils/logger'
  */
 export const getAllUOMTypes = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('uom_types')
       .select('*')
+      .eq('org_id', orgId) // Filter by current organization
       .eq('is_active', true)
       .order('code', { ascending: true })
 
@@ -57,6 +64,11 @@ export const createUOMType = async (uomData) => {
  */
 export const getAllItems = async (filters = {}) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Add timeout to prevent indefinite hanging
     const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Request timeout')), 15000)
@@ -70,6 +82,7 @@ export const getAllItems = async (filters = {}) => {
         category:categories!category_id(id, code, name),
         created_by_user:users!created_by(full_name, email)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('code', { ascending: true })
 
     // Apply filters
@@ -101,6 +114,11 @@ export const getAllItems = async (filters = {}) => {
  */
 export const getItemById = async (itemId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('items')
       .select(`
@@ -110,6 +128,7 @@ export const getItemById = async (itemId) => {
         created_by_user:users!created_by(full_name, email)
       `)
       .eq('id', itemId)
+      .eq('org_id', orgId) // Filter by current organization
       .single()
 
     if (error) throw error

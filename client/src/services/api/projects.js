@@ -47,6 +47,11 @@ export const getAllProjects = async (filters = {}) => {
  */
 export const getProjectById = async (projectId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('projects')
       .select(`
@@ -54,6 +59,7 @@ export const getProjectById = async (projectId) => {
         created_by_user:users!created_by(full_name, email)
       `)
       .eq('id', projectId)
+      .eq('org_id', orgId) // Filter by current organization
       .single()
 
     if (error) throw error

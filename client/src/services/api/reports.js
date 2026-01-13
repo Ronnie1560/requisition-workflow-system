@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Reports API Service
@@ -11,9 +12,15 @@ import { logger } from '../../utils/logger'
  */
 export const getRequisitionsByStatus = async (startDate = null, endDate = null) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisitions')
       .select('id, status, total_amount, created_at, requisition_number')
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Apply date filters if provided
@@ -57,6 +64,11 @@ export const getRequisitionsByStatus = async (startDate = null, endDate = null) 
  */
 export const getRequisitionsBySubmitter = async (startDate = null, endDate = null) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisitions')
       .select(`
@@ -67,6 +79,7 @@ export const getRequisitionsBySubmitter = async (startDate = null, endDate = nul
         requisition_number,
         submitted_by_user:users!requisitions_submitted_by_fkey(id, full_name, email)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Apply date filters if provided
@@ -131,6 +144,11 @@ export const getRequisitionsBySubmitter = async (startDate = null, endDate = nul
  */
 export const getRequisitionsByProject = async (startDate = null, endDate = null) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisitions')
       .select(`
@@ -141,6 +159,7 @@ export const getRequisitionsByProject = async (startDate = null, endDate = null)
         requisition_number,
         project:projects(id, code, name, budget)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Apply date filters if provided
@@ -215,6 +234,11 @@ export const getRequisitionsByProject = async (startDate = null, endDate = null)
  */
 export const getSpendingByExpenseAccount = async (startDate = null, endDate = null) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisitions')
       .select(`
@@ -226,6 +250,7 @@ export const getSpendingByExpenseAccount = async (startDate = null, endDate = nu
         expense_account:expense_accounts(id, code, name, description),
         requisition_items(id, total_price)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Apply date filters if provided
@@ -289,9 +314,15 @@ export const getSpendingByExpenseAccount = async (startDate = null, endDate = nu
  */
 export const getSpendingByTimePeriod = async (period = 'monthly', startDate = null, endDate = null) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisitions')
       .select('id, status, total_amount, created_at, requisition_number')
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Apply date filters if provided
@@ -446,6 +477,11 @@ export const exportToCSV = (data, filename, columns) => {
  */
 export const getSpendingByProjectAndExpenseAccount = async (startDate = null, endDate = null, projectId = null) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisitions')
       .select(`
@@ -458,6 +494,7 @@ export const getSpendingByProjectAndExpenseAccount = async (startDate = null, en
         expense_account:expense_accounts(id, code, name, project_id),
         requisition_items(id, total_price)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Apply date filters if provided

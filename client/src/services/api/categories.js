@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Categories API Service
@@ -15,12 +16,18 @@ import { logger } from '../../utils/logger'
  */
 export const getAllCategories = async (filters = {}) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('categories')
       .select(`
         *,
         created_by_user:users!created_by(full_name, email)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('name', { ascending: true })
 
     // Apply filters
@@ -48,9 +55,15 @@ export const getAllCategories = async (filters = {}) => {
  */
 export const getActiveCategories = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .select('*')
+      .eq('org_id', orgId) // Filter by current organization
       .eq('is_active', true)
       .order('name', { ascending: true })
 
@@ -67,6 +80,11 @@ export const getActiveCategories = async () => {
  */
 export const getCategoryById = async (categoryId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .select(`
@@ -74,6 +92,7 @@ export const getCategoryById = async (categoryId) => {
         created_by_user:users!created_by(full_name, email)
       `)
       .eq('id', categoryId)
+      .eq('org_id', orgId) // Filter by current organization
       .single()
 
     if (error) throw error

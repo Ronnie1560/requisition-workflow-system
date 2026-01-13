@@ -18,6 +18,11 @@ import { getCurrentOrgId } from './orgContext'
  */
 export const getUserRequisitions = async (userId, filters = {}) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await withRetry(async () => {
       let query = supabase
         .from('requisitions')
@@ -35,6 +40,7 @@ export const getUserRequisitions = async (userId, filters = {}) => {
             uom:uom_types(id, code, name)
           )
         `)
+        .eq('org_id', orgId) // Filter by current organization
         .eq('submitted_by', userId)
         .order('created_at', { ascending: false })
 
@@ -62,6 +68,11 @@ export const getUserRequisitions = async (userId, filters = {}) => {
  */
 export const getRequisitionById = async (requisitionId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisitions')
       .select(`
@@ -100,6 +111,7 @@ export const getRequisitionById = async (requisitionId) => {
         )
       `)
       .eq('id', requisitionId)
+      .eq('org_id', orgId) // Filter by current organization
       .single()
 
     if (error) throw error
@@ -116,11 +128,17 @@ export const getRequisitionById = async (requisitionId) => {
  */
 export const getUserProjects = async (userId, userRole = null) => {
   try {
-    // Super admins see ALL active projects
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Super admins see ALL active projects in their org
     if (userRole === 'super_admin') {
       const { data, error } = await supabase
         .from('projects')
         .select('id, code, name, budget, is_active')
+        .eq('org_id', orgId) // Filter by current organization
         .eq('is_active', true)
         .order('code', { ascending: true })
 
@@ -128,7 +146,7 @@ export const getUserProjects = async (userId, userRole = null) => {
       return { data: data || [], error: null }
     }
 
-    // Regular users see only assigned projects
+    // Regular users see only assigned projects in their org
     const { data, error } = await supabase
       .from('user_project_assignments')
       .select(`
@@ -140,6 +158,7 @@ export const getUserProjects = async (userId, userRole = null) => {
           is_active
         )
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .eq('user_id', userId)
       .eq('is_active', true)
 
@@ -158,9 +177,15 @@ export const getUserProjects = async (userId, userRole = null) => {
  */
 export const getAllExpenseAccounts = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('expense_accounts')
       .select('id, code, name, description')
+      .eq('org_id', orgId) // Filter by current organization
       .eq('is_active', true)
       .order('name', { ascending: true })
 
@@ -194,6 +219,11 @@ export const getProjectExpenseBreakdown = async (projectId) => {
  */
 export const getAllItemsForRequisition = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('items')
       .select(`
@@ -205,6 +235,7 @@ export const getAllItemsForRequisition = async () => {
         default_uom_id,
         uom:uom_types!items_default_uom_id_fkey(id, code, name)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .eq('is_active', true)
       .order('name', { ascending: true })
 
@@ -221,9 +252,15 @@ export const getAllItemsForRequisition = async () => {
  */
 export const getUomTypes = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('uom_types')
       .select('*')
+      .eq('org_id', orgId) // Filter by current organization
       .eq('is_active', true)
       .order('name')
 

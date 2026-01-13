@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Dashboard API Service
@@ -11,10 +12,16 @@ import { logger } from '../../utils/logger'
  */
 export const getSubmitterStats = async (userId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Get requisition counts by status
     const { data: requisitions, error } = await supabase
       .from('requisitions')
       .select('status, total_amount')
+      .eq('org_id', orgId) // Filter by current organization
       .eq('submitted_by', userId)
 
     if (error) throw error
@@ -42,10 +49,16 @@ export const getSubmitterStats = async (userId) => {
  */
 export const getReviewerStats = async () => {
   try {
-    // Get all requisitions (reviewers can see everything)
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Get all requisitions in the org (reviewers can see everything in their org)
     const { data: requisitions, error } = await supabase
       .from('requisitions')
       .select('status, total_amount')
+      .eq('org_id', orgId) // Filter by current organization
 
     if (error) throw error
 
@@ -74,10 +87,16 @@ export const getReviewerStats = async () => {
  */
 export const getApproverStats = async () => {
   try {
-    // Get requisitions ready for approval + approved/rejected
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Get requisitions ready for approval + approved/rejected in the org
     const { data: requisitions, error } = await supabase
       .from('requisitions')
       .select('status, total_amount')
+      .eq('org_id', orgId) // Filter by current organization
       .in('status', ['reviewed', 'approved', 'rejected'])
 
     if (error) throw error
@@ -106,25 +125,33 @@ export const getApproverStats = async () => {
  */
 export const getAdminStats = async () => {
   try {
-    // Get all requisitions
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Get all requisitions in the org
     const { data: requisitions, error: reqError } = await supabase
       .from('requisitions')
       .select('status, total_amount, created_at')
+      .eq('org_id', orgId) // Filter by current organization
 
     if (reqError) throw reqError
 
-    // Get user count
+    // Get user count in the org
     const { count: userCount, error: userError } = await supabase
       .from('users')
       .select('*', { count: 'exact', head: true })
+      .eq('org_id', orgId) // Filter by current organization
       .eq('is_active', true)
 
     if (userError) throw userError
 
-    // Get project count
+    // Get project count in the org
     const { count: projectCount, error: projectError } = await supabase
       .from('projects')
       .select('*', { count: 'exact', head: true })
+      .eq('org_id', orgId) // Filter by current organization
       .eq('is_active', true)
 
     if (projectError) throw projectError
