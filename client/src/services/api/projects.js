@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Projects API Service
@@ -11,9 +12,15 @@ import { logger } from '../../utils/logger'
  */
 export const getAllProjects = async (filters = {}) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('projects')
       .select('*')
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Apply filters

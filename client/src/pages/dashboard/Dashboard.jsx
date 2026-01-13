@@ -7,6 +7,7 @@ import { getUserProjects } from '../../services/api/requisitions'
 import { formatDate, formatCurrency } from '../../utils/formatters'
 import { STATUS_LABELS, STATUS_COLORS } from '../../utils/constants'
 import ProjectBudgetCard from '../../components/dashboard/ProjectBudgetCard'
+import DefaultOrgBanner from '../../components/organizations/DefaultOrgBanner'
 import { logger } from '../../utils/logger'
 
 const Dashboard = () => {
@@ -220,6 +221,9 @@ const Dashboard = () => {
 
   return (
     <div>
+      {/* Default Organization Banner */}
+      <DefaultOrgBanner />
+
       {/* Welcome Section */}
       <div className="mb-8 flex items-center justify-between">
         <div>

@@ -1,5 +1,6 @@
 import { supabase, withRetry } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Requisitions API Service
@@ -530,6 +531,11 @@ export const rejectRequisition = async (requisitionId, userId, reason) => {
  */
 export const getRequisitionsForReview = async (userId, userRole, filters = {}) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisitions')
       .select(`
@@ -540,6 +546,7 @@ export const getRequisitionsForReview = async (userId, userRole, filters = {}) =
         reviewed_by_user:users!requisitions_reviewed_by_fkey(id, full_name, email),
         requisition_items(count)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('created_at', { ascending: false })
 
     // Filter based on role

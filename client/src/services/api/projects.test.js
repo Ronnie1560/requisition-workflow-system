@@ -23,6 +23,13 @@ vi.mock('../../utils/logger', () => ({
   }
 }))
 
+// Mock orgContext to provide a test organization ID
+vi.mock('./orgContext', () => ({
+  getCurrentOrgId: vi.fn(() => 'test-org-id'),
+  applyOrgFilter: vi.fn((query) => query.eq('org_id', 'test-org-id')),
+  hasSelectedOrg: vi.fn(() => true)
+}))
+
 // Create mock query builder methods
 const mockSelect = vi.fn()
 const mockInsert = vi.fn()
@@ -55,77 +62,37 @@ vi.mock('../../lib/supabase', () => {
       from: (table) => {
         mockFrom(table)
         
-        // Return different mock based on current test expectations
-        const chain = {
+        // Create a full chainable mock that supports all query patterns
+        const createFullChain = () => ({
           select: (...args) => {
             mockSelect(...args)
-            return {
-              ...chain,
-              eq: (field, value) => {
-                mockEq(field, value)
-                return {
-                  ...chain,
-                  single: () => mockSingle(),
-                  eq: (f2, v2) => {
-                    mockEq(f2, v2)
-                    return {
-                      ...chain,
-                      single: () => mockSingle()
-                    }
-                  }
-                }
-              },
-              or: (filter) => {
-                mockOr(filter)
-                return chain
-              },
-              order: (field, opts) => {
-                mockOrder(field, opts)
-                return {
-                  ...chain,
-                  eq: (f, v) => {
-                    mockEq(f, v)
-                    return chain
-                  },
-                  or: (filter) => {
-                    mockOr(filter)
-                    return chain
-                  },
-                  then: (resolve) => mockSingle().then(resolve)
-                }
-              },
-              then: (resolve) => mockSingle().then(resolve)
-            }
+            return createFullChain()
           },
+          eq: (field, value) => {
+            mockEq(field, value)
+            return createFullChain()
+          },
+          or: (filter) => {
+            mockOr(filter)
+            return createFullChain()
+          },
+          order: (field, opts) => {
+            mockOrder(field, opts)
+            return createFullChain()
+          },
+          single: () => mockSingle(),
+          then: (resolve) => mockSingle().then(resolve),
           insert: (data) => {
             mockInsert(data)
-            return {
-              ...chain,
-              select: () => ({
-                ...chain,
-                single: () => mockSingle()
-              })
-            }
+            return createFullChain()
           },
           update: (data) => {
             mockUpdate(data)
-            return {
-              ...chain,
-              eq: (field, value) => {
-                mockEq(field, value)
-                return {
-                  ...chain,
-                  select: () => ({
-                    ...chain,
-                    single: () => mockSingle()
-                  })
-                }
-              }
-            }
+            return createFullChain()
           }
-        }
+        })
         
-        return chain
+        return createFullChain()
       }
     }
   }

@@ -5,6 +5,7 @@ import { useOrganization } from '../../context/OrganizationContext'
 import NotificationCenter from '../notifications/NotificationCenter'
 import ToastContainer from '../notifications/ToastContainer'
 import OrganizationSwitcher from '../organizations/OrganizationSwitcher'
+import CreateOrganizationPrompt from '../organizations/CreateOrganizationPrompt'
 import {
   Menu,
   X,
@@ -230,6 +231,9 @@ const MainLayout = () => {
 
       {/* Toast Notifications */}
       <ToastContainer />
+
+      {/* Organization Creation Prompt */}
+      <CreateOrganizationPrompt />
     </div>
   )
 }

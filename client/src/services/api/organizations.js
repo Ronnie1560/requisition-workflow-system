@@ -65,7 +65,7 @@ export const getOrganizationById = async (orgId) => {
           role,
           user_id,
           joined_at,
-          user:users(id, full_name, email, avatar_url)
+          users!organization_members_user_id_fkey(id, full_name, email, avatar_url)
         )
       `)
       .eq('id', orgId)
@@ -156,13 +156,21 @@ export const getOrganizationMembers = async (orgId) => {
         id,
         role,
         joined_at,
-        user:users(id, full_name, email, avatar_url, role)
+        user_id,
+        users!organization_members_user_id_fkey(id, full_name, email, avatar_url, role)
       `)
       .eq('organization_id', orgId)
       .order('role', { ascending: true })
 
     if (error) throw error
-    return { data, error: null }
+
+    // Transform data to match expected format
+    const transformedData = data?.map(member => ({
+      ...member,
+      user: member.users
+    })) || []
+
+    return { data: transformedData, error: null }
   } catch (error) {
     logger.error('Error fetching organization members:', error)
     return { data: null, error: error.message }
