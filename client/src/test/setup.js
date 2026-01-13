@@ -8,6 +8,8 @@
  * - Supabase client mock
  */
 
+/* global process */
+
 // Set up mock environment variables BEFORE any imports that might need them
 // Note: VITE_SUPABASE_ANON_KEY must start with 'eyJ' to pass JWT validation
 process.env.VITE_SUPABASE_URL = 'https://mock-project.supabase.co'
