@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
@@ -52,20 +52,11 @@ const UserDetail = () => {
   // Check if user is admin
   const isAdmin = profile?.role === 'super_admin'
 
-  useEffect(() => {
-    if (!isAdmin) {
-      navigate('/dashboard')
-      return
-    }
-    loadUserData()
-    loadAllProjects()
-  }, [id, isAdmin])
-
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await getUserById(id)
+    const { data, error: fetchError } = await getUserById(id)
 
-    if (error) {
+    if (fetchError) {
       setError('Failed to load user data')
       setLoading(false)
       return
@@ -81,13 +72,23 @@ const UserDetail = () => {
       department: data.department || ''
     })
     setLoading(false)
-  }
+  }, [id])
 
-  const loadAllProjects = async () => {
-    // Load all active projects in the system
-    const { data } = await getAllProjects({ is_active: true })
-    if (data) setAllProjects(data)
-  }
+  useEffect(() => {
+    const loadAllProjects = async () => {
+      // Load all active projects in the system
+      const { data } = await getAllProjects({ is_active: true })
+      if (data) setAllProjects(data)
+    }
+    
+    if (!isAdmin) {
+      navigate('/dashboard')
+      return
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
+    loadUserData()
+    loadAllProjects()
+  }, [isAdmin, navigate, loadUserData])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target

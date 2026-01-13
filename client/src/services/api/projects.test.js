@@ -10,8 +10,7 @@ import {
   createProject,
   updateProject,
   deleteProject,
-  activateProject,
-  getProjectStats
+  activateProject
 } from './projects.js'
 
 // Mock logger
@@ -35,7 +34,7 @@ const mockSingle = vi.fn()
 const mockFrom = vi.fn()
 
 // Create chainable mock
-const createChainableMock = (resolvedValue) => {
+const _createChainableMock = (resolvedValue) => {
   const chain = {
     select: vi.fn(() => chain),
     insert: vi.fn(() => chain),

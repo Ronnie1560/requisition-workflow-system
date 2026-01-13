@@ -186,7 +186,7 @@ const DashboardEnhanced = () => {
 
     if (!dashboardData?.stats) return alerts
 
-    const { stats, quickActions } = dashboardData
+    const { quickActions } = dashboardData
 
     // Pending reviews alert
     if (quickActions?.pendingReviews > 0) {

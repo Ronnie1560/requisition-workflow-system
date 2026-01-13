@@ -73,7 +73,7 @@ const loadJsPDF = async () => {
 }
 
 const ReportsEnhanced = () => {
-  const { userRole, profile } = useAuth()
+  const { userRole: _userRole, profile } = useAuth()
 
   const [activeReport, setActiveReport] = useState('status')
   const [loading, setLoading] = useState(false)
@@ -81,7 +81,7 @@ const ReportsEnhanced = () => {
   const [reportData, setReportData] = useState(null)
 
   // Organization settings - using cached hook
-  const { orgSettings, loading: orgLoading, error: orgError } = useOrganizationSettings()
+  const { orgSettings } = useOrganizationSettings()
 
   // Date filters
   const [startDate, setStartDate] = useState('')
@@ -228,7 +228,7 @@ const ReportsEnhanced = () => {
           { label: 'Item Count', accessor: (row) => row.itemCount }
         ]
         break
-      case 'spending-project-account':
+      case 'spending-project-account': {
         filename = 'spending_by_project_and_expense_account'
         const flattenedData = []
         reportData.forEach(project => {
@@ -259,6 +259,7 @@ const ReportsEnhanced = () => {
         ]
         exportToCSV(flattenedData, filename, columns)
         return
+      }
       case 'spending-period':
         filename = `spending_by_${selectedPeriod}`
         columns = [
@@ -539,7 +540,7 @@ const ReportsEnhanced = () => {
       let rows = []
 
       switch (activeReport) {
-        case 'status':
+        case 'status': {
           headers = [['Status', 'Count', 'Total Amount', '% of Total']]
           const totalCount = processedReportData.reduce((sum, item) => sum + (item.count || 0), 0)
           rows = processedReportData.map(item => [
@@ -549,6 +550,7 @@ const ReportsEnhanced = () => {
             `${((item.count / totalCount) * 100).toFixed(1)}%`
           ])
           break
+        }
 
         case 'submitter':
           headers = [['User', 'Total Reqs', 'Approved', 'Pending', 'Rejected', 'Total Amount']]
@@ -674,18 +676,20 @@ const ReportsEnhanced = () => {
           start: new Date(year, month - 1, 1).toISOString().split('T')[0],
           end: new Date(year, month, 0).toISOString().split('T')[0]
         }
-      case 'thisQuarter':
+      case 'thisQuarter': {
         const quarterStart = Math.floor(month / 3) * 3
         return {
           start: new Date(year, quarterStart, 1).toISOString().split('T')[0],
           end: new Date(year, quarterStart + 3, 0).toISOString().split('T')[0]
         }
-      case 'lastQuarter':
+      }
+      case 'lastQuarter': {
         const lastQuarterStart = Math.floor(month / 3) * 3 - 3
         return {
           start: new Date(year, lastQuarterStart, 1).toISOString().split('T')[0],
           end: new Date(year, lastQuarterStart + 3, 0).toISOString().split('T')[0]
         }
+      }
       case 'thisYear':
         return {
           start: new Date(year, 0, 1).toISOString().split('T')[0],
@@ -1624,7 +1628,7 @@ function ReportByStatusEnhanced({ data, onSort, sortConfig, onDrillDown }) {
 }
 
 // Spending By Expense Account Report
-function SpendingByExpenseAccountEnhanced({ data, onSort, sortConfig, onDrillDown }) {
+function SpendingByExpenseAccountEnhanced({ data, onSort, sortConfig, onDrillDown: _onDrillDown }) {
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-12 text-slate-500">
@@ -1814,7 +1818,7 @@ function ReportByProjectEnhanced({ data, onSort, sortConfig, onDrillDown }) {
 }
 
 // Spending By Project & Expense Account
-function SpendingByProjectAndExpenseAccountEnhanced({ data, onSort, sortConfig }) {
+function SpendingByProjectAndExpenseAccountEnhanced({ data, onSort: _onSort, sortConfig: _sortConfig }) {
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-12 text-slate-500">

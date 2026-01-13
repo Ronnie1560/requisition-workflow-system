@@ -24,12 +24,12 @@ import {
   getSpendingTrends,
   exportToCSV
 } from '../../services/api/reports'
-import { formatCurrency, formatDate } from '../../utils/formatters'
+import { formatCurrency } from '../../utils/formatters'
 import { STATUS_LABELS } from '../../utils/constants'
 import { logger } from '../../utils/logger'
 
 const Reports = () => {
-  const { userRole } = useAuth()
+  const { userRole: _userRole } = useAuth()
 
   const [activeReport, setActiveReport] = useState('status')
   const [loading, setLoading] = useState(false)
@@ -153,7 +153,7 @@ const Reports = () => {
           { label: 'Item Count', accessor: (row) => row.itemCount }
         ]
         break
-      case 'spending-project-account':
+      case 'spending-project-account': {
         filename = 'spending_by_project_and_expense_account'
         // Flatten the hierarchical data for CSV export
         const flattenedData = []
@@ -185,6 +185,7 @@ const Reports = () => {
         ]
         exportToCSV(flattenedData, filename, columns)
         return
+      }
       case 'spending-period':
         filename = `spending_by_${selectedPeriod}`
         columns = [
@@ -884,7 +885,7 @@ const SpendingByExpenseAccount = ({ data }) => {
 }
 
 // Spending by Time Period Component
-const SpendingByTimePeriod = ({ data, period }) => {
+const SpendingByTimePeriod = ({ data, period: _period }) => {
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-12 text-gray-500">

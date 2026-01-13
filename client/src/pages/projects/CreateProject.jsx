@@ -24,7 +24,7 @@ const CreateProject = () => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [isEditMode, setIsEditMode] = useState(!!id)
+  const isEditMode = !!id
 
   useEffect(() => {
     if (id) {

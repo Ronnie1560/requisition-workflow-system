@@ -12,7 +12,7 @@ import { logger } from '../../utils/logger'
 
 const RequisitionsList = () => {
   const navigate = useNavigate()
-  const { user, profile, userRole } = useAuth()
+  const { user, profile: _profile, userRole } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [requisitions, setRequisitions] = useState([])
@@ -22,7 +22,7 @@ const RequisitionsList = () => {
     search: searchParams.get('search') || ''
   })
   const [showTemplateModal, setShowTemplateModal] = useState(false)
-  const [creatingFromTemplate, setCreatingFromTemplate] = useState(false)
+  const [_creatingFromTemplate, setCreatingFromTemplate] = useState(false)
 
   // Update URL when filters change
   useEffect(() => {

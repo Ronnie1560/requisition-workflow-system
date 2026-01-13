@@ -192,6 +192,7 @@ export default ErrorBoundary
 /**
  * Higher-order component to wrap any component with an error boundary
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function withErrorBoundary(WrappedComponent, errorBoundaryProps = {}) {
   const WithErrorBoundary = (props) => (
     <ErrorBoundary {...errorBoundaryProps}>

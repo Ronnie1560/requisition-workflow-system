@@ -36,7 +36,7 @@ const ItemsList = () => {
   })
 
   // Debounce search input (300ms delay for API calls if needed)
-  const debouncedSearch = useDebounce(searchInput, 300)
+  const _debouncedSearch = useDebounce(searchInput, 300)
 
   // Load items when status/category filters change
   useEffect(() => {

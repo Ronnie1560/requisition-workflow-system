@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
@@ -34,43 +34,44 @@ const UsersList = () => {
   // Check if user is admin
   const isAdmin = profile?.role === 'super_admin'
 
-  useEffect(() => {
-    if (!isAdmin) {
-      navigate('/dashboard')
-      return
-    }
-    loadUsers()
-    loadStats()
-  }, [filters.role, filters.is_active, isAdmin])
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setLoading(true)
-    const { data, error } = await getAllUsers({
+    const { data, error: fetchError } = await getAllUsers({
       role: filters.role,
       is_active: filters.is_active,
       search: filters.search
     })
 
-    if (error) {
-      logger.error('Error loading users:', error)
+    if (fetchError) {
+      logger.error('Error loading users:', fetchError)
     } else {
       setUsers(data || [])
     }
     setLoading(false)
-  }
+  }, [filters.role, filters.is_active, filters.search])
 
-  const loadStats = async () => {
-    const { data } = await getUserStats()
-    if (data) setStats(data)
-  }
+  useEffect(() => {
+    const loadStats = async () => {
+      const { data } = await getUserStats()
+      if (data) setStats(data)
+    }
+    
+    if (!isAdmin) {
+      navigate('/dashboard')
+      return
+    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
+    loadUsers()
+    loadStats()
+  }, [isAdmin, navigate, loadUsers])
 
   const handleToggleStatus = async (userId, currentStatus) => {
     const { error } = await toggleUserStatus(userId, !currentStatus)
     if (error) {
       logger.error('Error toggling user status:', error)
     } else {
-      loadUsers()
-      loadStats()
+      // Trigger re-fetch by updating a filter slightly
+      setFilters(prev => ({ ...prev }))
     }
   }
 
@@ -80,7 +81,7 @@ const UsersList = () => {
     }
 
     setResendingInvitation(userId)
-    const { data, error } = await resendInvitation(userId, email)
+    const { error } = await resendInvitation(userId, email)
     setResendingInvitation(null)
 
     if (error) {

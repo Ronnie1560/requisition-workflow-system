@@ -50,13 +50,16 @@ export default PageLoader
  * Skeleton loader for content placeholders
  */
 export function SkeletonLoader({ lines, className }) {
+  // Use deterministic widths to avoid impure Math.random during render
+  const widths = [75, 90, 60, 85, 70, 95, 65, 80, 88, 72]
+  
   return (
     <div className={`animate-pulse space-y-3 ${className || ''}`}>
       {Array.from({ length: lines }).map((_, index) => (
         <div
           key={index}
           className="h-4 bg-slate-200 rounded"
-          style={{ width: `${Math.random() * 40 + 60}%` }}
+          style={{ width: `${widths[index % widths.length]}%` }}
         />
       ))}
     </div>

@@ -68,7 +68,7 @@ const SpendingByProjectEnhanced = ({
 
   // Local state for component
   const [localSortConfig, setLocalSortConfig] = useState(sortConfig || { key: null, direction: 'asc' })
-  const [selectedProject, setSelectedProject] = useState(null)
+  const [_selectedProject, setSelectedProject] = useState(null)
 
   // ============================================================================
   // SORTING LOGIC

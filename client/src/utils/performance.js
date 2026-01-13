@@ -70,12 +70,18 @@ export function useDebounce(value, delay = 300) {
  */
 export function useThrottle(value, interval = 300) {
   const [throttledValue, setThrottledValue] = useState(value)
-  const lastUpdated = useRef(Date.now())
+  const lastUpdated = useRef(null)
 
   useEffect(() => {
+    // Initialize on first run
+    if (lastUpdated.current === null) {
+      lastUpdated.current = Date.now()
+    }
+    
     const now = Date.now()
     if (now >= lastUpdated.current + interval) {
       lastUpdated.current = now
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Throttle pattern requires sync update
       setThrottledValue(value)
     } else {
       const timer = setTimeout(() => {
@@ -98,6 +104,7 @@ export function usePrevious(value) {
   useEffect(() => {
     ref.current = value
   }, [value])
+  // eslint-disable-next-line react-hooks/refs -- Intentional pattern for usePrevious hook
   return ref.current
 }
 
@@ -122,12 +129,14 @@ export function useStableCallback(callback) {
 export function useDeepMemo(factory, deps) {
   const ref = useRef({ deps: undefined, value: undefined })
 
+  /* eslint-disable react-hooks/refs -- Intentional memoization pattern that requires ref access during render */
   if (ref.current.deps === undefined || !deepArrayEqual(ref.current.deps, deps)) {
     ref.current.deps = deps
     ref.current.value = factory()
   }
 
   return ref.current.value
+  /* eslint-enable react-hooks/refs */
 }
 
 /**
@@ -171,6 +180,7 @@ export function useIntersectionObserver(options = {}) {
     observer.observe(ref.current)
 
     return () => observer.disconnect()
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only re-run when threshold/rootMargin change
   }, [options.threshold, options.rootMargin])
 
   return { ref, isIntersecting, hasIntersected }
@@ -216,7 +226,7 @@ export const perfMark = {
         if (entries.length > 0) {
           return entries[entries.length - 1].duration
         }
-      } catch (e) {
+      } catch {
         // Ignore measurement errors
       }
     }
@@ -243,6 +253,7 @@ export function useIdleCallback(callback, deps = []) {
       const id = setTimeout(callback, 1)
       return () => clearTimeout(id)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- deps array is passed by caller
   }, deps)
 }
 

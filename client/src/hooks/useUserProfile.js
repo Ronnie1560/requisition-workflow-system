@@ -52,7 +52,7 @@ export const useUserProfile = (userId) => {
           return parsed.data
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore localStorage errors
     }
     return null
@@ -65,7 +65,7 @@ export const useUserProfile = (userId) => {
         data,
         timestamp: Date.now()
       }))
-    } catch (e) {
+    } catch {
       // Ignore localStorage errors
     }
   }, [userId])

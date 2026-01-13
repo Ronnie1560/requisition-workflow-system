@@ -287,6 +287,7 @@ OrganizationProvider.propTypes = {
 /**
  * Hook to use organization context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useOrganization() {
   const context = useContext(OrganizationContext)
   
@@ -300,7 +301,8 @@ export function useOrganization() {
 /**
  * HOC to require organization selection
  */
-export function withOrganization(Component) {
+// eslint-disable-next-line react-refresh/only-export-components, no-unused-vars
+export function withOrganization(WrappedComponent) {
   return function WithOrganizationComponent(props) {
     const { currentOrg, loading } = useOrganization()
 
@@ -321,7 +323,7 @@ export function withOrganization(Component) {
       )
     }
 
-    return <Component {...props} />
+    return <WrappedComponent {...props} />
   }
 }
 

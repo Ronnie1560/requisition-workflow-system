@@ -149,6 +149,7 @@ export const exportRequisitionsToExcel = async (requisitions, filename = 'Requis
  */
 export const exportRequisitionDetailsToExcel = async (requisition) => {
   try {
+    const ExcelJS = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
     workbook.creator = 'PCM Requisition System'
     workbook.created = new Date()
@@ -259,6 +260,7 @@ export const exportRequisitionDetailsToExcel = async (requisition) => {
  */
 export const exportBudgetSummaryToExcel = async (projectName, budgetSummary, expenseBreakdown) => {
   try {
+    const ExcelJS = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
     workbook.creator = 'PCM Requisition System'
     workbook.created = new Date()
@@ -338,6 +340,7 @@ export const exportBudgetSummaryToExcel = async (projectName, budgetSummary, exp
  */
 export const exportToExcel = async (data, columns, sheetName = 'Data', filename = 'Export') => {
   try {
+    const ExcelJS = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
     workbook.creator = 'PCM Requisition System'
     workbook.created = new Date()

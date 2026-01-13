@@ -29,7 +29,7 @@ const ConnectionTest = () => {
       }
 
       // Test 3: Try to query a system table to verify connection
-      const { data, error: queryError } = await supabase
+      const { error: queryError } = await supabase
         .from('_non_existent_table_test')
         .select('*')
         .limit(1)

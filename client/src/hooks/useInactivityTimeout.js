@@ -25,12 +25,19 @@ export const useInactivityTimeout = (onTimeout, options = {}) => {
   const timeoutRef = useRef(null)
   const warningTimeoutRef = useRef(null)
   const countdownIntervalRef = useRef(null)
-  const lastActivityRef = useRef(Date.now())
+  const lastActivityRef = useRef(null)
   const isPausedRef = useRef(false)
 
   const TIMEOUT_MS = timeoutMinutes * 60 * 1000
   const WARNING_MS = warningMinutes * 60 * 1000
   const WARNING_TRIGGER_MS = TIMEOUT_MS - WARNING_MS
+
+  // Initialize lastActivityRef
+  useEffect(() => {
+    if (lastActivityRef.current === null) {
+      lastActivityRef.current = Date.now()
+    }
+  }, [])
 
   // Clear all timers
   const clearTimers = useCallback(() => {
@@ -129,6 +136,7 @@ export const useInactivityTimeout = (onTimeout, options = {}) => {
     })
 
     // Start the timer
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial timer setup is intentional
     resetTimer()
 
     // Cleanup

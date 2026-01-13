@@ -59,7 +59,7 @@ const CreateRequisition = () => {
   const [requisitionId, setRequisitionId] = useState(id || null) // Set from URL if editing
   const [isDraft, setIsDraft] = useState(true)
   const [lastSaved, setLastSaved] = useState(null)
-  const [isEditMode, setIsEditMode] = useState(!!id) // Track if we're editing
+  const [isEditMode, _setIsEditMode] = useState(!!id) // Track if we're editing
   const [showTemplateModal, setShowTemplateModal] = useState(false)
 
   // Load user's projects on mount
@@ -363,7 +363,7 @@ const CreateRequisition = () => {
         created_by: user.id
       }
 
-      const { data, error } = await createTemplate(fullTemplateData, lineItems)
+      const { error } = await createTemplate(fullTemplateData, lineItems)
 
       if (error) throw error
 

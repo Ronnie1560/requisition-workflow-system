@@ -1,4 +1,4 @@
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect, useCallback, memo, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { Plus, Trash2, AlertTriangle, Search } from 'lucide-react'
 import { getAllItemsForRequisition, getUomTypes, calculatePriceVariance, isPriceVarianceHigh } from '../../services/api/requisitions'
@@ -8,29 +8,33 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
   const [uomTypes, setUomTypes] = useState([])
   const [showItemSelector, setShowItemSelector] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const tempIdCounterRef = useRef(0)
 
-  useEffect(() => {
-    loadUomTypes()
-    loadAllItems()
-  }, [])
-
-  const loadAllItems = async () => {
+  const loadAllItems = useCallback(async () => {
     const { data, error } = await getAllItemsForRequisition()
     if (!error && data) {
       setAllItems(data)
     }
-  }
+  }, [])
 
-  const loadUomTypes = async () => {
+  const loadUomTypes = useCallback(async () => {
     const { data, error } = await getUomTypes()
     if (!error && data) {
       setUomTypes(data)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
+    loadUomTypes()
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
+    loadAllItems()
+  }, [loadUomTypes, loadAllItems])
 
   const addLineItem = (item) => {
+    tempIdCounterRef.current += 1
     const newItem = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${tempIdCounterRef.current}`,
       item_id: item.id,
       item_name: item.name,
       item_code: item.code,

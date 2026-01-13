@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { Plus, CreditCard, Search, Filter, DollarSign, FolderOpen, AlertCircle } from 'lucide-react'
 import { getAllExpenseAccounts } from '../../services/api/expenseAccounts'
-import { formatCurrency } from '../../utils/formatters'
 import { logger } from '../../utils/logger'
 
 const ExpenseAccountsList = () => {

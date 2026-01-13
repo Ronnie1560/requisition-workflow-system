@@ -15,7 +15,7 @@ import { USER_ROLES, ROLE_LABELS } from '../../utils/constants'
 
 const InviteUser = () => {
   const navigate = useNavigate()
-  const { profile, user } = useAuth()
+  const { profile, user: _user } = useAuth()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -33,20 +33,20 @@ const InviteUser = () => {
   const isAdmin = profile?.role === 'super_admin'
 
   useEffect(() => {
+    const loadData = async () => {
+      // Load all projects (admin can see all)
+      const { data } = await getAllProjects({ is_active: true })
+      if (data) {
+        setAvailableProjects(data)
+      }
+    }
+    
     if (!isAdmin) {
       navigate('/dashboard')
       return
     }
-    loadProjects()
-  }, [isAdmin])
-
-  const loadProjects = async () => {
-    // Load all projects (admin can see all)
-    const { data, error } = await getAllProjects({ is_active: true })
-    if (data) {
-      setAvailableProjects(data)
-    }
-  }
+    loadData()
+  }, [isAdmin, navigate])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -86,7 +86,7 @@ const InviteUser = () => {
     }
 
     // Send invitation
-    const { data, error: inviteError } = await inviteUser({
+    const { error: inviteError } = await inviteUser({
       email: formData.email,
       fullName: formData.fullName,
       role: formData.role,

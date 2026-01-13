@@ -19,7 +19,7 @@ const getSentry = async () => {
   if (!sentryModule) {
     try {
       sentryModule = await import('../lib/sentry.js')
-    } catch (error) {
+    } catch {
       // Sentry not available, continue without it
       console.warn('Sentry not available for error tracking')
     }

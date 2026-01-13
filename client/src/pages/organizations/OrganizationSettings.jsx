@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { 
   Building2, Users, CreditCard, Settings, 
   Loader2, Save, Upload, Trash2, UserPlus,
@@ -23,7 +23,7 @@ export default function OrganizationSettings() {
   } = useOrganization()
 
   const [activeTab, setActiveTab] = useState('general')
-  const [loading, setLoading] = useState(false)
+  const [_loading, _setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
@@ -53,6 +53,7 @@ export default function OrganizationSettings() {
   // Load initial data
   useEffect(() => {
     if (currentOrg) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Syncing form with external org data
       setGeneralForm({
         name: currentOrg.name || '',
         email: currentOrg.email || '',
@@ -69,14 +70,8 @@ export default function OrganizationSettings() {
     }
   }, [currentOrg])
 
-  // Load members when tab changes
-  useEffect(() => {
-    if (activeTab === 'members') {
-      loadMembers()
-    }
-  }, [activeTab])
-
-  const loadMembers = async () => {
+  // Load members callback
+  const loadMembers = useCallback(async () => {
     setLoadingMembers(true)
     const { data, error: fetchError } = await getMembers()
     if (data) {
@@ -86,7 +81,15 @@ export default function OrganizationSettings() {
       setError(fetchError)
     }
     setLoadingMembers(false)
-  }
+  }, [getMembers])
+
+  // Load members when tab changes
+  useEffect(() => {
+    if (activeTab === 'members') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Data loading on tab change is intentional
+      loadMembers()
+    }
+  }, [activeTab, loadMembers])
 
   const handleSaveGeneral = async (e) => {
     e.preventDefault()
@@ -135,7 +138,7 @@ export default function OrganizationSettings() {
     }
   }
 
-  const handleRoleChange = async (memberId, newRole) => {
+  const _handleRoleChange = async (memberId, newRole) => {
     const { error: roleError } = await updateMemberRole(memberId, newRole)
     if (roleError) {
       setError(roleError)

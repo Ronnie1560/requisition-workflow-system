@@ -30,7 +30,7 @@ const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const { profile, signOut } = useAuth()
-  const { currentOrg, canManageOrg } = useOrganization()
+  const { currentOrg: _currentOrg, canManageOrg } = useOrganization()
   const navigate = useNavigate()
   const location = useLocation()
 

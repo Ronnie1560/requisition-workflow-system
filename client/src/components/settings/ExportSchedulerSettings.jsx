@@ -102,7 +102,7 @@ const ExportSchedulerSettings = () => {
     try {
       // Get selected report types
       const selectedReports = Object.entries(preferences.reportTypes)
-        .filter(([_, enabled]) => enabled)
+        .filter(([, enabled]) => enabled)
         .map(([type]) => type)
 
       if (selectedReports.length === 0) {

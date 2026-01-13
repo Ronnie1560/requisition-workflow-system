@@ -651,7 +651,7 @@ export const uploadAttachment = async (requisitionId, file) => {
     const fileName = `${requisitionId}/${Date.now()}.${fileExt}`
 
     // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('requisition-attachments')
       .upload(fileName, file)
 

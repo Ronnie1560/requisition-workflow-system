@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 import PropTypes from 'prop-types'
 import { supabase } from '../lib/supabase'
 import { logger } from '../utils/logger'
@@ -29,7 +29,9 @@ const getProfileFromCache = (userId) => {
         return parsed.data
       }
     }
-  } catch (e) {}
+  } catch {
+    // Ignore localStorage errors
+  }
   return null
 }
 
@@ -42,9 +44,12 @@ const setProfileCache = (userId, data) => {
       data,
       timestamp: Date.now()
     }))
-  } catch (e) {}
+  } catch {
+    // Ignore localStorage errors
+  }
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
@@ -216,7 +221,7 @@ export const AuthProvider = ({ children }) => {
         setProfileCache(userId, data)
         setProfile(data)
       }
-    } catch (e) {
+    } catch {
       // Silent fail for background refresh
     }
   }

@@ -4,10 +4,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook } from '@testing-library/react'
 
 // Create mock data
-const mockOrgSettings = {
+const _mockOrgSettings = {
   id: 'org-1',
   organization_name: 'Test Organization',
   address_line1: '123 Test St',

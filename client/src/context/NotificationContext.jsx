@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext'
 
 const NotificationContext = createContext()
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useNotifications = () => {
   const context = useContext(NotificationContext)
   if (!context) {
@@ -131,6 +132,7 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!user?.id) return
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
     loadNotifications()
 
     // Subscribe to new notifications

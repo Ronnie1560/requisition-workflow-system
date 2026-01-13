@@ -113,7 +113,7 @@ const Register = () => {
           navigate('/dashboard')
         }, 2000)
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)

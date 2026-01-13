@@ -13,7 +13,7 @@ import { logger } from '../../utils/logger'
 const CreateExpenseAccount = () => {
   const navigate = useNavigate()
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user: _user } = useAuth()
 
   const [formData, setFormData] = useState({
     code: '',
@@ -28,7 +28,7 @@ const CreateExpenseAccount = () => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [isEditMode, setIsEditMode] = useState(!!id)
+  const isEditMode = !!id
 
   useEffect(() => {
     loadProjects()

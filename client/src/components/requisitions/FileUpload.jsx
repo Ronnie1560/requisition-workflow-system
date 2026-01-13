@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { Upload, File, X, AlertCircle, Loader } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
@@ -16,26 +16,26 @@ const FileUpload = ({ requisitionId, disabled }) => {
   const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg']
   const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 
-  useEffect(() => {
-    if (requisitionId) {
-      loadAttachments()
-    }
-  }, [requisitionId])
-
-  const loadAttachments = async () => {
+  const loadAttachments = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from('attachments')
         .select('*')
         .eq('requisition_id', requisitionId)
         .order('created_at', { ascending: false })
 
-      if (error) throw error
+      if (fetchError) throw fetchError
       setAttachments(data || [])
     } catch (err) {
       logger.error('Error loading attachments:', err)
     }
-  }
+  }, [requisitionId])
+
+  useEffect(() => {
+    if (requisitionId) {
+      loadAttachments()
+    }
+  }, [requisitionId, loadAttachments])
 
   const validateFile = (file) => {
     if (!ALLOWED_TYPES.includes(file.type)) {
@@ -94,7 +94,7 @@ const FileUpload = ({ requisitionId, disabled }) => {
     setError('')
 
     try {
-      const { data, error } = await uploadAttachment(requisitionId, file)
+      const { error } = await uploadAttachment(requisitionId, file)
 
       if (error) throw error
 

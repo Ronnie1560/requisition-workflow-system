@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getCurrentUserProfile, updateUserProfile, changePassword, updateUserEmail, getUserPreferences, updateUserPreferences } from '../../services/api/userProfile'
-import { getAllProjects } from '../../services/api/projects'
-import { getAllExpenseAccounts } from '../../services/api/expenseAccounts'
+import { getCurrentUserProfile, updateUserProfile, changePassword } from '../../services/api/userProfile'
 import { logger } from '../../utils/logger'
 import { Edit2 } from 'lucide-react'
 import EmailNotificationSettings from '../../components/settings/EmailNotificationSettings'
@@ -11,7 +8,6 @@ import ExportSchedulerSettings from '../../components/settings/ExportSchedulerSe
 
 export default function UserSettings() {
   const { user } = useAuth()
-  const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState('profile')
   const [loading, setLoading] = useState(true)

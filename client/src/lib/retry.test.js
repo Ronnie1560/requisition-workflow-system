@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 
 // Test the withRetry function logic directly without importing supabase
 describe('API Retry Logic', () => {
