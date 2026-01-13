@@ -211,10 +211,19 @@ export default function OrganizationSignup() {
         }
       })
 
+      // Log the full response for debugging
+      logger.info('Edge Function response:', { data, signupError })
+
+      // Handle edge function invocation error
       if (signupError) {
-        throw new Error(signupError.message || 'Failed to create organization')
+        // Try to extract error message from context if available
+        const errorMessage = signupError.context?.body 
+          ? JSON.parse(signupError.context.body)?.error 
+          : signupError.message
+        throw new Error(errorMessage || 'Failed to create organization')
       }
 
+      // Handle error returned in data
       if (data?.error) {
         throw new Error(data.error)
       }

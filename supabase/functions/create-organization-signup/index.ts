@@ -110,7 +110,7 @@ serve(async (req) => {
       )
     }
 
-    // Check if user email already exists
+    // Check if user email already exists in users table
     const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id')
@@ -125,6 +125,33 @@ serve(async (req) => {
           status: 409,
         }
       )
+    }
+
+    // Also check if email exists in auth.users (might be orphaned from previous failed signup)
+    const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers()
+    const existingAuthUser = authUsers?.users?.find(u => u.email === admin.email)
+    
+    if (existingAuthUser) {
+      // Check if this user has a profile - if not, it's an orphaned auth user we can delete
+      const { data: hasProfile } = await supabaseAdmin
+        .from('users')
+        .select('id')
+        .eq('id', existingAuthUser.id)
+        .maybeSingle()
+      
+      if (!hasProfile) {
+        // Delete orphaned auth user so they can sign up again
+        console.log('Deleting orphaned auth user:', existingAuthUser.id)
+        await supabaseAdmin.auth.admin.deleteUser(existingAuthUser.id)
+      } else {
+        return new Response(
+          JSON.stringify({ error: 'A user with this email already exists. Please log in instead.' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 409,
+          }
+        )
+      }
     }
 
     console.log('Creating organization and admin user:', { 
