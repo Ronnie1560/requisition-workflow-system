@@ -184,6 +184,11 @@ export const getAdminStats = async () => {
  */
 export const getRecentActivity = async (userRole, userId, limit = 5) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisitions')
       .select(`
@@ -197,6 +202,7 @@ export const getRecentActivity = async (userRole, userId, limit = 5) => {
         project:projects(name, code),
         submitted_by_user:users!requisitions_submitted_by_fkey(full_name)
       `)
+      .eq('org_id', orgId) // Filter by current organization
       .order('updated_at', { ascending: false })
       .limit(limit)
 
@@ -225,6 +231,11 @@ export const getRecentActivity = async (userRole, userId, limit = 5) => {
  */
 export const getQuickActionCounts = async (userRole, userId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const actions = {}
 
     if (userRole === 'submitter' || userRole === 'super_admin') {
@@ -232,6 +243,7 @@ export const getQuickActionCounts = async (userRole, userId) => {
       const { count: draftCount, error: draftError } = await supabase
         .from('requisitions')
         .select('*', { count: 'exact', head: true })
+        .eq('org_id', orgId) // Filter by current organization
         .eq('status', 'draft')
         .eq('submitted_by', userId)
 
@@ -244,6 +256,7 @@ export const getQuickActionCounts = async (userRole, userId) => {
       const { count: pendingCount, error: pendingError } = await supabase
         .from('requisitions')
         .select('*', { count: 'exact', head: true })
+        .eq('org_id', orgId) // Filter by current organization
         .in('status', ['pending', 'under_review'])
 
       if (pendingError) throw pendingError
@@ -255,6 +268,7 @@ export const getQuickActionCounts = async (userRole, userId) => {
       const { count: approvalCount, error: approvalError } = await supabase
         .from('requisitions')
         .select('*', { count: 'exact', head: true })
+        .eq('org_id', orgId) // Filter by current organization
         .eq('status', 'reviewed')
 
       if (approvalError) throw approvalError
