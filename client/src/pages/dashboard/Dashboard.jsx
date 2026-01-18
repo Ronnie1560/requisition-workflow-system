@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useOrganization } from '../../context/OrganizationContext'
 import { FileText, CheckCircle, Clock, XCircle, DollarSign, Users, Folder, AlertCircle, Plus, Eye, ArrowRight, Edit, ClipboardCheck } from 'lucide-react'
 import { getDashboardData } from '../../services/api/dashboard'
 import { getUserProjects } from '../../services/api/requisitions'
@@ -13,6 +14,7 @@ import { logger } from '../../utils/logger'
 const Dashboard = () => {
   const navigate = useNavigate()
   const { user, profile, userRole } = useAuth()
+  const { currentOrg, loading: orgLoading } = useOrganization()
 
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -21,12 +23,15 @@ const Dashboard = () => {
   const [selectedProjectId, setSelectedProjectId] = useState(null)
 
   useEffect(() => {
+    // Wait for organization context to be ready
+    if (orgLoading || !currentOrg) return
+
     loadDashboardData()
     loadProjects()
-  }, [user, userRole])
+  }, [user, userRole, currentOrg, orgLoading])
 
   const loadDashboardData = async () => {
-    if (!user || !userRole) return
+    if (!user || !userRole || !currentOrg) return
 
     setLoading(true)
     setError(null)
@@ -43,7 +48,7 @@ const Dashboard = () => {
   }
 
   const loadProjects = async () => {
-    if (!user || !profile) return
+    if (!user || !profile || !currentOrg) return
 
     try {
       const { data, error: err } = await getUserProjects(user.id, profile.role)
@@ -187,11 +192,29 @@ const Dashboard = () => {
     return actions
   }
 
-  if (loading) {
+  if (orgLoading || loading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-600 ml-4">Loading dashboard...</p>
+        <p className="text-gray-600 ml-4">
+          {orgLoading ? 'Loading organization...' : 'Loading dashboard...'}
+        </p>
+      </div>
+    )
+  }
+
+  if (!currentOrg) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <XCircle className="w-12 h-12 text-gray-400 mb-4" />
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">No Organization Selected</h3>
+        <p className="text-gray-600 mb-4">Please select or create an organization to continue.</p>
+        <button
+          onClick={() => navigate('/settings/organization')}
+          className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+        >
+          Go to Organizations
+        </button>
       </div>
     )
   }
