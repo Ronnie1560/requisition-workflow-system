@@ -2,6 +2,10 @@
 -- Date: 2026-01-18
 -- Description: Update email notification queue function to track organization context
 
+-- Drop existing function first (there might be multiple signatures)
+DROP FUNCTION IF EXISTS queue_email_notification(UUID, TEXT, UUID);
+DROP FUNCTION IF EXISTS queue_email_notification(UUID, TEXT, UUID, TEXT, TEXT, TEXT);
+
 CREATE OR REPLACE FUNCTION queue_email_notification(
   p_recipient_user_id UUID,
   p_notification_type TEXT,
