@@ -71,18 +71,19 @@ export const updateOrganizationSettings = async (updates) => {
 }
 
 // =====================================================
-// Fiscal Year Settings
+// Fiscal Year Settings (Organization-Specific)
 // =====================================================
 
 /**
- * Get fiscal year settings
+ * Get fiscal year settings for the current organization
  */
-export const getFiscalYearSettings = async () => {
+export const getFiscalYearSettings = async (orgId) => {
   try {
     const { data, error } = await supabase
       .from('fiscal_year_settings')
       .select('*')
-      .single()
+      .eq('org_id', orgId)
+      .maybeSingle()
 
     if (error) throw error
     return { data, error: null }
@@ -93,17 +94,47 @@ export const getFiscalYearSettings = async () => {
 }
 
 /**
- * Update fiscal year settings
+ * Create fiscal year settings for an organization
  */
-export const updateFiscalYearSettings = async (updates) => {
+export const createFiscalYearSettings = async (orgId, settings) => {
+  try {
+    const { data, error } = await supabase
+      .from('fiscal_year_settings')
+      .insert({
+        org_id: orgId,
+        fiscal_year_start_month: settings.fiscal_year_start_month,
+        fiscal_year_start_day: settings.fiscal_year_start_day,
+        current_fiscal_year: settings.current_fiscal_year
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    logger.error('Error creating fiscal year settings:', error)
+    return { data: null, error }
+  }
+}
+
+/**
+ * Update fiscal year settings for the current organization
+ */
+export const updateFiscalYearSettings = async (orgId, updates) => {
   try {
     // First get the current settings to get the ID
     const { data: currentSettings, error: fetchError } = await supabase
       .from('fiscal_year_settings')
       .select('id')
-      .single()
+      .eq('org_id', orgId)
+      .maybeSingle()
 
     if (fetchError) throw fetchError
+
+    // If settings don't exist, create them
+    if (!currentSettings) {
+      return await createFiscalYearSettings(orgId, updates)
+    }
 
     // Now update using the ID
     const { data, error } = await supabase

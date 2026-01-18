@@ -1,10 +1,14 @@
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  Building2, Users, CreditCard, Settings, 
+import {
+  Building2, Users, CreditCard, Settings, Calendar,
   Loader2, Save, Upload, Trash2, UserPlus,
   Crown, Shield, User
 } from 'lucide-react'
 import { useOrganization } from '../../context/OrganizationContext'
+import {
+  getFiscalYearSettings,
+  updateFiscalYearSettings
+} from '../../services/api/systemSettings'
 
 /**
  * Organization Settings Page
@@ -50,6 +54,19 @@ export default function OrganizationSettings() {
   const [inviteRole, setInviteRole] = useState('member')
   const [inviting, setInviting] = useState(false)
 
+  // Fiscal year settings
+  const [fiscalData, setFiscalData] = useState({
+    fiscal_year_start_month: 1,
+    fiscal_year_start_day: 1,
+    current_fiscal_year: new Date().getFullYear()
+  })
+  const [loadingFiscal, setLoadingFiscal] = useState(false)
+
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ]
+
   // Load initial data
   useEffect(() => {
     if (currentOrg) {
@@ -83,6 +100,26 @@ export default function OrganizationSettings() {
     setLoadingMembers(false)
   }, [getMembers])
 
+  // Load fiscal year settings callback
+  const loadFiscal = useCallback(async () => {
+    if (!currentOrg?.id) return
+
+    setLoadingFiscal(true)
+    const { data, error: fetchError } = await getFiscalYearSettings(currentOrg.id)
+
+    if (data) {
+      setFiscalData({
+        fiscal_year_start_month: data.fiscal_year_start_month,
+        fiscal_year_start_day: data.fiscal_year_start_day,
+        current_fiscal_year: data.current_fiscal_year
+      })
+    }
+    if (fetchError) {
+      setError(fetchError)
+    }
+    setLoadingFiscal(false)
+  }, [currentOrg])
+
   // Load members when tab changes
   useEffect(() => {
     if (activeTab === 'members') {
@@ -90,6 +127,14 @@ export default function OrganizationSettings() {
       loadMembers()
     }
   }, [activeTab, loadMembers])
+
+  // Load fiscal year when tab changes
+  useEffect(() => {
+    if (activeTab === 'fiscal') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Data loading on tab change is intentional
+      loadFiscal()
+    }
+  }, [activeTab, loadFiscal])
 
   const handleSaveGeneral = async (e) => {
     e.preventDefault()
@@ -103,6 +148,24 @@ export default function OrganizationSettings() {
       setError(updateError)
     } else {
       setSuccess('Organization settings saved successfully')
+    }
+    setSaving(false)
+  }
+
+  const handleSaveFiscal = async (e) => {
+    e.preventDefault()
+    if (!currentOrg?.id) return
+
+    setSaving(true)
+    setError(null)
+    setSuccess(null)
+
+    const { error: updateError } = await updateFiscalYearSettings(currentOrg.id, fiscalData)
+
+    if (updateError) {
+      setError(updateError)
+    } else {
+      setSuccess('Fiscal year settings saved successfully')
     }
     setSaving(false)
   }
@@ -158,6 +221,7 @@ export default function OrganizationSettings() {
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
     { id: 'members', label: 'Members', icon: Users },
+    { id: 'fiscal', label: 'Fiscal Year', icon: Calendar },
     { id: 'billing', label: 'Billing', icon: CreditCard },
   ]
 
@@ -425,6 +489,100 @@ export default function OrganizationSettings() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Fiscal Year Tab */}
+            {activeTab === 'fiscal' && (
+              <form onSubmit={handleSaveFiscal} className="space-y-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                  Fiscal Year Settings
+                </h2>
+
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    Configure when your organization's fiscal year starts. This affects reporting periods and budget planning for this organization.
+                  </p>
+                </div>
+
+                {loadingFiscal ? (
+                  <div className="flex justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+                  </div>
+                ) : (
+                  <div className="max-w-2xl space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Fiscal Year Start Month <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                          required
+                          value={fiscalData.fiscal_year_start_month}
+                          onChange={(e) => setFiscalData({ ...fiscalData, fiscal_year_start_month: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          disabled={!canManageOrg}
+                        >
+                          {months.map((month, index) => (
+                            <option key={index + 1} value={index + 1}>
+                              {month}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Fiscal Year Start Day <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          max="31"
+                          value={fiscalData.fiscal_year_start_day}
+                          onChange={(e) => setFiscalData({ ...fiscalData, fiscal_year_start_day: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          disabled={!canManageOrg}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Current Fiscal Year <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          value={fiscalData.current_fiscal_year}
+                          onChange={(e) => setFiscalData({ ...fiscalData, current_fiscal_year: parseInt(e.target.value) })}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          disabled={!canManageOrg}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                      <p className="text-sm text-gray-700">
+                        <strong>Current setting:</strong> Fiscal year starts on{' '}
+                        {months[fiscalData.fiscal_year_start_month - 1]} {fiscalData.fiscal_year_start_day}
+                      </p>
+                    </div>
+
+                    {canManageOrg && (
+                      <div className="flex justify-end">
+                        <button
+                          type="submit"
+                          disabled={saving}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                          Save Changes
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </form>
             )}
 
             {/* Billing Tab */}
