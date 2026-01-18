@@ -31,7 +31,7 @@ const Register = () => {
             Join the System
           </h1>
           <p className="text-gray-600">
-            PCM Requisition System
+            Requisition Workflow
           </p>
         </div>
 

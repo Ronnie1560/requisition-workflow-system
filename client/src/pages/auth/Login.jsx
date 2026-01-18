@@ -65,7 +65,7 @@ const Login = () => {
             Welcome Back
           </h1>
           <p className="text-gray-600">
-            Sign in to PCM Requisition System
+            Sign in to Requisition Workflow
           </p>
         </div>
 
