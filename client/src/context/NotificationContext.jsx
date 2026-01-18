@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect } from 'rea
 import PropTypes from 'prop-types'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
+import { useOrganization } from './OrganizationContext'
 
 const NotificationContext = createContext()
 
@@ -16,6 +17,7 @@ export const useNotifications = () => {
 
 export const NotificationProvider = ({ children }) => {
   const { user } = useAuth()
+  const { currentOrg } = useOrganization()
   const [toasts, setToasts] = useState([])
   const [notifications, setNotifications] = useState([])
   const [unreadCount, setUnreadCount] = useState(0)
@@ -51,14 +53,15 @@ export const NotificationProvider = ({ children }) => {
     custom: showToast
   }
 
-  // Load user notifications from database
+  // Load user notifications from database (filtered by current organization)
   const loadNotifications = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id || !currentOrg?.id) return
 
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
       .eq('user_id', user.id)
+      .eq('org_id', currentOrg.id) // Filter by current organization
       .order('created_at', { ascending: false })
       .limit(50)
 
@@ -66,7 +69,7 @@ export const NotificationProvider = ({ children }) => {
       setNotifications(data)
       setUnreadCount(data.filter(n => !n.is_read).length)
     }
-  }, [user])
+  }, [user, currentOrg])
 
   // Mark notification as read
   const markAsRead = useCallback(async (notificationId) => {
@@ -83,14 +86,15 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [])
 
-  // Mark all as read
+  // Mark all as read (for current organization only)
   const markAllAsRead = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id || !currentOrg?.id) return
 
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true, read_at: new Date().toISOString() })
       .eq('user_id', user.id)
+      .eq('org_id', currentOrg.id) // Only mark notifications for current org
       .eq('is_read', false)
 
     if (!error) {
@@ -99,7 +103,7 @@ export const NotificationProvider = ({ children }) => {
       )
       setUnreadCount(0)
     }
-  }, [user])
+  }, [user, currentOrg])
 
   // Delete notification
   const deleteNotification = useCallback(async (notificationId) => {
@@ -113,38 +117,39 @@ export const NotificationProvider = ({ children }) => {
     }
   }, [])
 
-  // Clear all notifications
+  // Clear all notifications (for current organization only)
   const clearAll = useCallback(async () => {
-    if (!user?.id) return
+    if (!user?.id || !currentOrg?.id) return
 
     const { error } = await supabase
       .from('notifications')
       .delete()
       .eq('user_id', user.id)
+      .eq('org_id', currentOrg.id) // Only clear notifications for current org
 
     if (!error) {
       setNotifications([])
       setUnreadCount(0)
     }
-  }, [user])
+  }, [user, currentOrg])
 
-  // Subscribe to real-time notifications
+  // Subscribe to real-time notifications (filtered by current organization)
   useEffect(() => {
-    if (!user?.id) return
+    if (!user?.id || !currentOrg?.id) return
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
     loadNotifications()
 
-    // Subscribe to new notifications
+    // Subscribe to new notifications for current organization only
     const channel = supabase
-      .channel('notifications')
+      .channel(`notifications-${currentOrg.id}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${user.id}`
+          filter: `user_id=eq.${user.id},org_id=eq.${currentOrg.id}` // Filter by user AND org
         },
         (payload) => {
           setNotifications(prev => [payload.new, ...prev])
@@ -164,7 +169,7 @@ export const NotificationProvider = ({ children }) => {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user, loadNotifications, showToast])
+  }, [user, currentOrg, loadNotifications, showToast])
 
   const value = {
     // Toast notifications
