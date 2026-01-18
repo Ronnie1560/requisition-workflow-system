@@ -2,10 +2,21 @@
 -- Date: 2026-01-18
 -- Description: Update email generation functions to fetch org name from requisition's organization
 
--- Drop existing functions first to avoid parameter name conflicts
+-- Drop ALL existing function signatures to avoid conflicts
+-- For generate_submission_email
 DROP FUNCTION IF EXISTS generate_submission_email(UUID, TEXT);
+DROP FUNCTION IF EXISTS generate_submission_email(UUID, TEXT, TEXT);
+
+-- For generate_approval_email (try all possible signatures)
+DROP FUNCTION IF EXISTS generate_approval_email(UUID, TEXT);
 DROP FUNCTION IF EXISTS generate_approval_email(UUID, TEXT, TEXT);
+DROP FUNCTION IF EXISTS generate_approval_email(UUID, TEXT, TEXT, TEXT);
+
+-- For generate_rejection_email (try all possible signatures)
+DROP FUNCTION IF EXISTS generate_rejection_email(UUID, TEXT);
+DROP FUNCTION IF EXISTS generate_rejection_email(UUID, TEXT, TEXT);
 DROP FUNCTION IF EXISTS generate_rejection_email(UUID, TEXT, TEXT, TEXT);
+DROP FUNCTION IF EXISTS generate_rejection_email(UUID, TEXT, TEXT, TEXT, TEXT);
 
 /**
  * Generate email body for new requisition submission
