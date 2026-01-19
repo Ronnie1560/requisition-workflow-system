@@ -71,15 +71,16 @@ let validatedEnv = null
  * @throws {Error} If required variables are missing or invalid
  */
 export function validateEnv() {
+  // Trim whitespace from env vars to prevent issues with copy-paste adding newlines
   const rawEnv = {
-    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
-    VITE_APP_NAME: import.meta.env.VITE_APP_NAME,
-    VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION,
-    VITE_ENABLE_ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS,
-    VITE_ENABLE_DEBUG_MODE: import.meta.env.VITE_ENABLE_DEBUG_MODE,
-    VITE_API_TIMEOUT: import.meta.env.VITE_API_TIMEOUT,
-    VITE_MAX_UPLOAD_SIZE: import.meta.env.VITE_MAX_UPLOAD_SIZE,
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL?.trim(),
+    VITE_SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY?.trim(),
+    VITE_APP_NAME: import.meta.env.VITE_APP_NAME?.trim(),
+    VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION?.trim(),
+    VITE_ENABLE_ANALYTICS: import.meta.env.VITE_ENABLE_ANALYTICS?.trim(),
+    VITE_ENABLE_DEBUG_MODE: import.meta.env.VITE_ENABLE_DEBUG_MODE?.trim(),
+    VITE_API_TIMEOUT: import.meta.env.VITE_API_TIMEOUT?.trim(),
+    VITE_MAX_UPLOAD_SIZE: import.meta.env.VITE_MAX_UPLOAD_SIZE?.trim(),
   }
 
   const result = envSchema.safeParse(rawEnv)
