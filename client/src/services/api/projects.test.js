@@ -190,7 +190,8 @@ describe('Projects API Service', () => {
       const result = await createProject(newProject)
 
       expect(mockFrom).toHaveBeenCalledWith('projects')
-      expect(mockInsert).toHaveBeenCalledWith([newProject])
+      // createProject now adds org_id to the insert data
+      expect(mockInsert).toHaveBeenCalledWith([{ ...newProject, org_id: 'test-org-id' }])
       expect(result.data).toEqual(createdProject)
     })
 
