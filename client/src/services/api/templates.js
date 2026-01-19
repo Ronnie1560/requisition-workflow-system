@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 /**
  * Requisition Templates API Service
@@ -15,6 +16,11 @@ import { logger } from '../../utils/logger'
  */
 export const getUserTemplates = async (userId, filters = {}) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     let query = supabase
       .from('requisition_templates')
       .select(`
@@ -23,6 +29,7 @@ export const getUserTemplates = async (userId, filters = {}) => {
         expense_account:expense_accounts(id, code, name),
         template_items:requisition_template_items(count)
       `)
+      .eq('org_id', orgId)
       .eq('created_by', userId)
       .order('created_at', { ascending: false })
 
@@ -50,6 +57,11 @@ export const getUserTemplates = async (userId, filters = {}) => {
  */
 export const getTemplateById = async (templateId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisition_templates')
       .select(`
@@ -70,6 +82,7 @@ export const getTemplateById = async (templateId) => {
         )
       `)
       .eq('id', templateId)
+      .eq('org_id', orgId)
       .single()
 
     if (error) throw error
@@ -89,10 +102,16 @@ export const getTemplateById = async (templateId) => {
  */
 export const createTemplate = async (templateData, items) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Create the template
     const { data: template, error: templateError } = await supabase
       .from('requisition_templates')
       .insert({
+        org_id: orgId,
         template_name: templateData.template_name,
         description: templateData.description,
         type: templateData.type || 'purchase',
@@ -203,10 +222,16 @@ export const createRequisitionFromTemplate = async (templateId, userId) => {
  */
 export const updateTemplate = async (templateId, updates) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisition_templates')
       .update(updates)
       .eq('id', templateId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -227,10 +252,16 @@ export const updateTemplate = async (templateId, updates) => {
  */
 export const deleteTemplate = async (templateId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { error } = await supabase
       .from('requisition_templates')
       .update({ is_active: false })
       .eq('id', templateId)
+      .eq('org_id', orgId)
 
     if (error) throw error
     return { error: null }
@@ -245,10 +276,16 @@ export const deleteTemplate = async (templateId) => {
  */
 export const permanentlyDeleteTemplate = async (templateId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { error } = await supabase
       .from('requisition_templates')
       .delete()
       .eq('id', templateId)
+      .eq('org_id', orgId)
 
     if (error) throw error
     return { error: null }

@@ -75,10 +75,15 @@ export const getProjectById = async (projectId) => {
  */
 export const createProject = async (projectData) => {
   try {
-    // Create the project
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Create the project with org_id
     const { data, error } = await supabase
       .from('projects')
-      .insert([projectData])
+      .insert([{ ...projectData, org_id: orgId }])
       .select()
       .single()
 
@@ -105,10 +110,16 @@ export const createProject = async (projectData) => {
  */
 export const updateProject = async (projectId, projectData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('projects')
       .update(projectData)
       .eq('id', projectId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -125,10 +136,16 @@ export const updateProject = async (projectId, projectData) => {
  */
 export const deleteProject = async (projectId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('projects')
       .update({ is_active: false })
       .eq('id', projectId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -145,10 +162,16 @@ export const deleteProject = async (projectId) => {
  */
 export const activateProject = async (projectId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('projects')
       .update({ is_active: true })
       .eq('id', projectId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -165,11 +188,17 @@ export const activateProject = async (projectId) => {
  */
 export const getProjectStats = async (projectId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Get requisition count and total amount
     const { data: requisitions, error: reqError } = await supabase
       .from('requisitions')
       .select('total_amount, status')
       .eq('project_id', projectId)
+      .eq('org_id', orgId)
 
     if (reqError) throw reqError
 

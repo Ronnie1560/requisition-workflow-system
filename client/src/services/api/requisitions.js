@@ -281,9 +281,15 @@ export const getUomTypes = async () => {
  */
 export const createRequisition = async (requisitionData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisitions')
       .insert({
+        org_id: orgId,
         type: requisitionData.type || 'purchase',
         project_id: requisitionData.project_id,
         expense_account_id: requisitionData.expense_account_id || null,
@@ -313,9 +319,17 @@ export const createRequisition = async (requisitionData) => {
  */
 export const addRequisitionItems = async (items) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Add org_id to each item
+    const itemsWithOrg = items.map(item => ({ ...item, org_id: orgId }))
+
     const { data, error } = await supabase
       .from('requisition_items')
-      .insert(items)
+      .insert(itemsWithOrg)
       .select()
 
     if (error) throw error
@@ -359,10 +373,16 @@ export const addComment = async (commentData) => {
  */
 export const updateRequisition = async (requisitionId, updates) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisitions')
       .update(updates)
       .eq('id', requisitionId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -379,10 +399,16 @@ export const updateRequisition = async (requisitionId, updates) => {
  */
 export const updateRequisitionItem = async (itemId, updates) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisition_items')
       .update(updates)
       .eq('id', itemId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -399,6 +425,11 @@ export const updateRequisitionItem = async (itemId, updates) => {
  */
 export const submitRequisition = async (requisitionId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisitions')
       .update({
@@ -406,6 +437,7 @@ export const submitRequisition = async (requisitionId) => {
         submitted_at: new Date().toISOString()
       })
       .eq('id', requisitionId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -422,12 +454,18 @@ export const submitRequisition = async (requisitionId) => {
  */
 export const startReview = async (requisitionId, userId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisitions')
       .update({
         status: 'under_review'
       })
       .eq('id', requisitionId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -453,6 +491,11 @@ export const startReview = async (requisitionId, userId) => {
  */
 export const markAsReviewed = async (requisitionId, userId, comments = '') => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('requisitions')
       .update({
@@ -461,6 +504,7 @@ export const markAsReviewed = async (requisitionId, userId, comments = '') => {
         reviewed_at: new Date().toISOString()
       })
       .eq('id', requisitionId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -495,6 +539,11 @@ export const markAsReviewed = async (requisitionId, userId, comments = '') => {
  */
 export const approveRequisition = async (requisitionId, userId, comments = '') => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Update requisition status
     const { data, error } = await supabase
       .from('requisitions')
@@ -504,6 +553,7 @@ export const approveRequisition = async (requisitionId, userId, comments = '') =
         approved_at: new Date().toISOString()
       })
       .eq('id', requisitionId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -531,6 +581,11 @@ export const approveRequisition = async (requisitionId, userId, comments = '') =
  */
 export const rejectRequisition = async (requisitionId, userId, reason) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Update requisition status AND save rejection reason
     const { data, error } = await supabase
       .from('requisitions')
@@ -541,6 +596,7 @@ export const rejectRequisition = async (requisitionId, userId, reason) => {
         reviewed_at: new Date().toISOString()
       })
       .eq('id', requisitionId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -632,10 +688,16 @@ export const getRequisitionsForReview = async (userId, userRole, filters = {}) =
  */
 export const deleteRequisitionItem = async (itemId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { error } = await supabase
       .from('requisition_items')
       .delete()
       .eq('id', itemId)
+      .eq('org_id', orgId)
 
     if (error) throw error
     return { error: null }
@@ -650,10 +712,16 @@ export const deleteRequisitionItem = async (itemId) => {
  */
 export const deleteAllRequisitionItems = async (requisitionId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { error } = await supabase
       .from('requisition_items')
       .delete()
       .eq('requisition_id', requisitionId)
+      .eq('org_id', orgId)
 
     if (error) throw error
     return { error: null }
@@ -668,10 +736,16 @@ export const deleteAllRequisitionItems = async (requisitionId) => {
  */
 export const deleteRequisition = async (requisitionId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { error } = await supabase
       .from('requisitions')
       .delete()
       .eq('id', requisitionId)
+      .eq('org_id', orgId)
       .eq('status', 'draft') // Can only delete drafts
 
     if (error) throw error

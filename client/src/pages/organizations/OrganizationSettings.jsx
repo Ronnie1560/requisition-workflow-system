@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Building2, Users, CreditCard, Settings, Calendar,
-  Loader2, Save
+  Loader2, Save, Pencil, X
 } from 'lucide-react'
 import { useOrganization } from '../../context/OrganizationContext'
 import {
@@ -26,6 +26,7 @@ export default function OrganizationSettings() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(null)
+  const [editMode, setEditMode] = useState(false)
 
   // General settings form
   const [generalForm, setGeneralForm] = useState({
@@ -115,6 +116,7 @@ export default function OrganizationSettings() {
       setError(updateError)
     } else {
       setSuccess('Organization settings saved successfully')
+      setEditMode(false) // Exit edit mode after successful save
     }
     setSaving(false)
   }
@@ -211,9 +213,49 @@ export default function OrganizationSettings() {
             {/* General Tab */}
             {activeTab === 'general' && (
               <form onSubmit={handleSaveGeneral} className="space-y-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  General Settings
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    General Settings
+                  </h2>
+                  {canManageOrg && !editMode && (
+                    <button
+                      type="button"
+                      onClick={() => setEditMode(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
+                    >
+                      <Pencil className="w-4 h-4" />
+                      Edit Details
+                    </button>
+                  )}
+                  {canManageOrg && editMode && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditMode(false)
+                        // Reset form to current org values
+                        if (currentOrg) {
+                          setGeneralForm({
+                            name: currentOrg.name || '',
+                            email: currentOrg.email || '',
+                            phone: currentOrg.phone || '',
+                            website: currentOrg.website || '',
+                            address_line1: currentOrg.address_line1 || '',
+                            address_line2: currentOrg.address_line2 || '',
+                            city: currentOrg.city || '',
+                            state_province: currentOrg.state_province || '',
+                            postal_code: currentOrg.postal_code || '',
+                            country: currentOrg.country || 'Uganda',
+                            tax_id: currentOrg.tax_id || '',
+                          })
+                        }
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                  )}
+                </div>
 
                 {/* Info Banner for Team Members */}
                 <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
@@ -243,8 +285,8 @@ export default function OrganizationSettings() {
                       type="text"
                       value={generalForm.name}
                       onChange={(e) => setGeneralForm(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      disabled={!canManageOrg}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!editMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      disabled={!editMode}
                     />
                   </div>
                   <div>
@@ -255,8 +297,8 @@ export default function OrganizationSettings() {
                       type="email"
                       value={generalForm.email}
                       onChange={(e) => setGeneralForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      disabled={!canManageOrg}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!editMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      disabled={!editMode}
                     />
                   </div>
                   <div>
@@ -267,8 +309,8 @@ export default function OrganizationSettings() {
                       type="tel"
                       value={generalForm.phone}
                       onChange={(e) => setGeneralForm(prev => ({ ...prev, phone: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      disabled={!canManageOrg}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!editMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      disabled={!editMode}
                     />
                   </div>
                   <div>
@@ -279,8 +321,8 @@ export default function OrganizationSettings() {
                       type="url"
                       value={generalForm.website}
                       onChange={(e) => setGeneralForm(prev => ({ ...prev, website: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      disabled={!canManageOrg}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!editMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      disabled={!editMode}
                     />
                   </div>
                 </div>
@@ -297,8 +339,8 @@ export default function OrganizationSettings() {
                       type="text"
                       value={generalForm.address_line1}
                       onChange={(e) => setGeneralForm(prev => ({ ...prev, address_line1: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      disabled={!canManageOrg}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!editMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      disabled={!editMode}
                     />
                   </div>
                   <div>
@@ -309,8 +351,8 @@ export default function OrganizationSettings() {
                       type="text"
                       value={generalForm.city}
                       onChange={(e) => setGeneralForm(prev => ({ ...prev, city: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      disabled={!canManageOrg}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!editMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      disabled={!editMode}
                     />
                   </div>
                   <div>
@@ -321,14 +363,39 @@ export default function OrganizationSettings() {
                       type="text"
                       value={generalForm.country}
                       onChange={(e) => setGeneralForm(prev => ({ ...prev, country: e.target.value }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      disabled={!canManageOrg}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${!editMode ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      disabled={!editMode}
                     />
                   </div>
                 </div>
 
-                {canManageOrg && (
-                  <div className="flex justify-end">
+                {editMode && (
+                  <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditMode(false)
+                        // Reset form to current org values
+                        if (currentOrg) {
+                          setGeneralForm({
+                            name: currentOrg.name || '',
+                            email: currentOrg.email || '',
+                            phone: currentOrg.phone || '',
+                            website: currentOrg.website || '',
+                            address_line1: currentOrg.address_line1 || '',
+                            address_line2: currentOrg.address_line2 || '',
+                            city: currentOrg.city || '',
+                            state_province: currentOrg.state_province || '',
+                            postal_code: currentOrg.postal_code || '',
+                            country: currentOrg.country || 'Uganda',
+                            tax_id: currentOrg.tax_id || '',
+                          })
+                        }
+                      }}
+                      className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    >
+                      Cancel
+                    </button>
                     <button
                       type="submit"
                       disabled={saving}

@@ -248,10 +248,16 @@ export const resendInvitation = async (userId, email) => {
  */
 export const updateUser = async (userId, updates) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('users')
       .update(updates)
       .eq('id', userId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -268,10 +274,16 @@ export const updateUser = async (userId, updates) => {
  */
 export const updateUserRole = async (userId, newRole) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('users')
       .update({ role: newRole })
       .eq('id', userId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -288,10 +300,16 @@ export const updateUserRole = async (userId, newRole) => {
  */
 export const toggleUserStatus = async (userId, isActive) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('users')
       .update({ is_active: isActive })
       .eq('id', userId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -405,11 +423,17 @@ export const assignUserToMultipleProjects = async (userId, projectIds, role, ass
  */
 export const deleteUser = async (userId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Soft delete by deactivating
     const { data, error } = await supabase
       .from('users')
       .update({ is_active: false })
       .eq('id', userId)
+      .eq('org_id', orgId)
       .select()
       .single()
 

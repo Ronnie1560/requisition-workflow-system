@@ -69,7 +69,17 @@ const MainLayout = () => {
   }
 
   const isActive = (path) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/')
+    // Exact match
+    if (location.pathname === path) return true
+    
+    // For /settings, don't highlight if we're on /settings/organization
+    // (Organization has its own nav item)
+    if (path === '/settings' && location.pathname.startsWith('/settings/organization')) {
+      return false
+    }
+    
+    // Check if current path starts with this path
+    return location.pathname.startsWith(path + '/')
   }
 
   return (

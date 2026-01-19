@@ -87,9 +87,14 @@ export const getExpenseAccountById = async (accountId) => {
  */
 export const createExpenseAccount = async (accountData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('expense_accounts')
-      .insert([accountData])
+      .insert([{ ...accountData, org_id: orgId }])
       .select()
       .single()
 
@@ -106,10 +111,16 @@ export const createExpenseAccount = async (accountData) => {
  */
 export const updateExpenseAccount = async (accountId, accountData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('expense_accounts')
       .update(accountData)
       .eq('id', accountId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -126,10 +137,16 @@ export const updateExpenseAccount = async (accountId, accountData) => {
  */
 export const deleteExpenseAccount = async (accountId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('expense_accounts')
       .update({ is_active: false })
       .eq('id', accountId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -146,10 +163,16 @@ export const deleteExpenseAccount = async (accountId) => {
  */
 export const activateExpenseAccount = async (accountId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('expense_accounts')
       .update({ is_active: true })
       .eq('id', accountId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -166,11 +189,17 @@ export const activateExpenseAccount = async (accountId) => {
  */
 export const getExpenseAccountStats = async (accountId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Get requisitions using this expense account
     const { data: requisitions, error: reqError } = await supabase
       .from('requisitions')
       .select('id, total_amount, status, requisition_items(id)')
       .eq('expense_account_id', accountId)
+      .eq('org_id', orgId)
 
     if (reqError) throw reqError
 
