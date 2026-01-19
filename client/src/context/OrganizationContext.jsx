@@ -22,6 +22,7 @@ export function OrganizationProvider({ children }) {
   const [currentOrg, setCurrentOrg] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   /**
    * Fetch user's organizations
@@ -238,10 +239,46 @@ export function OrganizationProvider({ children }) {
     }
   }, [currentOrg])
 
-  // Load organizations on mount
+  // Listen for auth state changes
   useEffect(() => {
-    fetchOrganizations()
-  }, [fetchOrganizations])
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAuthenticated(!!session)
+      if (!session) {
+        setLoading(false)
+      }
+    })
+
+    // Subscribe to auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      const wasAuthenticated = isAuthenticated
+      const nowAuthenticated = !!session
+      
+      setIsAuthenticated(nowAuthenticated)
+      
+      // If user just signed out, clear org state
+      if (event === 'SIGNED_OUT') {
+        setOrganizations([])
+        setCurrentOrg(null)
+        localStorage.removeItem(SELECTED_ORG_KEY)
+        setLoading(false)
+      }
+      
+      // If user just signed in, fetch organizations
+      if (event === 'SIGNED_IN' && !wasAuthenticated) {
+        fetchOrganizations()
+      }
+    })
+
+    return () => subscription.unsubscribe()
+  }, [isAuthenticated, fetchOrganizations])
+
+  // Load organizations when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchOrganizations()
+    }
+  }, [isAuthenticated, fetchOrganizations])
 
   // Check if user can manage org
   const canManageOrg = currentOrg?.member_role === 'owner' || currentOrg?.member_role === 'admin'
