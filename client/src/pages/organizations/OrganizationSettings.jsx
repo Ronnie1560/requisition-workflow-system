@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   Building2, Users, CreditCard, Settings, Calendar,
-  Loader2, Save, Upload, Trash2, UserPlus,
-  Crown, Shield, User
+  Loader2, Save
 } from 'lucide-react'
 import { useOrganization } from '../../context/OrganizationContext'
 import {
@@ -12,16 +11,12 @@ import {
 
 /**
  * Organization Settings Page
- * Manage organization details, members, and billing
+ * Manage organization details and fiscal year settings
  */
 export default function OrganizationSettings() {
   const {
     currentOrg,
     updateOrganization,
-    getMembers,
-    removeMember,
-    updateMemberRole,
-    inviteUser,
     isOwner,
     canManageOrg,
   } = useOrganization()
@@ -46,13 +41,6 @@ export default function OrganizationSettings() {
     country: '',
     tax_id: '',
   })
-
-  // Members list
-  const [members, setMembers] = useState([])
-  const [loadingMembers, setLoadingMembers] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState('member')
-  const [inviting, setInviting] = useState(false)
 
   // Fiscal year settings
   const [fiscalData, setFiscalData] = useState({
@@ -86,19 +74,6 @@ export default function OrganizationSettings() {
       })
     }
   }, [currentOrg])
-
-  // Load members callback
-  const loadMembers = useCallback(async () => {
-    setLoadingMembers(true)
-    const { data, error: fetchError } = await getMembers()
-    if (data) {
-      setMembers(data)
-    }
-    if (fetchError) {
-      setError(fetchError)
-    }
-    setLoadingMembers(false)
-  }, [getMembers])
 
   // Load fiscal year settings callback
   const loadFiscal = useCallback(async () => {
@@ -160,54 +135,6 @@ export default function OrganizationSettings() {
       setSuccess('Fiscal year settings saved successfully')
     }
     setSaving(false)
-  }
-
-  const handleInvite = async (e) => {
-    e.preventDefault()
-    if (!inviteEmail.trim()) return
-
-    setInviting(true)
-    setError(null)
-
-    const { error: inviteError } = await inviteUser(inviteEmail, inviteRole)
-
-    if (inviteError) {
-      setError(inviteError)
-    } else {
-      setSuccess(`Invitation sent to ${inviteEmail}`)
-      setInviteEmail('')
-      loadMembers()
-    }
-    setInviting(false)
-  }
-
-  const handleRemoveMember = async (memberId, memberName) => {
-    if (!confirm(`Remove ${memberName} from this organization?`)) return
-
-    const { error: removeError } = await removeMember(memberId)
-    if (removeError) {
-      setError(removeError)
-    } else {
-      setSuccess('Member removed successfully')
-      loadMembers()
-    }
-  }
-
-  const _handleRoleChange = async (memberId, newRole) => {
-    const { error: roleError } = await updateMemberRole(memberId, newRole)
-    if (roleError) {
-      setError(roleError)
-    } else {
-      loadMembers()
-    }
-  }
-
-  const getRoleIcon = (role) => {
-    switch (role) {
-      case 'owner': return <Crown className="w-4 h-4 text-yellow-500" />
-      case 'admin': return <Shield className="w-4 h-4 text-blue-500" />
-      default: return <User className="w-4 h-4 text-gray-400" />
-    }
   }
 
   const tabs = [
@@ -540,7 +467,7 @@ export default function OrganizationSettings() {
                   <div className="p-4 border border-gray-200 rounded-lg">
                     <p className="text-sm text-gray-500">Team Members</p>
                     <p className="text-2xl font-semibold text-gray-900">
-                      {members.length} / {currentOrg.max_users || 5}
+                      - / {currentOrg.max_users || 5}
                     </p>
                   </div>
                   <div className="p-4 border border-gray-200 rounded-lg">

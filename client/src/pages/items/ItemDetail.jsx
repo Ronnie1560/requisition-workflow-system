@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import {
@@ -26,13 +26,7 @@ const ItemDetail = () => {
   const [success, setSuccess] = useState('')
   const [actionLoading, setActionLoading] = useState(false)
 
-  useEffect(() => {
-    if (id) {
-      loadItemDetails()
-    }
-  }, [id])
-
-  const loadItemDetails = async () => {
+  const loadItemDetails = useCallback(async () => {
     setLoading(true)
     setError('')
 
@@ -54,7 +48,13 @@ const ItemDetail = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [id])
+
+  useEffect(() => {
+    if (id) {
+      loadItemDetails()
+    }
+  }, [id, loadItemDetails])
 
   const handleActivate = async () => {
     if (!window.confirm('Are you sure you want to activate this item?')) return

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import {
   BarChart3,
@@ -45,14 +45,7 @@ export function ReportsQuickViewDialog({ isOpen, onClose }) {
   // Period selection for time-based reports
   const [selectedPeriod, setSelectedPeriod] = useState('monthly')
 
-  // Load report data when report type or filters change
-  useEffect(() => {
-    if (isOpen) {
-      loadReportData()
-    }
-  }, [activeReport, startDate, endDate, selectedPeriod, isOpen])
-
-  const loadReportData = async () => {
+  const loadReportData = useCallback(async () => {
     setLoading(true)
     setError(null)
 
@@ -98,7 +91,14 @@ export function ReportsQuickViewDialog({ isOpen, onClose }) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [activeReport, startDate, endDate, selectedPeriod])
+
+  // Load report data when report type or filters change
+  useEffect(() => {
+    if (isOpen) {
+      loadReportData()
+    }
+  }, [isOpen, loadReportData])
 
   const handleExport = () => {
     if (!reportData || reportData.length === 0) {
