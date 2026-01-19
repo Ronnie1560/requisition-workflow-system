@@ -103,6 +103,15 @@ const UsersList = () => {
     return colors[role] || 'bg-gray-100 text-gray-800'
   }
 
+  const getOrgRoleBadgeColor = (orgRole) => {
+    const colors = {
+      'owner': 'bg-indigo-100 text-indigo-800',
+      'admin': 'bg-blue-100 text-blue-800',
+      'member': 'bg-gray-100 text-gray-800'
+    }
+    return colors[orgRole] || 'bg-gray-100 text-gray-800'
+  }
+
   const filteredUsers = users.filter(user => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase()
@@ -124,9 +133,9 @@ const UsersList = () => {
       {/* Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Users & Permissions</h1>
           <p className="text-sm text-gray-600 mt-1">
-            Manage users, roles, and project assignments
+            Manage team members, workflow roles, organization access, and project assignments
           </p>
         </div>
         <button
@@ -254,7 +263,10 @@ const UsersList = () => {
                     User
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Role
+                    Workflow Role
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Org Access
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Projects
@@ -293,6 +305,16 @@ const UsersList = () => {
                         {user.role === USER_ROLES.SUPER_ADMIN && <Shield className="w-3 h-3" />}
                         {ROLE_LABELS[user.role] || user.role}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.org_role ? (
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getOrgRoleBadgeColor(user.org_role)}`}>
+                          {user.org_role === 'owner' && <Shield className="w-3 h-3" />}
+                          {user.org_role.charAt(0).toUpperCase() + user.org_role.slice(1)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400">No access</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {user.project_assignments?.length || 0} projects

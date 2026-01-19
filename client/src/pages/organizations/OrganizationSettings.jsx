@@ -120,14 +120,6 @@ export default function OrganizationSettings() {
     setLoadingFiscal(false)
   }, [currentOrg])
 
-  // Load members when tab changes
-  useEffect(() => {
-    if (activeTab === 'members') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Data loading on tab change is intentional
-      loadMembers()
-    }
-  }, [activeTab, loadMembers])
-
   // Load fiscal year when tab changes
   useEffect(() => {
     if (activeTab === 'fiscal') {
@@ -220,7 +212,6 @@ export default function OrganizationSettings() {
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
-    { id: 'members', label: 'Members', icon: Users },
     { id: 'fiscal', label: 'Fiscal Year', icon: Calendar },
     { id: 'billing', label: 'Billing', icon: CreditCard },
   ]
@@ -296,6 +287,25 @@ export default function OrganizationSettings() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">
                   General Settings
                 </h2>
+
+                {/* Info Banner for Team Members */}
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <Users className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-900 mb-1">
+                        Manage Team Members
+                      </p>
+                      <p className="text-sm text-blue-700">
+                        To invite and manage team members, workflow roles, and permissions, visit the{' '}
+                        <a href="/users" className="font-semibold underline hover:text-blue-900">
+                          Users & Permissions
+                        </a>{' '}
+                        page.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -403,92 +413,6 @@ export default function OrganizationSettings() {
                   </div>
                 )}
               </form>
-            )}
-
-            {/* Members Tab */}
-            {activeTab === 'members' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Team Members
-                  </h2>
-                  <span className="text-sm text-gray-500">
-                    {members.length} / {currentOrg.max_users || 5} members
-                  </span>
-                </div>
-
-                {/* Invite Form */}
-                {canManageOrg && (
-                  <form onSubmit={handleInvite} className="flex gap-2">
-                    <input
-                      type="email"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                      placeholder="email@example.com"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                    <select
-                      value={inviteRole}
-                      onChange={(e) => setInviteRole(e.target.value)}
-                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="member">Member</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                    <button
-                      type="submit"
-                      disabled={inviting}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                      Invite
-                    </button>
-                  </form>
-                )}
-
-                {/* Members List */}
-                {loadingMembers ? (
-                  <div className="flex justify-center py-8">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200">
-                    {members.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            {member.user?.avatar_url ? (
-                              <img src={member.user.avatar_url} alt="" className="w-10 h-10 rounded-full" />
-                            ) : (
-                              <User className="w-5 h-5 text-gray-500" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {member.user?.full_name || member.user?.email}
-                            </p>
-                            <p className="text-sm text-gray-500">{member.user?.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center gap-1">
-                            {getRoleIcon(member.role)}
-                            <span className="text-sm text-gray-600 capitalize">{member.role}</span>
-                          </div>
-                          {canManageOrg && member.role !== 'owner' && (
-                            <button
-                              onClick={() => handleRemoveMember(member.id, member.user?.full_name)}
-                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
             )}
 
             {/* Fiscal Year Tab */}

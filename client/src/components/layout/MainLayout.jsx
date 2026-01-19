@@ -44,7 +44,7 @@ const MainLayout = () => {
     { name: 'Purchase Orders', href: '/purchase-orders', icon: Package },
     { name: 'Receipts', href: '/receipts', icon: Receipt },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
-    { name: 'All Users', href: '/users', icon: Users, adminOnly: true },
+    { name: 'Users', href: '/users', icon: Users, adminOnly: true },
     { name: 'Organization', href: '/settings/organization', icon: Building2, orgAdmin: true },
     { name: 'System', href: '/admin/system-settings', icon: Sliders, adminOnly: true },
     { name: 'Settings', href: '/settings', icon: Settings }
