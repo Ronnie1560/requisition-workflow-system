@@ -3,6 +3,7 @@
 // 1. Fetches pending emails from the queue
 // 2. Sends them using Resend (or your chosen email service)
 // 3. Updates the queue status
+// 4. Uses per-org Reply-To for multi-tenancy support
 
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
@@ -10,8 +11,9 @@ import { createClient } from 'supabase'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@passionchristianministries.org'
-const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://pcm-requisition.vercel.app'
+const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@requisition-system.com'
+const FROM_NAME = Deno.env.get('FROM_NAME') || 'Requisition System'
+const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://requisition-workflow.vercel.app'
 
 interface EmailNotification {
   id: string
@@ -21,6 +23,13 @@ interface EmailNotification {
   body_text: string
   notification_type: string
   retry_count: number
+  org_id: string
+}
+
+interface Organization {
+  id: string
+  name: string
+  email: string | null
 }
 
 serve(async (req) => {
@@ -67,6 +76,9 @@ serve(async (req) => {
       errors: [] as string[]
     }
 
+    // Cache organization details to avoid repeated lookups
+    const orgCache = new Map<string, Organization>()
+
     // Process each email with rate limiting (Resend allows 2 req/sec)
     for (let i = 0; i < emails.length; i++) {
       const email = emails[i] as EmailNotification
@@ -77,8 +89,27 @@ serve(async (req) => {
       }
       
       try {
-        // Send email using Resend
-        const sent = await sendEmail(email)
+        // Fetch organization details (with caching)
+        let org: Organization | null = null
+        if (email.org_id) {
+          if (orgCache.has(email.org_id)) {
+            org = orgCache.get(email.org_id)!
+          } else {
+            const { data: orgData } = await supabase
+              .from('organizations')
+              .select('id, name, email')
+              .eq('id', email.org_id)
+              .single()
+            
+            if (orgData) {
+              org = orgData as Organization
+              orgCache.set(email.org_id, org)
+            }
+          }
+        }
+
+        // Send email using Resend with org-specific Reply-To
+        const sent = await sendEmail(email, org)
 
         if (sent) {
           // Update status to 'sent'
@@ -136,28 +167,42 @@ serve(async (req) => {
 
 /**
  * Send email using Resend
+ * Uses org-specific Reply-To for multi-tenant support
  * You can replace this with SendGrid, Mailgun, or any other service
  */
-async function sendEmail(email: EmailNotification): Promise<boolean> {
+async function sendEmail(email: EmailNotification, org: Organization | null): Promise<boolean> {
   if (!RESEND_API_KEY) {
     console.warn('RESEND_API_KEY not set, skipping email send (dev mode)')
     return true // In development, pretend email was sent
   }
 
   try {
+    // Build FROM address with org name if available
+    const fromName = org?.name || FROM_NAME
+    const fromAddress = `${fromName} <${FROM_EMAIL}>`
+
+    // Build email payload with optional Reply-To
+    const emailPayload: Record<string, unknown> = {
+      from: fromAddress,
+      to: [email.recipient_email],
+      subject: email.subject,
+      html: email.body_html,
+      text: email.body_text
+    }
+
+    // Add Reply-To if organization has an email configured
+    if (org?.email) {
+      emailPayload.reply_to = org.email
+      console.log(`Using Reply-To: ${org.email} for org: ${org.name}`)
+    }
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${RESEND_API_KEY}`
       },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        to: [email.recipient_email],
-        subject: email.subject,
-        html: email.body_html,
-        text: email.body_text
-      })
+      body: JSON.stringify(emailPayload)
     })
 
     if (!response.ok) {
