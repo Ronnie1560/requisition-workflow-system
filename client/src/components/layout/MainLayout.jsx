@@ -6,6 +6,7 @@ import NotificationCenter from '../notifications/NotificationCenter'
 import ToastContainer from '../notifications/ToastContainer'
 import OrganizationSwitcher from '../organizations/OrganizationSwitcher'
 import CreateOrganizationPrompt from '../organizations/CreateOrganizationPrompt'
+import ReportsQuickViewDialog from '../dialogs/ReportsQuickViewDialog'
 import {
   Menu,
   X,
@@ -30,6 +31,7 @@ import {
 const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [showReportsDialog, setShowReportsDialog] = useState(false)
   const { profile, signOut } = useAuth()
   const { currentOrg: _currentOrg, canManageOrg } = useOrganization()
   const navigate = useNavigate()
@@ -114,6 +116,16 @@ const MainLayout = () => {
                   />
                 </div>
               </div>
+
+              {/* Quick Reports Access */}
+              <button
+                onClick={() => setShowReportsDialog(true)}
+                className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                title="Quick Reports"
+              >
+                <BarChart3 className="h-5 w-5" />
+                <span className="hidden lg:inline text-sm">Reports</span>
+              </button>
 
               {/* Notifications */}
               <NotificationCenter />
@@ -235,6 +247,12 @@ const MainLayout = () => {
 
       {/* Organization Creation Prompt */}
       <CreateOrganizationPrompt />
+
+      {/* Reports Quick View Dialog */}
+      <ReportsQuickViewDialog
+        isOpen={showReportsDialog}
+        onClose={() => setShowReportsDialog(false)}
+      />
     </div>
   )
 }
