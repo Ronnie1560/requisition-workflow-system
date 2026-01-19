@@ -164,20 +164,27 @@ export function RequisitionPrintDialog({ isOpen, onClose, requisition, organizat
       {/* Preview Area */}
       <div className="p-6 bg-gray-100 min-h-[500px] flex items-start justify-center overflow-auto">
         <div
-          ref={printPreviewRef}
-          className="bg-white shadow-2xl"
+          className="bg-white shadow-2xl overflow-hidden"
           style={{
             transform: `scale(${zoom / 100})`,
             transformOrigin: 'top center',
             transition: 'transform 0.2s ease',
             width: '210mm', // A4 width
             minHeight: '297mm', // A4 height
-            padding: '15mm'
           }}
-          dangerouslySetInnerHTML={{
-            __html: generatePrintableHTML(requisition, organization).replace('<!DOCTYPE html><html><head>', '').replace('</head><body>', '').replace('</body></html>', '').replace(/<style>[\s\S]*?<\/style>/g, '')
-          }}
-        />
+        >
+          <iframe
+            ref={printPreviewRef}
+            title="Print Preview"
+            srcDoc={generatePrintableHTML(requisition, organization)}
+            className="w-full h-full border-0"
+            style={{
+              width: '210mm',
+              minHeight: '297mm',
+              border: 'none'
+            }}
+          />
+        </div>
       </div>
 
       {/* Footer Info */}
