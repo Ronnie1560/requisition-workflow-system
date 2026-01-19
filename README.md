@@ -25,6 +25,32 @@ Production-ready requisition management system for Passion Christian Ministries.
 
 ## Development
 
+### Quick Start (Recommended)
+
+Use the automated startup scripts to ensure you're running the correct multi-tenant client (not the old prototype):
+
+**Windows PowerShell:**
+```powershell
+.\start-dev.ps1
+```
+
+**Windows Command Prompt:**
+```cmd
+start-dev.bat
+```
+
+**Git Bash / WSL / Linux / Mac:**
+```bash
+./start-dev.sh
+```
+
+These scripts will:
+1. ✅ Kill any old prototype servers (port 3000)
+2. ✅ Kill any stuck dev servers (port 5173)
+3. ✅ Start the correct multi-tenant client on http://localhost:5173
+
+### Manual Setup
+
 ```bash
 # Install dependencies
 cd client
@@ -36,6 +62,8 @@ npm run dev
 # Build for production
 npm run build
 ```
+
+**Important:** Always use `http://localhost:5173` (not port 3000)
 
 ## Deployment
 

@@ -61,3 +61,6 @@ test-*.ps1
 test-*.sh
 *.test.ps1
 *.test.sh
+
+# Old prototype (deprecated - use client/ instead)
+web_prototype/
