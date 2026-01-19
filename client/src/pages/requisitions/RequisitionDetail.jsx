@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useOrganization } from '../../context/OrganizationContext'
 import {
   ArrowLeft,
   Calendar,
@@ -12,10 +13,8 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  Download,
   Edit,
-  Printer,
-  FileDown
+  FileSpreadsheet
 } from 'lucide-react'
 import {
   getRequisitionById,
@@ -26,18 +25,20 @@ import {
   addComment
 } from '../../services/api/requisitions'
 import { formatCurrency, formatDate } from '../../utils/formatters'
-import { REQUISITION_STATUS, STATUS_COLORS } from '../../utils/constants'
-import { exportRequisitionToCSV, printRequisition, downloadRequisitionAsPDF } from '../../utils/requisitionExport'
+import { STATUS_COLORS } from '../../utils/constants'
+import RequisitionPrintDialog from '../../components/dialogs/RequisitionPrintDialog'
 import { logger } from '../../utils/logger'
 
 const RequisitionDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { user, profile, organizationName } = useAuth()
+  const { user, profile } = useAuth()
+  const { currentOrg } = useOrganization()
 
   const [requisition, setRequisition] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [showPrintDialog, setShowPrintDialog] = useState(false)
   const [showApprovalModal, setShowApprovalModal] = useState(false)
   const [approvalAction, setApprovalAction] = useState(null) // 'approve' or 'reject'
   const [approvalComments, setApprovalComments] = useState('')
@@ -268,30 +269,14 @@ const RequisitionDetail = () => {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          {/* Export Buttons */}
+          {/* Print & Export Dialog Button */}
           <button
-            onClick={() => exportRequisitionToCSV(requisition, organizationName)}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-            title="Download as CSV"
+            onClick={() => setShowPrintDialog(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            title="Preview, Print & Export"
           >
-            <FileDown className="w-4 h-4" />
-            CSV
-          </button>
-          <button
-            onClick={() => printRequisition(requisition, organizationName)}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-            title="Print"
-          >
-            <Printer className="w-4 h-4" />
-            Print
-          </button>
-          <button
-            onClick={() => downloadRequisitionAsPDF(requisition, organizationName)}
-            className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-            title="Download as PDF"
-          >
-            <Download className="w-4 h-4" />
-            PDF
+            <FileSpreadsheet className="w-4 h-4" />
+            Preview & Export
           </button>
           {canEditDraft() && (
             <button
@@ -651,6 +636,14 @@ const RequisitionDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Print Preview Dialog */}
+      <RequisitionPrintDialog
+        isOpen={showPrintDialog}
+        onClose={() => setShowPrintDialog(false)}
+        requisition={requisition}
+        organization={currentOrg}
+      />
     </div>
   )
 }

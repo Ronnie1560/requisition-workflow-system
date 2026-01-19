@@ -203,10 +203,24 @@ export const exportRequisitionToCSV = async (requisition, organizationName = DEF
 /**
  * Generate printable HTML for requisition
  * @param {Object} requisition - The requisition data
- * @param {string} organizationName - Organization name
+ * @param {Object|string} organization - Organization object with full details, or just name as string
  */
-export const generatePrintableHTML = (requisition, organizationName = DEFAULT_ORG_NAME) => {
+export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NAME) => {
   if (!requisition) return ''
+
+  // Handle both organization object and simple string name (backward compatibility)
+  const isOrgObject = typeof organization === 'object' && organization !== null
+  const orgName = isOrgObject ? organization.name : organization
+  const orgEmail = isOrgObject ? organization.email : null
+  const orgPhone = isOrgObject ? organization.phone : null
+  const orgWebsite = isOrgObject ? organization.website : null
+  const orgAddress = isOrgObject && organization.address_line1 ?
+    [
+      organization.address_line1,
+      organization.address_line2,
+      [organization.city, organization.state_province].filter(Boolean).join(', '),
+      [organization.postal_code, organization.country].filter(Boolean).join(', ')
+    ].filter(Boolean).join('<br>') : null
 
   return `
     <!DOCTYPE html>
@@ -506,7 +520,19 @@ export const generatePrintableHTML = (requisition, organizationName = DEFAULT_OR
     <body>
       <!-- Header -->
       <div class="document-header">
-        <div class="org-name">${organizationName}</div>
+        <div class="org-name">${orgName}</div>
+        ${orgAddress || orgEmail || orgPhone || orgWebsite ? `
+        <div style="font-size: 8px; color: #6b7280; margin-top: 4px; line-height: 1.5;">
+          ${orgAddress ? `<div>${orgAddress}</div>` : ''}
+          ${orgEmail || orgPhone || orgWebsite ? `
+          <div style="margin-top: 2px;">
+            ${orgEmail ? `📧 ${orgEmail}` : ''}
+            ${orgPhone ? `${orgEmail ? ' &nbsp;•&nbsp; ' : ''}📞 ${orgPhone}` : ''}
+            ${orgWebsite ? `${orgEmail || orgPhone ? ' &nbsp;•&nbsp; ' : ''}🌐 ${orgWebsite}` : ''}
+          </div>
+          ` : ''}
+        </div>
+        ` : ''}
         <div class="doc-title-row">
           <span class="doc-type">Purchase Requisition</span>
           <span class="doc-number">${requisition.requisition_number || 'DRAFT'}</span>
@@ -622,7 +648,7 @@ export const generatePrintableHTML = (requisition, organizationName = DEFAULT_OR
       <!-- Footer -->
       <div class="document-footer">
         <p>Generated on ${formatDate(new Date().toISOString())} | This is a system-generated document</p>
-        <p>${organizationName} - Purchase Requisition Management System</p>
+        <p>${orgName} - Purchase Requisition Management System</p>
       </div>
     </body>
     </html>
