@@ -14,7 +14,8 @@ import {
   CheckCircle,
   Clock,
   Edit,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Download
 } from 'lucide-react'
 import {
   getRequisitionById,
@@ -25,7 +26,7 @@ import {
   addComment
 } from '../../services/api/requisitions'
 import { formatCurrency, formatDate } from '../../utils/formatters'
-import { STATUS_COLORS } from '../../utils/constants'
+import { STATUS_LABELS } from '../../utils/constants'
 import RequisitionPrintDialog from '../../components/dialogs/RequisitionPrintDialog'
 import { logger } from '../../utils/logger'
 
@@ -62,6 +63,21 @@ const RequisitionDetail = () => {
       setRequisition(data)
     }
     setLoading(false)
+  }
+
+  const getStatusBadgeClass = (status) => {
+    const statusStyles = {
+      'draft': 'bg-gray-100 text-gray-800',
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'under_review': 'bg-blue-100 text-blue-800',
+      'reviewed': 'bg-blue-100 text-blue-800',
+      'approved': 'bg-green-100 text-green-800',
+      'rejected': 'bg-red-100 text-red-800',
+      'cancelled': 'bg-gray-100 text-gray-600',
+      'partially_received': 'bg-purple-100 text-purple-800',
+      'completed': 'bg-indigo-100 text-indigo-800'
+    }
+    return statusStyles[status] || 'bg-gray-100 text-gray-800'
   }
 
   const handleApprove = () => {
@@ -288,9 +304,9 @@ const RequisitionDetail = () => {
             </button>
           )}
           <span
-            className={`px-3 py-1 rounded-full text-sm font-medium bg-${STATUS_COLORS[requisition.status]} text-gray-800`}
+            className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(requisition.status)}`}
           >
-            {requisition.status}
+            {STATUS_LABELS[requisition.status] || requisition.status}
           </span>
         </div>
       </div>

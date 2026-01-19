@@ -5,7 +5,7 @@ import { Plus, FileText, Filter, Search, Download } from 'lucide-react'
 import { getRequisitionsForReview } from '../../services/api/requisitions'
 import { createRequisitionFromTemplate } from '../../services/api/templates'
 import { formatDate, formatCurrency } from '../../utils/formatters'
-import { STATUS_LABELS, STATUS_COLORS } from '../../utils/constants'
+import { STATUS_LABELS } from '../../utils/constants'
 import { exportRequisitionsToExcel } from '../../utils/excelExport'
 import TemplateSelectionModal from '../../components/requisitions/TemplateSelectionModal'
 import { logger } from '../../utils/logger'
@@ -54,7 +54,21 @@ const RequisitionsList = () => {
 
   const getStatusBadgeClass = (status) => {
     const baseClass = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium'
-    const colorClass = `bg-${STATUS_COLORS[status]} bg-opacity-20 text-gray-800`
+
+    // Map status to complete Tailwind classes (can't use dynamic class construction)
+    const statusStyles = {
+      'draft': 'bg-gray-100 text-gray-800',
+      'pending': 'bg-yellow-100 text-yellow-800',
+      'under_review': 'bg-blue-100 text-blue-800',
+      'reviewed': 'bg-blue-100 text-blue-800',
+      'approved': 'bg-green-100 text-green-800',
+      'rejected': 'bg-red-100 text-red-800',
+      'cancelled': 'bg-gray-100 text-gray-600',
+      'partially_received': 'bg-purple-100 text-purple-800',
+      'completed': 'bg-indigo-100 text-indigo-800'
+    }
+
+    const colorClass = statusStyles[status] || 'bg-gray-100 text-gray-800'
     return `${baseClass} ${colorClass}`
   }
 
