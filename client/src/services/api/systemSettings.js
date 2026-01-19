@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
+import { getCurrentOrgId } from './orgContext'
 
 // =====================================================
 // Organization Settings
@@ -8,10 +9,13 @@ import { logger } from '../../utils/logger'
 /**
  * Get organization settings
  * Optimized to select only required fields for better performance
+ * In multi-tenant mode, filters by current org_id
  */
 export const getOrganizationSettings = async () => {
   try {
-    const { data, error } = await supabase
+    const orgId = getCurrentOrgId()
+    
+    let query = supabase
       .from('organization_settings')
       .select(`
         id,
@@ -26,11 +30,42 @@ export const getOrganizationSettings = async () => {
         email,
         website,
         tax_id,
-        logo_url
+        logo_url,
+        org_id
       `)
-      .single()
+    
+    // Filter by org_id if available (multi-tenant mode)
+    if (orgId) {
+      query = query.eq('org_id', orgId)
+    }
+    
+    // Use maybeSingle() to handle 0 or 1 result gracefully
+    const { data, error } = await query.maybeSingle()
 
     if (error) throw error
+    
+    // Return default settings if no data found
+    if (!data) {
+      logger.warn('No organization settings found, returning defaults')
+      return { 
+        data: {
+          organization_name: 'Your Organization',
+          address_line1: '',
+          address_line2: '',
+          city: '',
+          state_province: '',
+          postal_code: '',
+          country: '',
+          phone: '',
+          email: '',
+          website: '',
+          tax_id: '',
+          logo_url: null
+        }, 
+        error: null 
+      }
+    }
+    
     return { data, error: null }
   } catch (error) {
     logger.error('Error fetching organization settings:', error)

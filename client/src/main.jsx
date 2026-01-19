@@ -11,7 +11,7 @@ initSentry()
 
 // Initialize Web Vitals monitoring (production only)
 if (import.meta.env.PROD) {
-  import('web-vitals').then(({ onCLS, onFID, onFCP, onLCP, onTTFB, onINP }) => {
+  import('web-vitals').then((webVitals) => {
     const sendToAnalytics = (metric) => {
       // Log metric
       logger.info(`[Web Vitals] ${metric.name}:`, Math.round(metric.value))
@@ -33,17 +33,15 @@ if (import.meta.env.PROD) {
     }
 
     // Cumulative Layout Shift (should be < 0.1)
-    onCLS(sendToAnalytics)
-    // First Input Delay (should be < 100ms)
-    onFID(sendToAnalytics)
+    webVitals.onCLS?.(sendToAnalytics)
     // First Contentful Paint (should be < 1.8s)
-    onFCP(sendToAnalytics)
+    webVitals.onFCP?.(sendToAnalytics)
     // Largest Contentful Paint (should be < 2.5s)
-    onLCP(sendToAnalytics)
+    webVitals.onLCP?.(sendToAnalytics)
     // Time to First Byte (should be < 800ms)
-    onTTFB(sendToAnalytics)
+    webVitals.onTTFB?.(sendToAnalytics)
     // Interaction to Next Paint (should be < 200ms)
-    onINP(sendToAnalytics)
+    webVitals.onINP?.(sendToAnalytics)
   }).catch(err => {
     logger.error('Failed to load web-vitals:', err)
   })

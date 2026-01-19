@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useOrganization } from '../../context/OrganizationContext'
 import {
   FileText, CheckCircle, Clock, XCircle, DollarSign, Users,
   Folder, AlertCircle, Plus, Eye, TrendingUp, TrendingDown,
@@ -16,6 +17,7 @@ import { logger } from '../../utils/logger'
 const DashboardEnhanced = () => {
   const navigate = useNavigate()
   const { user, profile, userRole } = useAuth()
+  const { currentOrg, loading: orgLoading } = useOrganization()
 
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -28,9 +30,12 @@ const DashboardEnhanced = () => {
   const [showDatePicker, setShowDatePicker] = useState(false)
 
   useEffect(() => {
-    loadDashboardData()
-    loadProjects()
-  }, [user, userRole, dateRange, customStartDate, customEndDate])
+    // Wait for organization to be loaded before fetching data
+    if (!orgLoading && currentOrg) {
+      loadDashboardData()
+      loadProjects()
+    }
+  }, [user, userRole, dateRange, customStartDate, customEndDate, currentOrg, orgLoading])
 
   const loadDashboardData = async () => {
     if (!user || !userRole) return
@@ -225,6 +230,37 @@ const DashboardEnhanced = () => {
     }
 
     return alerts
+  }
+
+  // Show loading while organization context is loading
+  if (orgLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-600 ml-4">Loading organization...</p>
+      </div>
+    )
+  }
+
+  // Show message if no organization is selected
+  if (!currentOrg) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <div className="flex items-center gap-3">
+          <AlertCircle className="w-6 h-6 text-yellow-600" />
+          <div>
+            <h3 className="text-yellow-900 font-semibold">No Organization Selected</h3>
+            <p className="text-yellow-700 text-sm mt-1">Please select or create an organization to view your dashboard.</p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/organizations/new')}
+          className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+        >
+          Create Organization
+        </button>
+      </div>
+    )
   }
 
   if (loading) {
