@@ -108,9 +108,14 @@ export const getCategoryById = async (categoryId) => {
  */
 export const createCategory = async (categoryData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('categories')
-      .insert([categoryData])
+      .insert([{ ...categoryData, org_id: orgId }])
       .select(`
         *,
         created_by_user:users!created_by(full_name, email)
@@ -130,6 +135,11 @@ export const createCategory = async (categoryData) => {
  */
 export const updateCategory = async (categoryId, categoryData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .update({
@@ -137,6 +147,7 @@ export const updateCategory = async (categoryId, categoryData) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', categoryId)
+      .eq('org_id', orgId) // Ensure category belongs to current org
       .select(`
         *,
         created_by_user:users!created_by(full_name, email)
@@ -156,6 +167,11 @@ export const updateCategory = async (categoryId, categoryData) => {
  */
 export const deleteCategory = async (categoryId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .update({
@@ -163,6 +179,7 @@ export const deleteCategory = async (categoryId) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', categoryId)
+      .eq('org_id', orgId) // Ensure category belongs to current org
       .select()
       .single()
 
@@ -179,6 +196,11 @@ export const deleteCategory = async (categoryId) => {
  */
 export const activateCategory = async (categoryId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('categories')
       .update({
@@ -186,6 +208,7 @@ export const activateCategory = async (categoryId) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', categoryId)
+      .eq('org_id', orgId) // Ensure category belongs to current org
       .select()
       .single()
 
@@ -202,19 +225,26 @@ export const activateCategory = async (categoryId) => {
  */
 export const getCategoryStats = async (categoryId) => {
   try {
-    // Get count of items in this category
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Get count of items in this category (filtered by org)
     const { count: itemCount, error: itemError } = await supabase
       .from('items')
       .select('*', { count: 'exact', head: true })
       .eq('category_id', categoryId)
+      .eq('org_id', orgId)
 
     if (itemError) throw itemError
 
-    // Get count of active items in this category
+    // Get count of active items in this category (filtered by org)
     const { count: activeItemCount, error: activeError } = await supabase
       .from('items')
       .select('*', { count: 'exact', head: true })
       .eq('category_id', categoryId)
+      .eq('org_id', orgId)
       .eq('is_active', true)
 
     if (activeError) throw activeError

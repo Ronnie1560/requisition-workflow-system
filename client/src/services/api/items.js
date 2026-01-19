@@ -41,9 +41,14 @@ export const getAllUOMTypes = async () => {
  */
 export const createUOMType = async (uomData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('uom_types')
-      .insert([uomData])
+      .insert([{ ...uomData, org_id: orgId }])
       .select()
       .single()
 
@@ -144,11 +149,17 @@ export const getItemById = async (itemId) => {
  */
 export const createItem = async (itemData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Sanitize empty strings to null for optional UUID fields
     const sanitizedData = {
       ...itemData,
       category_id: itemData.category_id || null,
       default_uom_id: itemData.default_uom_id || null,
+      org_id: orgId, // Add org_id for multi-tenancy
     }
 
     // Auto-generate item code if not provided
@@ -189,6 +200,11 @@ export const createItem = async (itemData) => {
  */
 export const updateItem = async (itemId, itemData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     // Sanitize empty strings to null for optional UUID fields
     const sanitizedData = {
       ...itemData,
@@ -200,6 +216,7 @@ export const updateItem = async (itemId, itemData) => {
       .from('items')
       .update(sanitizedData)
       .eq('id', itemId)
+      .eq('org_id', orgId) // Ensure item belongs to current org
       .select(`
         *,
         default_uom:uom_types!default_uom_id(id, code, name),
@@ -221,10 +238,16 @@ export const updateItem = async (itemId, itemData) => {
  */
 export const deleteItem = async (itemId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('items')
       .update({ is_active: false })
       .eq('id', itemId)
+      .eq('org_id', orgId) // Ensure item belongs to current org
       .select()
       .single()
 
@@ -241,10 +264,16 @@ export const deleteItem = async (itemId) => {
  */
 export const activateItem = async (itemId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('items')
       .update({ is_active: true })
       .eq('id', itemId)
+      .eq('org_id', orgId) // Ensure item belongs to current org
       .select()
       .single()
 
@@ -261,19 +290,26 @@ export const activateItem = async (itemId) => {
  */
 export const getItemStats = async (itemId) => {
   try {
-    // Get usage count in requisitions
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Get usage count in requisitions (filtered by org)
     const { count: requisitionCount, error: reqError } = await supabase
       .from('requisition_items')
       .select('*', { count: 'exact', head: true })
       .eq('item_id', itemId)
+      .eq('org_id', orgId)
 
     if (reqError) throw reqError
 
-    // Get total quantities and amounts used
+    // Get total quantities and amounts used (filtered by org)
     const { data: reqItems, error: itemsError } = await supabase
       .from('requisition_items')
       .select('quantity, total_price')
       .eq('item_id', itemId)
+      .eq('org_id', orgId)
 
     if (itemsError) throw itemsError
 
@@ -298,9 +334,15 @@ export const getItemStats = async (itemId) => {
  */
 export const getItemCategories = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('items')
       .select('category')
+      .eq('org_id', orgId) // Filter by current organization
       .not('category', 'is', null)
       .order('category', { ascending: true })
 
