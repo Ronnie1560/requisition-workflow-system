@@ -49,10 +49,10 @@ export default defineConfig({
     environment: 'jsdom',
     // Setup file for test configuration
     setupFiles: ['./src/test/setup.js'],
-    // Include test files
-    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}', '../tests/**/*.{test,spec}.{js,jsx,ts,tsx}'],
-    // Exclude node_modules
-    exclude: ['node_modules', 'dist'],
+    // Include test files (only unit tests in src/, not integration tests)
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    // Exclude node_modules and integration tests
+    exclude: ['node_modules', 'dist', '../tests/**'],
     // Coverage configuration
     coverage: {
       provider: 'v8',
