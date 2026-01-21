@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
-import { 
-  Building2, 
-  User, 
-  Mail, 
-  Lock, 
+import { sanitizeOrganizationData, sanitizeAdminData } from '../../utils/sanitization'
+import {
+  Building2,
+  User,
+  Mail,
+  Lock,
   Phone,
-  ArrowRight, 
+  ArrowRight,
   ArrowLeft,
   CheckCircle,
   AlertCircle,
@@ -54,6 +55,19 @@ export default function OrganizationSignup() {
     phone: ''
   })
 
+  // Reserved slugs that cannot be used for organizations
+  const RESERVED_SLUGS = [
+    'admin', 'api', 'app', 'www', 'dashboard', 'login', 'signup', 'register',
+    'default', 'system', 'support', 'help', 'billing', 'settings', 'account',
+    'auth', 'oauth', 'sso', 'mail', 'email', 'static', 'assets', 'cdn',
+    'status', 'health', 'metrics', 'webhook', 'webhooks', 'callback',
+    'test', 'demo', 'staging', 'production', 'dev', 'development',
+    'pcm', 'passion', 'christian', 'ministries'
+  ]
+
+  // Check if slug is reserved
+  const isReservedSlug = (slug) => RESERVED_SLUGS.includes(slug.toLowerCase())
+
   // Auto-generate slug from organization name
   const handleOrgNameChange = (e) => {
     const name = e.target.value
@@ -71,6 +85,12 @@ export default function OrganizationSignup() {
   useEffect(() => {
     if (!orgData.slug || orgData.slug.length < 3) {
       setSlugAvailable(null)
+      return
+    }
+
+    // Check reserved slugs immediately (no API call needed)
+    if (isReservedSlug(orgData.slug)) {
+      setSlugAvailable(false)
       return
     }
 
@@ -119,6 +139,10 @@ export default function OrganizationSignup() {
     }
     if (!orgData.slug.trim() || orgData.slug.length < 3) {
       setError('Organization URL must be at least 3 characters')
+      return false
+    }
+    if (isReservedSlug(orgData.slug)) {
+      setError('This organization URL is reserved. Please choose a different name.')
       return false
     }
     if (slugAvailable === false) {
@@ -193,21 +217,26 @@ export default function OrganizationSignup() {
     setLoading(true)
 
     try {
+      // Sanitize all user inputs before sending to backend
+      const sanitizedOrg = sanitizeOrganizationData({
+        name: orgData.name,
+        slug: orgData.slug,
+        email: orgData.email || userData.email,
+        plan: orgData.plan
+      })
+
+      const sanitizedAdmin = sanitizeAdminData({
+        fullName: userData.fullName,
+        email: userData.email,
+        password: userData.password,
+        phone: userData.phone
+      })
+
       // Call the Edge Function to create organization and admin user
       const { data, error: signupError } = await supabase.functions.invoke('create-organization-signup', {
         body: {
-          organization: {
-            name: orgData.name,
-            slug: orgData.slug,
-            email: orgData.email || userData.email,
-            plan: orgData.plan
-          },
-          admin: {
-            fullName: userData.fullName,
-            email: userData.email,
-            password: userData.password,
-            phone: userData.phone
-          }
+          organization: sanitizedOrg,
+          admin: sanitizedAdmin
         }
       })
 
@@ -230,20 +259,13 @@ export default function OrganizationSignup() {
       logger.info('Organization created successfully', { orgId: data?.organizationId })
       setSuccess(true)
 
-      // Sign in the user
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: userData.email,
-        password: userData.password
-      })
-
-      if (signInError) {
-        logger.warn('Auto sign-in failed, redirecting to login', signInError)
-        // Still a success, just redirect to login
-        setTimeout(() => navigate('/login'), 2000)
-      } else {
-        // Redirect to dashboard after short delay
-        setTimeout(() => navigate('/dashboard'), 1500)
-      }
+      // Redirect to email verification page
+      setTimeout(() => navigate('/verify-email', {
+        state: {
+          email: userData.email,
+          organizationName: orgData.name
+        }
+      }), 2000)
     } catch (err) {
       logger.error('Organization signup failed:', err)
       setError(err.message || 'Failed to create organization. Please try again.')
@@ -261,10 +283,11 @@ export default function OrganizationSignup() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Organization Created!
+            Check Your Email!
           </h2>
           <p className="text-gray-600 mb-4">
-            Welcome to {orgData.name}. Redirecting you to your dashboard...
+            We've sent a verification email to <strong>{userData.email}</strong>.
+            Please check your inbox and click the verification link to activate your account.
           </p>
           <div className="flex justify-center">
             <Loader2 className="w-6 h-6 text-indigo-600 animate-spin" />

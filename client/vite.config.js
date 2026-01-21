@@ -50,7 +50,7 @@ export default defineConfig({
     // Setup file for test configuration
     setupFiles: ['./src/test/setup.js'],
     // Include test files
-    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}'],
+    include: ['src/**/*.{test,spec}.{js,jsx,ts,tsx}', '../tests/**/*.{test,spec}.{js,jsx,ts,tsx}'],
     // Exclude node_modules
     exclude: ['node_modules', 'dist'],
     // Coverage configuration

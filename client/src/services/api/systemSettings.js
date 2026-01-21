@@ -195,13 +195,19 @@ export const updateFiscalYearSettings = async (orgId, updates) => {
 // =====================================================
 
 /**
- * Get all approval workflows
+ * Get all approval workflows for the current organization
  */
 export const getApprovalWorkflows = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('approval_workflows')
       .select('*')
+      .eq('org_id', orgId)
       .order('priority', { ascending: true })
 
     if (error) throw error
@@ -213,13 +219,19 @@ export const getApprovalWorkflows = async () => {
 }
 
 /**
- * Get active approval workflows
+ * Get active approval workflows for the current organization
  */
 export const getActiveApprovalWorkflows = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('approval_workflows')
       .select('*')
+      .eq('org_id', orgId)
       .eq('is_active', true)
       .order('priority', { ascending: true })
 
@@ -232,13 +244,19 @@ export const getActiveApprovalWorkflows = async () => {
 }
 
 /**
- * Get workflow for a specific amount
+ * Get workflow for a specific amount in the current organization
  */
 export const getWorkflowForAmount = async (amount) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('approval_workflows')
       .select('*')
+      .eq('org_id', orgId)
       .eq('is_active', true)
       .gte('amount_threshold_min', 0)
       .or(`amount_threshold_max.is.null,amount_threshold_max.gte.${amount}`)
@@ -256,13 +274,18 @@ export const getWorkflowForAmount = async (amount) => {
 }
 
 /**
- * Create approval workflow
+ * Create approval workflow for the current organization
  */
 export const createApprovalWorkflow = async (workflowData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('approval_workflows')
-      .insert([workflowData])
+      .insert([{ ...workflowData, org_id: orgId }])
       .select()
       .single()
 
@@ -275,10 +298,15 @@ export const createApprovalWorkflow = async (workflowData) => {
 }
 
 /**
- * Update approval workflow
+ * Update approval workflow in the current organization
  */
 export const updateApprovalWorkflow = async (id, updates) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('approval_workflows')
       .update({
@@ -286,6 +314,7 @@ export const updateApprovalWorkflow = async (id, updates) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -298,14 +327,20 @@ export const updateApprovalWorkflow = async (id, updates) => {
 }
 
 /**
- * Delete approval workflow
+ * Delete approval workflow from the current organization
  */
 export const deleteApprovalWorkflow = async (id) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { error } = await supabase
       .from('approval_workflows')
       .delete()
       .eq('id', id)
+      .eq('org_id', orgId)
 
     if (error) throw error
     return { error: null }
@@ -316,14 +351,20 @@ export const deleteApprovalWorkflow = async (id) => {
 }
 
 /**
- * Toggle workflow active status
+ * Toggle workflow active status in the current organization
  */
 export const toggleWorkflowStatus = async (id, isActive) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('approval_workflows')
       .update({ is_active: isActive })
       .eq('id', id)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -340,13 +381,19 @@ export const toggleWorkflowStatus = async (id, isActive) => {
 // =====================================================
 
 /**
- * Get item code settings
+ * Get item code settings for the current organization
  */
 export const getItemCodeSettings = async () => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('organization_settings')
       .select('item_code_prefix, item_code_next_number, item_code_padding')
+      .eq('org_id', orgId)
       .single()
 
     if (error) throw error
@@ -358,13 +405,19 @@ export const getItemCodeSettings = async () => {
 }
 
 /**
- * Update item code settings
+ * Update item code settings for the current organization
  */
 export const updateItemCodeSettings = async (settings) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data: currentSettings, error: fetchError } = await supabase
       .from('organization_settings')
       .select('id')
+      .eq('org_id', orgId)
       .single()
 
     if (fetchError) throw fetchError
@@ -376,6 +429,7 @@ export const updateItemCodeSettings = async (settings) => {
         updated_at: new Date().toISOString()
       })
       .eq('id', currentSettings.id)
+      .eq('org_id', orgId)
       .select()
       .single()
 

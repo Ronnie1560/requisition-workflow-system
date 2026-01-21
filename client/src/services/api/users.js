@@ -1,6 +1,7 @@
 import { supabase } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
 import { getCurrentOrgId } from './orgContext'
+import { logCrossOrgAccess } from '../../utils/auditLogger'
 
 /**
  * Users API Service
@@ -330,6 +331,35 @@ export const toggleUserStatus = async (userId, isActive) => {
  */
 export const assignUserToProject = async (userId, projectId, role, assignedBy) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Verify project belongs to current organization
+    const { data: project, error: projectError } = await supabase
+      .from('projects')
+      .select('id, org_id')
+      .eq('id', projectId)
+      .single()
+
+    if (projectError || !project) {
+      throw new Error('Project not found or access denied')
+    }
+
+    // Check for cross-org access attempt
+    if (project.org_id !== orgId) {
+      // Log the security event
+      await logCrossOrgAccess({
+        resourceType: 'project',
+        resourceId: projectId,
+        resourceOrgId: project.org_id,
+        action: 'assign_user',
+        currentOrgId: orgId
+      })
+      throw new Error('Project not found or access denied')
+    }
+
     const { data, error } = await supabase
       .from('user_project_assignments')
       .insert({
@@ -355,10 +385,16 @@ export const assignUserToProject = async (userId, projectId, role, assignedBy) =
  */
 export const removeUserFromProject = async (assignmentId) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { error } = await supabase
       .from('user_project_assignments')
       .delete()
       .eq('id', assignmentId)
+      .eq('org_id', orgId)
 
     if (error) throw error
     return { error: null }
@@ -373,10 +409,16 @@ export const removeUserFromProject = async (assignmentId) => {
  */
 export const updateProjectAssignment = async (assignmentId, newRole) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('user_project_assignments')
       .update({ role: newRole })
       .eq('id', assignmentId)
+      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -393,6 +435,25 @@ export const updateProjectAssignment = async (assignmentId, newRole) => {
  */
 export const assignUserToMultipleProjects = async (userId, projectIds, role, assignedBy) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Verify all projects belong to current organization
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select('id')
+      .in('id', projectIds)
+      .eq('org_id', orgId)
+
+    if (projectsError) throw projectsError
+
+    // Check if all requested projects were found
+    if (!projects || projects.length !== projectIds.length) {
+      throw new Error('One or more projects not found or access denied')
+    }
+
     const assignments = projectIds.map(projectId => ({
       user_id: userId,
       project_id: projectId,

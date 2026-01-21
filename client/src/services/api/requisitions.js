@@ -1,6 +1,7 @@
 import { supabase, withRetry } from '../../lib/supabase'
 import { logger } from '../../utils/logger'
 import { getCurrentOrgId } from './orgContext'
+import { logCrossOrgAccess } from '../../utils/auditLogger'
 
 /**
  * Requisitions API Service
@@ -345,6 +346,35 @@ export const addRequisitionItems = async (items) => {
  */
 export const addComment = async (commentData) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Verify requisition belongs to current organization
+    const { data: requisition, error: reqError } = await supabase
+      .from('requisitions')
+      .select('id, org_id')
+      .eq('id', commentData.requisition_id)
+      .single()
+
+    if (reqError || !requisition) {
+      throw new Error('Requisition not found or access denied')
+    }
+
+    // Check for cross-org access attempt
+    if (requisition.org_id !== orgId) {
+      // Log the security event
+      await logCrossOrgAccess({
+        resourceType: 'requisition',
+        resourceId: commentData.requisition_id,
+        resourceOrgId: requisition.org_id,
+        action: 'add_comment',
+        currentOrgId: orgId
+      })
+      throw new Error('Requisition not found or access denied')
+    }
+
     const { data, error } = await supabase
       .from('comments')
       .insert({
@@ -765,6 +795,35 @@ export const deleteRequisition = async (requisitionId) => {
  */
 export const uploadAttachment = async (requisitionId, file) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Verify requisition belongs to current organization
+    const { data: requisition, error: reqError } = await supabase
+      .from('requisitions')
+      .select('id, org_id')
+      .eq('id', requisitionId)
+      .single()
+
+    if (reqError || !requisition) {
+      throw new Error('Requisition not found or access denied')
+    }
+
+    // Check for cross-org access attempt
+    if (requisition.org_id !== orgId) {
+      // Log the security event
+      await logCrossOrgAccess({
+        resourceType: 'requisition',
+        resourceId: requisitionId,
+        resourceOrgId: requisition.org_id,
+        action: 'upload_attachment',
+        currentOrgId: orgId
+      })
+      throw new Error('Requisition not found or access denied')
+    }
+
     const fileExt = file.name.split('.').pop()
     const fileName = `${requisitionId}/${Date.now()}.${fileExt}`
 
@@ -807,6 +866,35 @@ export const uploadAttachment = async (requisitionId, file) => {
  */
 export const deleteAttachment = async (attachmentId, filePath) => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    // Verify attachment belongs to a requisition in current organization
+    const { data: attachment, error: attachmentError } = await supabase
+      .from('attachments')
+      .select('requisition_id, requisitions!inner(org_id)')
+      .eq('id', attachmentId)
+      .single()
+
+    if (attachmentError || !attachment) {
+      throw new Error('Attachment not found or access denied')
+    }
+
+    // Check for cross-org access attempt
+    if (attachment.requisitions.org_id !== orgId) {
+      // Log the security event
+      await logCrossOrgAccess({
+        resourceType: 'attachment',
+        resourceId: attachmentId,
+        resourceOrgId: attachment.requisitions.org_id,
+        action: 'delete_attachment',
+        currentOrgId: orgId
+      })
+      throw new Error('Access denied')
+    }
+
     // Delete from storage
     const fileName = filePath.split('/').slice(-2).join('/')
     const { error: storageError } = await supabase.storage

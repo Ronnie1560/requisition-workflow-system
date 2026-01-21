@@ -6,6 +6,27 @@ import { logger } from '../utils/logger'
 /**
  * Organization Context
  * Manages multi-tenant organization state
+ *
+ * REACTIVE DATA REFRESHING:
+ * When the organization changes (via switchOrganization or createOrganization),
+ * components need to refetch their data. This is handled via:
+ *
+ * 1. orgVersion: A counter that increments on org changes. Add it to useEffect deps:
+ *    ```js
+ *    const { orgId, orgVersion } = useOrganization()
+ *    useEffect(() => {
+ *      fetchMyData(orgId)
+ *    }, [orgId, orgVersion])
+ *    ```
+ *
+ * 2. organizationChanged event: For manual handling if needed:
+ *    ```js
+ *    useEffect(() => {
+ *      const handler = (e) => { console.log('Org changed to:', e.detail.orgId) }
+ *      window.addEventListener('organizationChanged', handler)
+ *      return () => window.removeEventListener('organizationChanged', handler)
+ *    }, [])
+ *    ```
  */
 
 const OrganizationContext = createContext(null)
@@ -23,6 +44,8 @@ export function OrganizationProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  // Version number that increments when org changes - components can use this to trigger refetches
+  const [orgVersion, setOrgVersion] = useState(0)
 
   /**
    * Fetch user's organizations
@@ -69,9 +92,14 @@ export function OrganizationProvider({ children }) {
       setCurrentOrg(org)
       localStorage.setItem(SELECTED_ORG_KEY, orgId)
       logger.info('[OrganizationContext] Switched to organization', { orgId, name: org.name })
-      
-      // Reload the page to refresh all data with new org context
-      window.location.reload()
+
+      // Increment version to trigger data refresh in components
+      setOrgVersion(v => v + 1)
+
+      // Dispatch custom event for components that need manual refresh
+      window.dispatchEvent(new CustomEvent('organizationChanged', {
+        detail: { orgId, orgName: org.name }
+      }))
     }
   }, [organizations])
 
@@ -93,10 +121,23 @@ export function OrganizationProvider({ children }) {
       // Refresh organizations list
       await fetchOrganizations()
 
-      // Switch to new org
+      // Switch to new org reactively (no page reload)
       if (data) {
-        localStorage.setItem(SELECTED_ORG_KEY, data)
-        window.location.reload()
+        const newOrg = organizations.find(o => o.id === data)
+        if (newOrg) {
+          setCurrentOrg(newOrg)
+          localStorage.setItem(SELECTED_ORG_KEY, data)
+
+          // Increment version to trigger data refresh
+          setOrgVersion(v => v + 1)
+
+          // Dispatch event for manual refresh needs
+          window.dispatchEvent(new CustomEvent('organizationChanged', {
+            detail: { orgId: data, orgName: newOrg.name }
+          }))
+
+          logger.info('[OrganizationContext] Created and switched to new organization', { orgId: data })
+        }
       }
 
       return { data, error: null }
@@ -104,7 +145,7 @@ export function OrganizationProvider({ children }) {
       logger.error('[OrganizationContext] Failed to create organization', err)
       return { data: null, error: err.message }
     }
-  }, [fetchOrganizations])
+  }, [fetchOrganizations, organizations])
 
   /**
    * Update current organization
@@ -290,7 +331,8 @@ export function OrganizationProvider({ children }) {
     currentOrg,
     loading,
     error,
-    
+    orgVersion, // Version number that increments when org changes (use in useEffect deps)
+
     // Computed
     hasMultipleOrgs: organizations.length > 1,
     canManageOrg,
@@ -298,7 +340,7 @@ export function OrganizationProvider({ children }) {
     orgId: currentOrg?.id,
     orgSlug: currentOrg?.slug,
     orgName: currentOrg?.name,
-    
+
     // Actions
     switchOrganization,
     createOrganization,

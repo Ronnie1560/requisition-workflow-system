@@ -12,6 +12,16 @@ Your Edge Functions need these secrets to be set in Supabase:
 - `SUPABASE_URL` - Auto-provided by Supabase
 - `SUPABASE_SERVICE_ROLE_KEY` - Auto-provided by Supabase
 
+### For `create-organization-signup` function:
+- `RESEND_API_KEY` - Your Resend API key for sending verification emails
+- `FROM_EMAIL` - Sender email address (default: noreply@passionchristianministries.org)
+- `APP_BASE_URL` - Your app URL (default: https://pcm-requisition.vercel.app)
+- `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
+
+### For `cleanup-orphaned-signups` function:
+- `CLEANUP_SECRET_KEY` - Secret key to authorize cleanup requests (required)
+- `ORPHAN_RETENTION_DAYS` - Days to wait before cleaning up unverified signups (default: 7)
+
 ## How to Set Secrets in Supabase CLI
 
 ### Option 1: Using Supabase CLI (Recommended)
