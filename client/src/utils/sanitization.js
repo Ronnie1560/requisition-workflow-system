@@ -25,7 +25,8 @@ export const sanitizeInput = (input, maxLength = 255) => {
   sanitized = sanitized.substring(0, maxLength)
 
   // Remove control characters except newlines and tabs
-  sanitized = sanitized.replace(/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F]/g, '')
+  // eslint-disable-next-line no-control-regex
+  sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
 
   // Encode HTML special characters to prevent XSS
   sanitized = sanitized
@@ -97,7 +98,7 @@ export const sanitizePhone = (phone) => {
 
   return phone
     .trim()
-    .replace(/[^0-9\s\-\(\)\+]/g, '') // Only allow numbers and common phone formatting chars
+    .replace(/[^0-9\s()+-]/g, '') // Only allow numbers and common phone formatting chars
     .substring(0, 20)
 }
 

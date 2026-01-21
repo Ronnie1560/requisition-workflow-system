@@ -17,6 +17,19 @@ import {
   Globe
 } from 'lucide-react'
 
+// Reserved slugs that cannot be used for organizations (defined outside component for stability)
+const RESERVED_SLUGS = [
+  'admin', 'api', 'app', 'www', 'dashboard', 'login', 'signup', 'register',
+  'default', 'system', 'support', 'help', 'billing', 'settings', 'account',
+  'auth', 'oauth', 'sso', 'mail', 'email', 'static', 'assets', 'cdn',
+  'status', 'health', 'metrics', 'webhook', 'webhooks', 'callback',
+  'test', 'demo', 'staging', 'production', 'dev', 'development',
+  'pcm', 'passion', 'christian', 'ministries'
+]
+
+// Check if slug is reserved
+const isReservedSlug = (slug) => RESERVED_SLUGS.includes(slug.toLowerCase())
+
 /**
  * Organization Signup Page
  * 
@@ -54,19 +67,6 @@ export default function OrganizationSignup() {
     confirmPassword: '',
     phone: ''
   })
-
-  // Reserved slugs that cannot be used for organizations
-  const RESERVED_SLUGS = [
-    'admin', 'api', 'app', 'www', 'dashboard', 'login', 'signup', 'register',
-    'default', 'system', 'support', 'help', 'billing', 'settings', 'account',
-    'auth', 'oauth', 'sso', 'mail', 'email', 'static', 'assets', 'cdn',
-    'status', 'health', 'metrics', 'webhook', 'webhooks', 'callback',
-    'test', 'demo', 'staging', 'production', 'dev', 'development',
-    'pcm', 'passion', 'christian', 'ministries'
-  ]
-
-  // Check if slug is reserved
-  const isReservedSlug = (slug) => RESERVED_SLUGS.includes(slug.toLowerCase())
 
   // Auto-generate slug from organization name
   const handleOrgNameChange = (e) => {
