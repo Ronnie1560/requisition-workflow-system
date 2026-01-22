@@ -322,7 +322,7 @@ Documentation Coverage:
 **Review Completed By:** Senior Lead Engineer/Developer/Architect  
 **Review Date:** January 22, 2026  
 **System:** PCM Requisition System  
-**Production URL:** https://pcm-requisition.vercel.app  
+**Production URL:** https://requisition-workflow.vercel.app  
 **Status:** ✅ **APPROVED FOR PRODUCTION**
 
 **Scope:** Complete system analysis and strategic planning  

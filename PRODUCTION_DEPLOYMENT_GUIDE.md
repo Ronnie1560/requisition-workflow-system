@@ -54,7 +54,7 @@ VITE_APP_BASE_URL=https://your-production-domain.com
 
 **Option A: If using Vercel**
 - Before first deployment: Leave empty or use placeholder
-- After first deployment: Update with your Vercel URL (e.g., `https://pcm-requisition.vercel.app`)
+- After first deployment: Update with your Vercel URL (e.g., `https://requisition-workflow.vercel.app`)
 
 **Option B: If using Netlify**
 - Before first deployment: Leave empty or use placeholder
@@ -214,7 +214,7 @@ After you have your production URL, update the edge function environment:
 
 1. Go to Supabase Dashboard → Functions → Settings
 2. Update `APP_BASE_URL` to your production domain
-3. Example: `https://pcm-requisition.vercel.app`
+3. Example: `https://requisition-workflow.vercel.app`
 
 ---
 

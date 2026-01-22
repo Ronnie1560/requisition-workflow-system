@@ -13,11 +13,11 @@ import { createClient } from 'supabase'
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@passionchristianministries.org'
-const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://pcm-requisition.vercel.app'
+const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://requisition-workflow.vercel.app'
 
 // Allowed origins for CORS (restrict to known domains for security)
 const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [
-  'https://pcm-requisition.vercel.app',
+  'https://requisition-workflow.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000'
 ]

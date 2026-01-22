@@ -207,7 +207,7 @@ graph TD
 # Edge Function (already configured)
 RESEND_API_KEY=your_resend_api_key
 FROM_EMAIL=noreply@passionchristianministries.org
-APP_BASE_URL=https://pcm-requisition.vercel.app
+APP_BASE_URL=https://requisition-workflow.vercel.app
 ```
 
 ### Supabase Auth Settings:
@@ -216,7 +216,7 @@ APP_BASE_URL=https://pcm-requisition.vercel.app
 
 2. Redirect URLs (in Supabase Dashboard)
    - Add your app domain to allowed redirect URLs
-   - Example: `https://pcm-requisition.vercel.app/**`
+   - Example: `https://requisition-workflow.vercel.app/**`
 
 ---
 

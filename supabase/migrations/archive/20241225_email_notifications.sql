@@ -136,7 +136,7 @@ BEGIN
      '<tr><td style="padding: 8px; font-weight: bold;">Project:</td><td style="padding: 8px;">' || COALESCE(req.project_name, 'N/A') || '</td></tr>' ||
      '<tr><td style="padding: 8px; font-weight: bold;">Amount:</td><td style="padding: 8px;">UGX ' || TO_CHAR(req.total_amount, 'FM999,999,999') || '</td></tr>' ||
      '</table>' ||
-     '<p><a href="' || COALESCE(current_setting('app.base_url', true), 'https://pcm-requisition.vercel.app') || '/requisitions/' || p_requisition_id || '" ' ||
+     '<p><a href="' || COALESCE(current_setting('app.base_url', true), 'https://requisition-workflow.vercel.app') || '/requisitions/' || p_requisition_id || '" ' ||
      'style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Requisition</a></p>' ||
      '<p style="color: #666; margin-top: 30px;">This is an automated message from ' || COALESCE(org_name, 'Requisition System') || '.</p>' ||
      '</body></html>')::TEXT,
@@ -149,7 +149,7 @@ BEGIN
      'Submitted By: ' || req.submitter_name || E'\n' ||
      'Project: ' || COALESCE(req.project_name, 'N/A') || E'\n' ||
      'Amount: UGX ' || TO_CHAR(req.total_amount, 'FM999,999,999') || E'\n\n' ||
-     'View requisition at: ' || COALESCE(current_setting('app.base_url', true), 'https://pcm-requisition.vercel.app') || '/requisitions/' || p_requisition_id || E'\n\n' ||
+     'View requisition at: ' || COALESCE(current_setting('app.base_url', true), 'https://requisition-workflow.vercel.app') || '/requisitions/' || p_requisition_id || E'\n\n' ||
      'This is an automated message from ' || COALESCE(org_name, 'Requisition System') || '.')::TEXT;
 END;
 $$;
@@ -196,7 +196,7 @@ BEGIN
      '<tr><td style="padding: 8px; font-weight: bold;">Amount:</td><td style="padding: 8px;">UGX ' || TO_CHAR(req.total_amount, 'FM999,999,999') || '</td></tr>' ||
      '<tr><td style="padding: 8px; font-weight: bold;">Approved By:</td><td style="padding: 8px;">' || p_approver_name || '</td></tr>' ||
      '</table>' ||
-     '<p><a href="' || COALESCE(current_setting('app.base_url', true), 'https://pcm-requisition.vercel.app') || '/requisitions/' || p_requisition_id || '" ' ||
+     '<p><a href="' || COALESCE(current_setting('app.base_url', true), 'https://requisition-workflow.vercel.app') || '/requisitions/' || p_requisition_id || '" ' ||
      'style="background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Requisition</a></p>' ||
      '<p style="color: #666; margin-top: 30px;">This is an automated message from ' || COALESCE(org_name, 'Requisition System') || '.</p>' ||
      '</body></html>')::TEXT,
@@ -208,7 +208,7 @@ BEGIN
      'Title: ' || req.title || E'\n' ||
      'Amount: UGX ' || TO_CHAR(req.total_amount, 'FM999,999,999') || E'\n' ||
      'Approved By: ' || p_approver_name || E'\n\n' ||
-     'View requisition at: ' || COALESCE(current_setting('app.base_url', true), 'https://pcm-requisition.vercel.app') || '/requisitions/' || p_requisition_id || E'\n\n' ||
+     'View requisition at: ' || COALESCE(current_setting('app.base_url', true), 'https://requisition-workflow.vercel.app') || '/requisitions/' || p_requisition_id || E'\n\n' ||
      'This is an automated message from ' || COALESCE(org_name, 'Requisition System') || '.')::TEXT;
 END;
 $$;
@@ -257,7 +257,7 @@ BEGIN
        '<tr><td style="padding: 8px; font-weight: bold; vertical-align: top;">Reason:</td><td style="padding: 8px;">' || p_reason || '</td></tr>'
      ELSE '' END ||
      '</table>' ||
-     '<p><a href="' || COALESCE(current_setting('app.base_url', true), 'https://pcm-requisition.vercel.app') || '/requisitions/' || p_requisition_id || '" ' ||
+     '<p><a href="' || COALESCE(current_setting('app.base_url', true), 'https://requisition-workflow.vercel.app') || '/requisitions/' || p_requisition_id || '" ' ||
      'style="background-color: #DC2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">View Requisition</a></p>' ||
      '<p style="color: #666; margin-top: 30px;">This is an automated message from ' || COALESCE(org_name, 'Requisition System') || '.</p>' ||
      '</body></html>')::TEXT,
@@ -270,7 +270,7 @@ BEGIN
      'Rejected By: ' || p_rejector_name || E'\n' ||
      CASE WHEN p_reason IS NOT NULL THEN 'Reason: ' || p_reason || E'\n' ELSE '' END ||
      E'\n' ||
-     'View requisition at: ' || COALESCE(current_setting('app.base_url', true), 'https://pcm-requisition.vercel.app') || '/requisitions/' || p_requisition_id || E'\n\n' ||
+     'View requisition at: ' || COALESCE(current_setting('app.base_url', true), 'https://requisition-workflow.vercel.app') || '/requisitions/' || p_requisition_id || E'\n\n' ||
      'This is an automated message from ' || COALESCE(org_name, 'Requisition System') || '.')::TEXT;
 END;
 $$;

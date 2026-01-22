@@ -400,7 +400,7 @@ BEGIN
   FROM organization_settings
   LIMIT 1;
 
-  base_url := COALESCE(base_url, 'https://pcm-requisition.vercel.app');
+  base_url := COALESCE(base_url, 'https://requisition-workflow.vercel.app');
 
   RETURN QUERY SELECT
     ('New Requisition: ' || req.requisition_number)::TEXT,
@@ -461,7 +461,7 @@ BEGIN
   FROM organization_settings
   LIMIT 1;
 
-  base_url := COALESCE(base_url, 'https://pcm-requisition.vercel.app');
+  base_url := COALESCE(base_url, 'https://requisition-workflow.vercel.app');
 
   RETURN QUERY SELECT
     ('Requisition Approved: ' || req.requisition_number)::TEXT,
@@ -521,7 +521,7 @@ BEGIN
   FROM organization_settings
   LIMIT 1;
 
-  base_url := COALESCE(base_url, 'https://pcm-requisition.vercel.app');
+  base_url := COALESCE(base_url, 'https://requisition-workflow.vercel.app');
 
   RETURN QUERY SELECT
     ('Requisition Rejected: ' || req.requisition_number)::TEXT,

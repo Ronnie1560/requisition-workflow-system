@@ -300,7 +300,7 @@ This review covered:
 **Reviewed by:** Senior Lead Engineer/Developer/Architect  
 **Review Date:** January 22, 2026  
 **System:** PCM Requisition System  
-**Production URL:** https://pcm-requisition.vercel.app  
+**Production URL:** https://requisition-workflow.vercel.app  
 **Status:** ✅ **APPROVED - WITH ACTION ITEMS**
 
 **Approved for deployment pending:**

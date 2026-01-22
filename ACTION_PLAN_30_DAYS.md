@@ -615,7 +615,7 @@ LIMIT 50;
 **Configuration:**
 1. **UptimeRobot Setup**
    - Service: https://uptimerobot.com/
-   - Add monitor: https://pcm-requisition.vercel.app
+   - Add monitor: https://requisition-workflow.vercel.app
    - Check interval: Every 5 minutes
    - Alert: Email + Slack
    - Success: HTTP 200

@@ -193,6 +193,13 @@ export function useRequisitionForm(draftId = null) {
    * @param {boolean} silent - If true, don't show success message
    */
   const handleSaveDraft = useCallback(async (silent = false) => {
+    // Check if user is still authenticated
+    if (!user?.id) {
+      setError('Session expired. Please log in again.')
+      navigate('/login')
+      return
+    }
+
     if (!validateForm()) return
 
     setSaving(true)
@@ -262,12 +269,19 @@ export function useRequisitionForm(draftId = null) {
         setSaving(false)
       }
     }
-  }, [formData, lineItems, requisitionId, user?.id, validateForm])
+  }, [formData, lineItems, navigate, requisitionId, user?.id, validateForm])
 
   /**
    * Submit requisition for review
    */
   const handleSubmit = useCallback(async () => {
+    // Check if user is still authenticated
+    if (!user?.id) {
+      setError('Session expired. Please log in again.')
+      navigate('/login')
+      return
+    }
+
     if (!validateForm()) return
 
     if (!requisitionId) {
@@ -300,12 +314,19 @@ export function useRequisitionForm(draftId = null) {
         setLoading(false)
       }
     }
-  }, [requisitionId, navigate, validateForm])
+  }, [requisitionId, navigate, user?.id, validateForm])
 
   /**
    * Save current requisition as template
    */
   const handleSaveAsTemplate = useCallback(async (templateData) => {
+    // Check if user is still authenticated
+    if (!user?.id) {
+      setError('Session expired. Please log in again.')
+      navigate('/login')
+      return
+    }
+
     if (!validateForm()) return
 
     try {
@@ -333,7 +354,7 @@ export function useRequisitionForm(draftId = null) {
       logger.error('Error saving template:', err)
       throw err
     }
-  }, [formData, lineItems, user?.id, validateForm])
+  }, [formData, lineItems, navigate, user?.id, validateForm])
 
   /**
    * Clear error message

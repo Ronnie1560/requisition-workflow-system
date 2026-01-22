@@ -208,7 +208,7 @@ END IF;
 **CORS Configuration**:
 ```javascript
 const ALLOWED_ORIGINS = [
-  'https://pcm-requisition.vercel.app',
+  'https://requisition-workflow.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000'
 ]

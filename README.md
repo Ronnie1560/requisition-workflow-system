@@ -4,7 +4,7 @@ Production-ready requisition management system for Passion Christian Ministries.
 
 ## Live Production
 
-🚀 **Production URL**: https://pcm-requisition.vercel.app
+🚀 **Production URL**: https://requisition-workflow.vercel.app
 
 ## Features
 

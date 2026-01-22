@@ -1,6 +1,6 @@
 # Production Deployment Verification
 
-**Production URL**: https://pcm-requisition.vercel.app
+**Production URL**: https://requisition-workflow.vercel.app
 **Deployed**: January 12, 2026
 **Deployment Status**: ✅ LIVE
 
@@ -17,7 +17,7 @@ All 10 critical fixes have been deployed to production. Use this checklist to ve
 **Expected**: CSP headers prevent unauthorized resource loading
 
 ### Verification Steps:
-1. Open https://pcm-requisition.vercel.app
+1. Open https://requisition-workflow.vercel.app
 2. Open DevTools (F12) → Console tab
 3. Look for any CSP violation warnings
 
@@ -73,7 +73,7 @@ Content-Security-Policy:
 ### Test Cases:
 
 #### Registration Page:
-1. Go to https://pcm-requisition.vercel.app/register
+1. Go to https://requisition-workflow.vercel.app/register
 2. Try password: `weak` → Should reject
 3. Try password: `nouppercas3` → Should reject (needs uppercase)
 4. Try password: `NOLOWERCASE3` → Should reject (needs lowercase)
@@ -81,7 +81,7 @@ Content-Security-Policy:
 6. Try password: `Valid123` → Should accept ✓
 
 #### Password Reset:
-1. Go to https://pcm-requisition.vercel.app/forgot-password
+1. Go to https://requisition-workflow.vercel.app/forgot-password
 2. Request reset link
 3. Test same password rules
 
@@ -124,7 +124,7 @@ ORDER BY tablename;
 **Expected**: Errors captured and sent to Sentry dashboard
 
 ### Verification Steps:
-1. Open https://pcm-requisition.vercel.app
+1. Open https://requisition-workflow.vercel.app
 2. Open DevTools → Console
 3. Test error tracking:
    ```javascript
@@ -259,7 +259,7 @@ Promise.reject('Test rejection')
 **Expected**: Performance metrics sent to Sentry
 
 ### Verification Steps:
-1. Open https://pcm-requisition.vercel.app
+1. Open https://requisition-workflow.vercel.app
 2. Interact with the page (click, scroll, navigate)
 3. Wait 30 seconds for metrics to collect
 4. Go to Sentry Dashboard → Performance tab
@@ -290,7 +290,7 @@ Verify these are configured in Vercel Dashboard (Settings → Environment Variab
 - ✅ `VITE_SUPABASE_ANON_KEY` = your-anon-key-here
 - ✅ `VITE_SENTRY_DSN` = your-sentry-dsn-here
 - ✅ `VITE_SENTRY_ENVIRONMENT` = production
-- ✅ `VITE_APP_BASE_URL` = https://pcm-requisition.vercel.app
+- ✅ `VITE_APP_BASE_URL` = https://requisition-workflow.vercel.app
 - ✅ `VITE_DEBUG_MODE` = false
 - ✅ `VITE_ENABLE_WEB_VITALS` = true
 

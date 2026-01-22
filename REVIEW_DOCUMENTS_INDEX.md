@@ -309,7 +309,7 @@ Each document includes:
 - Date: January 22, 2026
 - Reviewer: Senior Lead Engineer/Developer/Architect
 - System: PCM Requisition System
-- Production URL: https://pcm-requisition.vercel.app
+- Production URL: https://requisition-workflow.vercel.app
 - Review Scope: Complete system analysis
 - Duration: 3-4 hour deep analysis
 

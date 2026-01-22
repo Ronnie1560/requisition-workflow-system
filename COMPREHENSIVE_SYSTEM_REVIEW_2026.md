@@ -1,7 +1,7 @@
 # Comprehensive System Review - PCM Requisition System
 **Review Date:** January 12, 2026
 **Reviewer:** Claude Code
-**System Version:** Production (https://pcm-requisition.vercel.app)
+**System Version:** Production (https://requisition-workflow.vercel.app)
 
 ---
 
@@ -218,7 +218,7 @@ CREATE POLICY "Users can view project requisitions"
 
 2. **CORS Allows All Origins**
    - **Risk:** Any website can call your API
-   - **Action:** Restrict to `https://pcm-requisition.vercel.app`
+   - **Action:** Restrict to `https://requisition-workflow.vercel.app`
 
 3. **Weak Password Requirements**
    - **Risk:** Brute force attacks, credential stuffing
@@ -1048,7 +1048,7 @@ onLCP(metric => captureMessage(`LCP: ${metric.value}`, 'info'))
 ### Production Readiness: **9/10 (Excellent)**
 
 **Deployment Status:**
-- ✅ Live at https://pcm-requisition.vercel.app
+- ✅ Live at https://requisition-workflow.vercel.app
 - ✅ CI/CD pipeline (GitHub Actions)
 - ✅ Auto-deploy on push to main
 - ✅ Error monitoring (Sentry configured)

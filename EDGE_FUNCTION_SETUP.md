@@ -15,7 +15,7 @@ Your Edge Functions need these secrets to be set in Supabase:
 ### For `create-organization-signup` function:
 - `RESEND_API_KEY` - Your Resend API key for sending verification emails
 - `FROM_EMAIL` - Sender email address (default: noreply@passionchristianministries.org)
-- `APP_BASE_URL` - Your app URL (default: https://pcm-requisition.vercel.app)
+- `APP_BASE_URL` - Your app URL (default: https://requisition-workflow.vercel.app)
 - `ALLOWED_ORIGINS` - Comma-separated list of allowed CORS origins
 
 ### For `cleanup-orphaned-signups` function:
@@ -60,7 +60,7 @@ Edge Functions will automatically use the new secrets on their next invocation. 
 ## Testing
 
 After setting the `RESEND_API_KEY`:
-1. Go to your app: https://pcm-requisition.vercel.app
+1. Go to your app: https://requisition-workflow.vercel.app
 2. Try inviting a user again
 3. The invitation email should now be sent successfully
 

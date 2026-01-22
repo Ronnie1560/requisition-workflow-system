@@ -65,7 +65,7 @@ SELECT * FROM user_organizations LIMIT 5;
 ### Test 1: Login and Organization Context
 
 1. **Login to Application**:
-   - URL: https://pcm-requisition.vercel.app/login
+   - URL: https://requisition-workflow.vercel.app/login
    - Use any existing user credentials
 
 2. **Expected Behavior**:
