@@ -38,8 +38,8 @@ The file has been created at `client/.env.production`. You need to fill in these
 
 ```env
 # Already filled in:
-VITE_SUPABASE_URL=https://winfoubqhkrigtgjwrpm.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGc...
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
 # YOU NEED TO FILL IN:
 

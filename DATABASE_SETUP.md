@@ -93,7 +93,7 @@ The database setup consists of 4 migration files in the `supabase/migrations/` f
 supabase init
 
 # Link to your remote project
-supabase link --project-ref winfoubqhkrigtgjwrpm
+supabase link --project-ref your-project-ref
 
 # Push migrations to Supabase
 supabase db push

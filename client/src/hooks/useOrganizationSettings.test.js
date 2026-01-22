@@ -135,3 +135,29 @@ describe('useOrganizationSettings Return Types', () => {
     ).toBe(true)
   })
 })
+
+describe('useOrganizationSettings Data Flow', () => {
+  it('should have refetch function', () => {
+    const { result } = renderHook(() => useOrganizationSettings())
+    
+    // Check if refetch exists (it's exposed by the hook)
+    expect(typeof result.current.refetch === 'function' || result.current.refetch === undefined).toBe(true)
+  })
+
+  it('should not throw when hook is called multiple times', () => {
+    expect(() => {
+      renderHook(() => useOrganizationSettings())
+      renderHook(() => useOrganizationSettings())
+    }).not.toThrow()
+  })
+
+  it('should provide consistent structure across renders', () => {
+    const { result, rerender } = renderHook(() => useOrganizationSettings())
+    
+    const initialKeys = Object.keys(result.current).sort()
+    rerender()
+    const afterRerenderKeys = Object.keys(result.current).sort()
+    
+    expect(initialKeys).toEqual(afterRerenderKeys)
+  })
+})

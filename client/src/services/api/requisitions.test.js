@@ -4,6 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { calculateGrandTotal } from './requisitions.js'
 
 // Mock data
 const mockRequisitions = [
@@ -192,5 +193,67 @@ describe('Status Transitions', () => {
 
   it('should allow rejected to go back to draft', () => {
     expect(validTransitions.rejected).toContain('draft')
+  })
+})
+
+describe('calculateGrandTotal', () => {
+  it('should calculate sum of all item total_price', () => {
+    const items = [
+      { item_id: '1', total_price: 100 },
+      { item_id: '2', total_price: 200 },
+      { item_id: '3', total_price: 300 }
+    ]
+    
+    expect(calculateGrandTotal(items)).toBe(600)
+  })
+
+  it('should return 0 for empty array', () => {
+    expect(calculateGrandTotal([])).toBe(0)
+  })
+
+  it('should handle items with missing total_price', () => {
+    const items = [
+      { item_id: '1', total_price: 100 },
+      { item_id: '2' }, // No total_price
+      { item_id: '3', total_price: 300 }
+    ]
+    
+    expect(calculateGrandTotal(items)).toBe(400)
+  })
+
+  it('should handle items with null total_price', () => {
+    const items = [
+      { item_id: '1', total_price: null },
+      { item_id: '2', total_price: 200 }
+    ]
+    
+    expect(calculateGrandTotal(items)).toBe(200)
+  })
+
+  it('should handle items with zero total_price', () => {
+    const items = [
+      { item_id: '1', total_price: 0 },
+      { item_id: '2', total_price: 500 }
+    ]
+    
+    expect(calculateGrandTotal(items)).toBe(500)
+  })
+
+  it('should handle large numbers', () => {
+    const items = [
+      { item_id: '1', total_price: 1000000000 },
+      { item_id: '2', total_price: 2000000000 }
+    ]
+    
+    expect(calculateGrandTotal(items)).toBe(3000000000)
+  })
+
+  it('should handle decimal values', () => {
+    const items = [
+      { item_id: '1', total_price: 100.50 },
+      { item_id: '2', total_price: 200.25 }
+    ]
+    
+    expect(calculateGrandTotal(items)).toBeCloseTo(300.75)
   })
 })

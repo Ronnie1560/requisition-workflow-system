@@ -1,6 +1,6 @@
 # How to Run SQL RLS Policy Tests
 
-Your Supabase Project: `https://winfoubqhkrigtgjwrpm.supabase.co`
+Your Supabase Project: `https://your-project-ref.supabase.co`
 
 ## ✅ Option 1: Supabase Dashboard (Easiest - Recommended)
 
@@ -9,7 +9,7 @@ Your Supabase Project: `https://winfoubqhkrigtgjwrpm.supabase.co`
 1. **Go to Supabase Dashboard**:
    - Open: https://supabase.com/dashboard
    - Sign in to your account
-   - Select project: `winfoubqhkrigtgjwrpm`
+   - Select project: `your-project-ref`
 
 2. **Open SQL Editor**:
    - Click **SQL Editor** in the left sidebar
@@ -61,7 +61,7 @@ Your Supabase Project: `https://winfoubqhkrigtgjwrpm.supabase.co`
 
 2. **Run the test**:
    ```cmd
-   psql "postgresql://postgres:[YOUR-PASSWORD]@db.winfoubqhkrigtgjwrpm.supabase.co:5432/postgres" -f supabase\migrations\20260120_rls_policy_tests.sql
+   psql "postgresql://postgres:[YOUR-PASSWORD]@db.your-project-ref.supabase.co:5432/postgres" -f supabase\migrations\20260120_rls_policy_tests.sql
    ```
 
 3. **Get your password**:
@@ -90,7 +90,7 @@ scoop install supabase
 supabase login
 
 # Link to your project
-supabase link --project-ref winfoubqhkrigtgjwrpm
+supabase link --project-ref your-project-ref
 
 # Run the test
 supabase db execute -f supabase/migrations/20260120_rls_policy_tests.sql

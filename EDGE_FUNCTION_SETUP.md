@@ -37,7 +37,7 @@ supabase secrets set RESEND_API_KEY=your_resend_api_key_here
 ### Option 2: Using Supabase Dashboard
 
 1. Go to: https://supabase.com/dashboard
-2. Select your project: **winfoubqhkrigtgjwrpm**
+2. Select your project: **your-project-ref**
 3. Navigate to: **Edge Functions** → **Settings** (or **Secrets**)
 4. Add secret:
    - Name: `RESEND_API_KEY`

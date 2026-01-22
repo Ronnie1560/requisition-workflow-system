@@ -135,7 +135,7 @@ ORDER BY tablename;
 
 ### Sentry Configuration:
 ```env
-VITE_SENTRY_DSN=https://7619c9753998d9e717ecf104cbd00bc3@o4510699406032896.ingest.us.sentry.io/4510699440570368
+VITE_SENTRY_DSN=your-sentry-dsn-here
 VITE_SENTRY_ENVIRONMENT=production
 ```
 
@@ -286,9 +286,9 @@ VITE_SENTRY_ENVIRONMENT=production
 
 Verify these are configured in Vercel Dashboard (Settings → Environment Variables):
 
-- ✅ `VITE_SUPABASE_URL` = https://winfoubqhkrigtgjwrpm.supabase.co
-- ✅ `VITE_SUPABASE_ANON_KEY` = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-- ✅ `VITE_SENTRY_DSN` = https://7619c9753998d9e717ecf104cbd00bc3@...
+- ✅ `VITE_SUPABASE_URL` = https://your-project-ref.supabase.co
+- ✅ `VITE_SUPABASE_ANON_KEY` = your-anon-key-here
+- ✅ `VITE_SENTRY_DSN` = your-sentry-dsn-here
 - ✅ `VITE_SENTRY_ENVIRONMENT` = production
 - ✅ `VITE_APP_BASE_URL` = https://pcm-requisition.vercel.app
 - ✅ `VITE_DEBUG_MODE` = false
@@ -370,7 +370,7 @@ https://sentry.io/organizations/YOUR_ORG/
 https://vercel.com/dashboard
 
 ### Supabase Dashboard:
-https://supabase.com/dashboard/project/winfoubqhkrigtgjwrpm
+https://supabase.com/dashboard/project/your-project-ref
 
 ---
 

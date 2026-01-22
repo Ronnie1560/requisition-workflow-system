@@ -206,7 +206,7 @@ AND column_name = 'org_id';
 ### Option 1: Manual Deployment via Supabase Dashboard
 
 1. **Go to Supabase SQL Editor**:
-   - https://supabase.com/dashboard/project/winfoubqhkrigtgjwrpm/sql
+   - https://supabase.com/dashboard/project/your-project-ref/sql
 
 2. **Copy the migration file**:
    - Open [supabase/migrations/20250112_10_multi_tenancy.sql](supabase/migrations/20250112_10_multi_tenancy.sql)

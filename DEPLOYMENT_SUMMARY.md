@@ -341,7 +341,7 @@ if (import.meta.env.PROD) {
 
 **Setup Completed**:
 - ✅ Supabase CLI initialized (`config.toml` created)
-- ✅ Project linked to remote instance (winfoubqhkrigtgjwrpm)
+- ✅ Project linked to remote instance (your-project-ref)
 - ✅ Migration deployment successful
 - 📝 Migration sync documentation: [MIGRATION_SYNC.md](supabase/MIGRATION_SYNC.md)
 
@@ -410,7 +410,7 @@ After deployment to production:
 **Production Client (.env.production)**:
 ```env
 # Supabase
-VITE_SUPABASE_URL=https://winfoubqhkrigtgjwrpm.supabase.co
+VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your_anon_key_here
 
 # Sentry (Required for error tracking)

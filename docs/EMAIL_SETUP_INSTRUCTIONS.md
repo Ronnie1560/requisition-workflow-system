@@ -4,7 +4,7 @@
 
 ### Step 1: Access Email Templates
 
-1. Go to: **https://supabase.com/dashboard/project/winfoubqhkrigtgjwrpm/auth/templates**
+1. Go to: **https://supabase.com/dashboard/project/your-project-ref/auth/templates**
 2. Or navigate: **Authentication** → **Email Templates** in your Supabase Dashboard
 
 ### Step 2: Configure Invite User Template
@@ -155,8 +155,8 @@ Before going live:
 
 ## Quick Links
 
-- **Email Templates**: https://supabase.com/dashboard/project/winfoubqhkrigtgjwrpm/auth/templates
-- **URL Config**: https://supabase.com/dashboard/project/winfoubqhkrigtgjwrpm/auth/url-configuration
-- **SMTP Settings**: https://supabase.com/dashboard/project/winfoubqhkrigtgjwrpm/settings/auth
-- **Auth Logs**: https://supabase.com/dashboard/project/winfoubqhkrigtgjwrpm/logs/auth-logs
-- **Function Logs**: https://supabase.com/dashboard/project/winfoubqhkrigtgjwrpm/functions/invite-user/logs
+- **Email Templates**: https://supabase.com/dashboard/project/your-project-ref/auth/templates
+- **URL Config**: https://supabase.com/dashboard/project/your-project-ref/auth/url-configuration
+- **SMTP Settings**: https://supabase.com/dashboard/project/your-project-ref/settings/auth
+- **Auth Logs**: https://supabase.com/dashboard/project/your-project-ref/logs/auth-logs
+- **Function Logs**: https://supabase.com/dashboard/project/your-project-ref/functions/invite-user/logs
