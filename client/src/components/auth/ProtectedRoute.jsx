@@ -1,9 +1,18 @@
+import { useEffect } from 'react'
 import PropTypes from 'prop-types'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth()
+  const { user, loading, sessionExpired, validateSession } = useAuth()
+  const location = useLocation()
+
+  // Validate session on route change
+  useEffect(() => {
+    if (user && !loading) {
+      validateSession()
+    }
+  }, [location.pathname, user, loading, validateSession])
 
   if (loading) {
     return (
@@ -16,8 +25,10 @@ const ProtectedRoute = ({ children }) => {
     )
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />
+  // Redirect to login if no user or session expired
+  if (!user || sessionExpired) {
+    // Pass the current location so we can redirect back after login
+    return <Navigate to="/login" state={{ from: location, sessionExpired: true }} replace />
   }
 
   return children

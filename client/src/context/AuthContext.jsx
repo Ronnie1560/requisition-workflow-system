@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { supabase } from '../lib/supabase'
 import { logger } from '../utils/logger'
@@ -7,6 +7,9 @@ import { useInactivityTimeout } from '../hooks/useInactivityTimeout'
 import InactivityWarningModal from '../components/auth/InactivityWarningModal'
 
 const AuthContext = createContext({})
+
+// Session validation interval (5 minutes)
+const SESSION_VALIDATION_INTERVAL = 5 * 60 * 1000
 
 // Profile cache
 let profileCache = null
@@ -58,20 +61,126 @@ export const useAuth = () => {
   return context
 }
 
+// Export a function to trigger logout from outside React components (e.g., API interceptors)
+let globalLogoutCallback = null
+// eslint-disable-next-line react-refresh/only-export-components
+export const setGlobalLogoutCallback = (callback) => {
+  globalLogoutCallback = callback
+}
+// eslint-disable-next-line react-refresh/only-export-components
+export const triggerGlobalLogout = () => {
+  if (globalLogoutCallback) {
+    globalLogoutCallback()
+  }
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [sessionExpired, setSessionExpired] = useState(false)
+  const sessionValidationRef = useRef(null)
 
   // Use cached organization settings hook
   const { orgSettings } = useOrganizationSettings()
   const organizationName = orgSettings?.organization_name || 'Your Organization Name'
 
+  /**
+   * Clear all auth state and storage
+   */
+  const clearAuthState = useCallback(() => {
+    setUser(null)
+    setProfile(null)
+    setSessionExpired(false)
+    clearOrganizationSettingsCache()
+    
+    // Clear profile cache from localStorage
+    try {
+      const keys = Object.keys(localStorage)
+      keys.forEach(key => {
+        if (key.startsWith('profile_') || key.startsWith('org_')) {
+          localStorage.removeItem(key)
+        }
+      })
+    } catch {
+      // Ignore localStorage errors
+    }
+  }, [])
+
+  /**
+   * Force logout and redirect to login page
+   */
+  const forceLogout = useCallback(async (reason = 'session_expired') => {
+    logger.warn(`Force logout triggered: ${reason}`)
+    
+    // Clear state immediately
+    clearAuthState()
+    setSessionExpired(true)
+    
+    // Sign out from Supabase
+    try {
+      await supabase.auth.signOut()
+    } catch (error) {
+      logger.error('Error during force signOut:', error)
+    }
+  }, [clearAuthState])
+
+  // Register global logout callback for API interceptors
+  useEffect(() => {
+    setGlobalLogoutCallback(forceLogout)
+    return () => setGlobalLogoutCallback(null)
+  }, [forceLogout])
+
+  /**
+   * Validate current session - check if token is still valid
+   */
+  const validateSession = useCallback(async () => {
+    try {
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser()
+      
+      if (error || !currentUser) {
+        logger.warn('Session validation failed - no valid user')
+        await forceLogout('session_invalid')
+        return false
+      }
+      
+      return true
+    } catch (error) {
+      logger.error('Session validation error:', error)
+      await forceLogout('session_error')
+      return false
+    }
+  }, [forceLogout])
+
+  // Set up periodic session validation
+  useEffect(() => {
+    if (!user) {
+      // Clear interval if no user
+      if (sessionValidationRef.current) {
+        clearInterval(sessionValidationRef.current)
+        sessionValidationRef.current = null
+      }
+      return
+    }
+
+    // Validate session every 5 minutes
+    sessionValidationRef.current = setInterval(() => {
+      validateSession()
+    }, SESSION_VALIDATION_INTERVAL)
+
+    return () => {
+      if (sessionValidationRef.current) {
+        clearInterval(sessionValidationRef.current)
+        sessionValidationRef.current = null
+      }
+    }
+  }, [user, validateSession])
+
   // Handle automatic logout due to inactivity
-  const handleInactivityLogout = async () => {
+  const handleInactivityLogout = useCallback(async () => {
     logger.warn('Auto-logout due to inactivity')
-    await signOut()
-  }
+    await forceLogout('inactivity')
+  }, [forceLogout])
 
   // Set up inactivity timeout (only when user is logged in)
   const {
@@ -255,22 +364,8 @@ export const AuthProvider = ({ children }) => {
   }
 
   const signOut = async () => {
-    // Clear state immediately for responsive UI (don't wait for network)
-    setUser(null)
-    setProfile(null)
-    clearOrganizationSettingsCache()
-    
-    // Then perform the actual signout (can complete in background)
-    try {
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        logger.error('Error during signOut API call:', error)
-        // Don't throw - user is already logged out locally
-      }
-    } catch (error) {
-      logger.error('Error signing out:', error)
-      // Don't throw - user is already logged out locally
-    }
+    // Use forceLogout for consistent cleanup
+    await forceLogout('user_initiated')
   }
 
   const updateProfile = async (updates) => {
@@ -295,10 +390,12 @@ export const AuthProvider = ({ children }) => {
     profile,
     loading,
     organizationName,
+    sessionExpired,
     signUp,
     signIn,
     signOut,
     updateProfile,
+    validateSession,
     isAuthenticated: !!user,
     isAdmin: profile?.role === 'super_admin',
     userRole: profile?.role,
