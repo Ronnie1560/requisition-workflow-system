@@ -34,7 +34,7 @@ function RequisitionActionButtons({
   saving = false,
   isDraft = true,
   hasRequisitionId = false,
-  isEditMode = false,
+  _isEditMode = false,
   disabled = false
 }) {
   const navigate = useNavigate()

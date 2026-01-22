@@ -4,7 +4,7 @@
  * Tests the custom hook that manages requisition form state and handlers.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { useRequisitionForm } from './useRequisitionForm'
 
