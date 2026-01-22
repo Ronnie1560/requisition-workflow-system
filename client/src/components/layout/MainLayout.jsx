@@ -70,8 +70,10 @@ const MainLayout = () => {
   })
 
   const handleSignOut = async () => {
-    await signOut()
+    // Navigate immediately for responsive UI
     navigate('/login')
+    // Then perform signout (clears state and calls API)
+    await signOut()
   }
 
   const isActive = (path) => {

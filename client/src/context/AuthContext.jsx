@@ -255,16 +255,21 @@ export const AuthProvider = ({ children }) => {
   }
 
   const signOut = async () => {
+    // Clear state immediately for responsive UI (don't wait for network)
+    setUser(null)
+    setProfile(null)
+    clearOrganizationSettingsCache()
+    
+    // Then perform the actual signout (can complete in background)
     try {
       const { error } = await supabase.auth.signOut()
-      if (error) throw error
-      setUser(null)
-      setProfile(null)
-      // Clear organization settings cache on sign out
-      clearOrganizationSettingsCache()
+      if (error) {
+        logger.error('Error during signOut API call:', error)
+        // Don't throw - user is already logged out locally
+      }
     } catch (error) {
       logger.error('Error signing out:', error)
-      throw error
+      // Don't throw - user is already logged out locally
     }
   }
 
