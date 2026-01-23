@@ -164,18 +164,20 @@ const InviteUser = () => {
         <div className="p-6 space-y-6">
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="inviteEmail" className="block text-sm font-medium text-gray-700 mb-2">
               Email Address <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="email"
+                id="inviteEmail"
                 name="email"
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="user@example.com"
                 required
+                autoComplete="email"
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
               />
             </div>
@@ -186,18 +188,20 @@ const InviteUser = () => {
 
           {/* Full Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="inviteFullName" className="block text-sm font-medium text-gray-700 mb-2">
               Full Name <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
+                id="inviteFullName"
                 name="fullName"
                 value={formData.fullName}
                 onChange={handleInputChange}
                 placeholder="John Doe"
                 required
+                autoComplete="name"
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
               />
             </div>
@@ -205,12 +209,13 @@ const InviteUser = () => {
 
           {/* Role */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label htmlFor="inviteRole" className="block text-sm font-medium text-gray-700 mb-2">
               Role <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <select
+                id="inviteRole"
                 name="role"
                 value={formData.role}
                 onChange={handleInputChange}
@@ -247,10 +252,13 @@ const InviteUser = () => {
                 availableProjects.map((project) => (
                   <label
                     key={project.id}
+                    htmlFor={`project-${project.id}`}
                     className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer"
                   >
                     <input
                       type="checkbox"
+                      id={`project-${project.id}`}
+                      name={`project-${project.id}`}
                       checked={formData.projects.includes(project.id)}
                       onChange={() => handleProjectToggle(project.id)}
                       className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"

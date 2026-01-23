@@ -223,15 +223,18 @@ export default function UserSettings() {
               <form onSubmit={handleProfileSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-2">
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
+                      id="fullName"
+                      name="fullName"
                       required
                       value={profileData.full_name}
                       onChange={(e) => setProfileData({ ...profileData, full_name: e.target.value })}
                       disabled={!isEditingProfile}
+                      autoComplete="name"
                       className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         !isEditingProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''
                       }`}
@@ -239,27 +242,33 @@ export default function UserSettings() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
                       Email
                     </label>
                     <input
                       type="email"
+                      id="email"
+                      name="email"
                       value={profileData.email}
                       disabled
+                      autoComplete="email"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed text-gray-500"
                     />
                     <p className="text-xs text-gray-500 mt-1">Email cannot be changed here</p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
                       Phone
                     </label>
                     <input
                       type="tel"
+                      id="phone"
+                      name="phone"
                       value={profileData.phone}
                       onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
                       disabled={!isEditingProfile}
+                      autoComplete="tel"
                       className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         !isEditingProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''
                       }`}
@@ -267,14 +276,17 @@ export default function UserSettings() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-2">
                       Department
                     </label>
                     <input
                       type="text"
+                      id="department"
+                      name="department"
                       value={profileData.department}
                       onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
                       disabled={!isEditingProfile}
+                      autoComplete="organization-title"
                       className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                         !isEditingProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''
                       }`}
@@ -282,11 +294,13 @@ export default function UserSettings() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="employeeId" className="block text-sm font-medium text-gray-700 mb-2">
                       Employee ID
                     </label>
                     <input
                       type="text"
+                      id="employeeId"
+                      name="employeeId"
                       value={profileData.employee_id}
                       disabled
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed text-gray-500"
@@ -332,28 +346,34 @@ export default function UserSettings() {
               <form onSubmit={handlePasswordSubmit} className="space-y-6">
                 <div className="max-w-md space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
                       New Password <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
+                      id="newPassword"
+                      name="newPassword"
                       required
                       value={passwordData.newPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                      autoComplete="new-password"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Enter new password"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
                       Confirm Password <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="password"
+                      id="confirmPassword"
+                      name="confirmPassword"
                       required
                       value={passwordData.confirmPassword}
                       onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                      autoComplete="new-password"
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Confirm new password"
                     />
