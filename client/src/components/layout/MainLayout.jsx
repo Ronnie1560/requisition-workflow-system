@@ -70,10 +70,17 @@ const MainLayout = () => {
   })
 
   const handleSignOut = async () => {
-    // Navigate immediately for responsive UI
-    navigate('/login')
-    // Then perform signout (clears state and calls API)
-    await signOut()
+    try {
+      // IMPORTANT: Complete signOut BEFORE navigating
+      // This ensures auth state is fully cleared before Login page mounts
+      await signOut()
+      // Navigate only after signOut completes
+      navigate('/login')
+    } catch (error) {
+      // Log error but still navigate to login
+      console.error('Sign out error:', error)
+      navigate('/login')
+    }
   }
 
   const isActive = (path) => {

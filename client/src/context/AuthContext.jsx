@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useRef } f
 import PropTypes from 'prop-types'
 import { supabase } from '../lib/supabase'
 import { logger } from '../utils/logger'
+import { captureMessage } from '../lib/sentry'
 import { useOrganizationSettings, clearOrganizationSettingsCache } from '../hooks/useOrganizationSettings'
 import { useInactivityTimeout } from '../hooks/useInactivityTimeout'
 import InactivityWarningModal from '../components/auth/InactivityWarningModal'
@@ -94,11 +95,16 @@ export const AuthProvider = ({ children }) => {
     setSessionExpired(false)
     clearOrganizationSettingsCache()
     
+    // Clear in-memory profile cache (CRITICAL: fixes sign-in after sign-out bug)
+    profileCache = null
+    profileCacheUserId = null
+    profileCacheTimestamp = null
+    
     // Clear profile cache from localStorage
     try {
       const keys = Object.keys(localStorage)
       keys.forEach(key => {
-        if (key.startsWith('profile_') || key.startsWith('org_')) {
+        if (key.startsWith('profile_') || key.startsWith('org_') || key.startsWith('pcm_')) {
           localStorage.removeItem(key)
         }
       })
@@ -109,19 +115,32 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * Force logout and redirect to login page
+   * Returns a promise that resolves when signOut is complete
    */
   const forceLogout = useCallback(async (reason = 'session_expired') => {
     logger.warn(`Force logout triggered: ${reason}`)
     
-    // Clear state immediately
-    clearAuthState()
-    setSessionExpired(true)
+    // Track logout event for analytics
+    captureMessage('User logged out', {
+      level: 'info',
+      tags: { event: 'auth.logout', reason }
+    })
     
-    // Sign out from Supabase
+    // Clear state immediately (synchronous)
+    clearAuthState()
+    
+    // Only set sessionExpired for non-user-initiated logouts
+    if (reason !== 'user_initiated') {
+      setSessionExpired(true)
+    }
+    
+    // Sign out from Supabase and wait for completion
     try {
       await supabase.auth.signOut()
+      logger.info('Supabase signOut completed successfully')
     } catch (error) {
       logger.error('Error during force signOut:', error)
+      // Even on error, the local state is cleared, so user can still sign in
     }
   }, [clearAuthState])
 
@@ -351,12 +370,27 @@ export const AuthProvider = ({ children }) => {
 
   const signIn = async (email, password) => {
     try {
+      // Ensure clean state before sign in (fixes sign-in after sign-out issue)
+      clearAuthState()
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
-      if (error) throw error
+      if (error) {
+        captureMessage('Login failed', {
+          level: 'warning',
+          tags: { event: 'auth.login.failed', errorCode: error.code || 'unknown' }
+        })
+        throw error
+      }
+      
+      captureMessage('Login successful', {
+        level: 'info',
+        tags: { event: 'auth.login.success' }
+      })
+      
       return { data, error: null }
     } catch (error) {
       return { data: null, error }

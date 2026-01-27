@@ -10,8 +10,7 @@ const Login = () => {
 
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
-    rememberMe: false
+    password: ''
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -21,16 +20,19 @@ const Login = () => {
   useEffect(() => {
     if (location.state?.sessionExpired) {
       setSessionExpiredMessage(true)
-      // Clear the state so it doesn't persist on refresh
-      window.history.replaceState({}, document.title)
+      // Clear the navigation state to prevent message showing on refresh
+      // Use a small delay to ensure React Router has processed the navigation
+      const timer = setTimeout(() => {
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }, 100)
+      return () => clearTimeout(timer)
     }
   }, [location.state])
 
   const handleChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
     setFormData({
       ...formData,
-      [e.target.name]: value
+      [e.target.name]: e.target.value
     })
     setError('') // Clear error when user types
     setSessionExpiredMessage(false) // Clear session message when typing
@@ -166,32 +168,14 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Remember Me & Forgot Password */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="rememberMe"
-                name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleChange}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer"
-              />
-              <label
-                htmlFor="rememberMe"
-                className="ml-2 block text-sm text-gray-700 cursor-pointer"
-              >
-                Remember me
-              </label>
-            </div>
-            <div className="text-sm">
-              <Link
-                to="/forgot-password"
-                className="font-medium text-indigo-600 hover:text-indigo-500"
-              >
-                Forgot password?
-              </Link>
-            </div>
+          {/* Forgot Password */}
+          <div className="flex justify-end">
+            <Link
+              to="/forgot-password"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              Forgot password?
+            </Link>
           </div>
 
           {/* Submit Button */}
