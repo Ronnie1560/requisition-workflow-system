@@ -1,6 +1,6 @@
-# PCM Requisition System
+# Requisition Workflow System
 
-Production-ready requisition management system for Passion Christian Ministries.
+Production-ready requisition management system.
 
 ## Live Production
 

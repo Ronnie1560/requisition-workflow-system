@@ -12,8 +12,8 @@ test.describe('Authentication Flow', () => {
   })
 
   test('should display login page for unauthenticated users', async ({ page }) => {
-    // Should redirect to login or show login form
-    await expect(page.locator('text=Sign In, text=Log In, text=Login').first()).toBeVisible({ timeout: 10000 })
+    // Should redirect to login or show login form - look for email input field
+    await expect(page.locator('input[type="email"], input[name="email"]').first()).toBeVisible({ timeout: 10000 })
   })
 
   test('should show validation errors for empty form submission', async ({ page }) => {

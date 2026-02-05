@@ -8,7 +8,7 @@ describe('Environment Schema Validation', () => {
       .string()
       .url('VITE_SUPABASE_URL must be a valid URL')
       .min(1, 'VITE_SUPABASE_URL is required'),
-    
+
     VITE_SUPABASE_ANON_KEY: z
       .string()
       .min(20, 'VITE_SUPABASE_ANON_KEY must be a valid key')
@@ -16,8 +16,8 @@ describe('Environment Schema Validation', () => {
 
     VITE_APP_NAME: z
       .string()
-      .default('PCM Requisition System'),
-    
+      .default('Requisition Workflow System'),
+
     VITE_API_TIMEOUT: z
       .string()
       .transform(val => parseInt(val, 10))
@@ -31,7 +31,7 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_URL: 'https://test.supabase.co',
         VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
       })
-      
+
       expect(result.success).toBe(true)
     })
 
@@ -40,7 +40,7 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_URL: 'not-a-url',
         VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
       })
-      
+
       expect(result.success).toBe(false)
       expect(result.error.issues[0].path).toContain('VITE_SUPABASE_URL')
     })
@@ -49,7 +49,7 @@ describe('Environment Schema Validation', () => {
       const result = envSchema.safeParse({
         VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
       })
-      
+
       expect(result.success).toBe(false)
     })
 
@@ -58,7 +58,7 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_URL: 'https://test.supabase.co',
         VITE_SUPABASE_ANON_KEY: 'invalid-key-format',
       })
-      
+
       expect(result.success).toBe(false)
       expect(result.error.issues[0].path).toContain('VITE_SUPABASE_ANON_KEY')
     })
@@ -68,7 +68,7 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_URL: 'https://test.supabase.co',
         VITE_SUPABASE_ANON_KEY: 'eyJ',
       })
-      
+
       expect(result.success).toBe(false)
     })
   })
@@ -79,9 +79,9 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_URL: 'https://test.supabase.co',
         VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
       })
-      
+
       expect(result.success).toBe(true)
-      expect(result.data.VITE_APP_NAME).toBe('PCM Requisition System')
+      expect(result.data.VITE_APP_NAME).toBe('Requisition Workflow System')
     })
 
     it('should use custom app name when provided', () => {
@@ -90,7 +90,7 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
         VITE_APP_NAME: 'Custom App',
       })
-      
+
       expect(result.success).toBe(true)
       expect(result.data.VITE_APP_NAME).toBe('Custom App')
     })
@@ -101,7 +101,7 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
         VITE_API_TIMEOUT: '60000',
       })
-      
+
       expect(result.success).toBe(true)
       expect(result.data.VITE_API_TIMEOUT).toBe(60000)
       expect(typeof result.data.VITE_API_TIMEOUT).toBe('number')
@@ -112,7 +112,7 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_URL: 'https://test.supabase.co',
         VITE_SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test',
       })
-      
+
       expect(result.success).toBe(true)
       // Default returns as string '30000', transform only runs on provided values
       expect(result.data.VITE_API_TIMEOUT).toBe('30000')
@@ -127,7 +127,7 @@ describe('Environment Schema Validation', () => {
         VITE_APP_NAME: 'Test App',
         VITE_API_TIMEOUT: '5000',
       })
-      
+
       expect(result.success).toBe(true)
       expect(result.data).toEqual({
         VITE_SUPABASE_URL: 'https://test.supabase.co',
@@ -142,10 +142,10 @@ describe('Environment Schema Validation', () => {
         VITE_SUPABASE_URL: '',
         VITE_SUPABASE_ANON_KEY: '',
       })
-      
+
       expect(result.success).toBe(false)
       expect(result.error.issues.length).toBeGreaterThan(0)
-      
+
       // Check that error messages are descriptive
       const messages = result.error.issues.map(i => i.message)
       expect(messages.some(m => m.includes('URL') || m.includes('required'))).toBe(true)

@@ -373,10 +373,59 @@ export const AuthProvider = ({ children }) => {
       // Ensure clean state before sign in (fixes sign-in after sign-out issue)
       clearAuthState()
       
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      })
+      // Use rate-limited login edge function if available, fallback to direct auth
+      const useRateLimitedLogin = import.meta.env.VITE_USE_RATE_LIMITED_LOGIN === 'true'
+      
+      let data, error
+      
+      if (useRateLimitedLogin) {
+        // Call rate-limited login edge function
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rate-limited-login`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({ email, password })
+          }
+        )
+        
+        const result = await response.json()
+        
+        if (!response.ok) {
+          // Handle rate limiting
+          if (response.status === 429) {
+            const retryAfter = result.retry_after || 900 // 15 min default
+            const minutes = Math.ceil(retryAfter / 60)
+            error = new Error(`Too many login attempts. Please try again in ${minutes} minute${minutes > 1 ? 's' : ''}.`)
+            error.code = 'RATE_LIMITED'
+          } else {
+            error = new Error(result.error || 'Invalid login credentials')
+            error.code = result.code || 'INVALID_CREDENTIALS'
+          }
+        } else {
+          // Set the session from edge function response
+          const { error: setError } = await supabase.auth.setSession({
+            access_token: result.session.access_token,
+            refresh_token: result.session.refresh_token
+          })
+          if (setError) {
+            error = setError
+          } else {
+            data = result
+          }
+        }
+      } else {
+        // Direct Supabase auth (fallback)
+        const result = await supabase.auth.signInWithPassword({
+          email,
+          password
+        })
+        data = result.data
+        error = result.error
+      }
 
       if (error) {
         captureMessage('Login failed', {

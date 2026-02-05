@@ -39,9 +39,9 @@ const ConnectionTest = () => {
       if (queryError) {
         // Check if it's a "relation does not exist" error, which is actually good!
         if (queryError.message.includes('relation') ||
-            queryError.message.includes('does not exist') ||
-            queryError.code === '42P01' ||
-            queryError.code === 'PGRST116') {
+          queryError.message.includes('does not exist') ||
+          queryError.code === '42P01' ||
+          queryError.code === 'PGRST116') {
           setConnectionStatus('connected')
           setProjectInfo({
             url: import.meta.env.VITE_SUPABASE_URL,
@@ -72,7 +72,7 @@ const ConnectionTest = () => {
       <div className="bg-white rounded-lg shadow-xl p-8 max-w-2xl w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            PCM Requisition System
+            Requisition Workflow System
           </h1>
           <p className="text-gray-600">Supabase Connection Test</p>
         </div>

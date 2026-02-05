@@ -22,7 +22,7 @@ const envSchema = z.object({
   // Optional: Application Settings
   VITE_APP_NAME: z
     .string()
-    .default('PCM Requisition System'),
+    .default('Requisition Workflow System'),
   
   VITE_APP_VERSION: z
     .string()

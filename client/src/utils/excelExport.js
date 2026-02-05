@@ -31,8 +31,8 @@ const loadExcelJS = async () => {
  */
 const downloadExcelFile = async (workbook, filename) => {
   const buffer = await workbook.xlsx.writeBuffer()
-  const blob = new Blob([buffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   })
   const url = window.URL.createObjectURL(blob)
   const link = document.createElement('a')
@@ -68,7 +68,7 @@ export const exportRequisitionsToExcel = async (requisitions, filename = 'Requis
     const ExcelJS = await loadExcelJS()
 
     const workbook = new ExcelJS.Workbook()
-    workbook.creator = 'PCM Requisition System'
+    workbook.creator = 'Requisition Workflow System'
     workbook.created = new Date()
 
     const worksheet = workbook.addWorksheet('Requisitions')
@@ -151,12 +151,12 @@ export const exportRequisitionDetailsToExcel = async (requisition) => {
   try {
     const ExcelJS = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
-    workbook.creator = 'PCM Requisition System'
+    workbook.creator = 'Requisition Workflow System'
     workbook.created = new Date()
 
     // Sheet 1: Requisition Header
     const headerSheet = workbook.addWorksheet('Requisition Details')
-    
+
     headerSheet.columns = [
       { header: 'Field', key: 'field', width: 25 },
       { header: 'Value', key: 'value', width: 50 }
@@ -262,7 +262,7 @@ export const exportBudgetSummaryToExcel = async (projectName, budgetSummary, exp
   try {
     const ExcelJS = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
-    workbook.creator = 'PCM Requisition System'
+    workbook.creator = 'Requisition Workflow System'
     workbook.created = new Date()
 
     // Sheet 1: Budget Summary
@@ -342,7 +342,7 @@ export const exportToExcel = async (data, columns, sheetName = 'Data', filename 
   try {
     const ExcelJS = await loadExcelJS()
     const workbook = new ExcelJS.Workbook()
-    workbook.creator = 'PCM Requisition System'
+    workbook.creator = 'Requisition Workflow System'
     workbook.created = new Date()
 
     const worksheet = workbook.addWorksheet(sheetName)

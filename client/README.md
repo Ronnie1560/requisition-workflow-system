@@ -1,4 +1,4 @@
-# PCM Requisition System - Frontend
+# Requisition Workflow System - Frontend
 
 A modern Requisition and Expense Management System built with React, Vite, and Supabase for Uganda-based organizations.
 

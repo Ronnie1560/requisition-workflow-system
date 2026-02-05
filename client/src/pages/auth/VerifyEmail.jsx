@@ -138,7 +138,7 @@ export default function VerifyEmail() {
           <ol className="space-y-2 text-gray-600">
             <li className="flex items-start gap-2">
               <span className="font-semibold text-blue-600 mt-0.5">1.</span>
-              <span>Check your inbox for an email from PCM Requisition System</span>
+              <span>Check your inbox for an email from Requisition Workflow System</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-semibold text-blue-600 mt-0.5">2.</span>
