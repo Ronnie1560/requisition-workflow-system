@@ -492,13 +492,15 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={value}>
       {children}
 
-      {/* Inactivity Warning Modal */}
-      <InactivityWarningModal
-        isOpen={showWarning}
-        remainingSeconds={remainingSeconds}
-        onStayLoggedIn={handleStayLoggedIn}
-        onLogout={handleLogoutFromWarning}
-      />
+      {/* Inactivity Warning Modal - only show when user is authenticated */}
+      {user && (
+        <InactivityWarningModal
+          isOpen={showWarning}
+          remainingSeconds={remainingSeconds}
+          onStayLoggedIn={handleStayLoggedIn}
+          onLogout={handleLogoutFromWarning}
+        />
+      )}
     </AuthContext.Provider>
   )
 }

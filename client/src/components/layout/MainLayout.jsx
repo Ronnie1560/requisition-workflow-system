@@ -32,14 +32,15 @@ const MainLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [showReportsDialog, setShowReportsDialog] = useState(false)
-  const { user, profile, signOut, loading } = useAuth()
+  const { user, profile, signOut } = useAuth()
   const { currentOrg: _currentOrg, canManageOrg } = useOrganization()
   const navigate = useNavigate()
   const location = useLocation()
 
-  // If user is not authenticated after loading, don't render the layout
+  // If user is not authenticated, don't render the layout
   // This prevents navigation from being visible after logout
-  if (!loading && !user) {
+  // Check !user first to ensure immediate hide on logout (regardless of loading state)
+  if (!user) {
     return null
   }
 
