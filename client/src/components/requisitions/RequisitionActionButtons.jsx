@@ -10,6 +10,7 @@
 import React, { useState } from 'react'
 import PropTypes from 'prop-types'
 import { useNavigate } from 'react-router-dom'
+import { AlertTriangle, Send, CheckCircle } from 'lucide-react'
 import SaveTemplateModal from './SaveTemplateModal'
 
 /**
@@ -39,6 +40,7 @@ function RequisitionActionButtons({
 }) {
   const navigate = useNavigate()
   const [showTemplateModal, setShowTemplateModal] = useState(false)
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
 
   const handleCancel = () => {
     navigate('/requisitions')
@@ -55,6 +57,15 @@ function RequisitionActionButtons({
   const handleTemplateSave = async (templateData) => {
     await onSaveTemplate(templateData)
     setShowTemplateModal(false)
+  }
+
+  const handleSubmitClick = () => {
+    setShowSubmitConfirm(true)
+  }
+
+  const handleSubmitConfirm = () => {
+    setShowSubmitConfirm(false)
+    onSubmit()
   }
 
   const isLoading = loading || saving
@@ -134,7 +145,7 @@ function RequisitionActionButtons({
           {isDraft && hasRequisitionId && (
             <button
               type="button"
-              onClick={onSubmit}
+              onClick={handleSubmitClick}
               disabled={isLoading || disabled}
               className="w-full sm:w-auto px-6 py-2 text-sm font-medium 
                        text-white bg-green-600 hover:bg-green-700 
@@ -166,6 +177,48 @@ function RequisitionActionButtons({
           )}
         </div>
       </div>
+
+      {/* Submit Confirmation Modal */}
+      {showSubmitConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden">
+            <div className="p-6">
+              <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-green-100 rounded-full">
+                <Send className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                Submit Requisition for Review?
+              </h3>
+              <p className="text-sm text-gray-600 text-center mb-1">
+                Once submitted, this requisition will be sent to the reviewer/approver. You will not be able to edit it unless it is returned to you.
+              </p>
+              <div className="flex items-start gap-2 mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700">
+                  Please ensure all items, quantities, and prices are correct before submitting.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 py-4 bg-gray-50 border-t border-gray-200">
+              <button
+                type="button"
+                onClick={() => setShowSubmitConfirm(false)}
+                className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Go Back
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitConfirm}
+                className="flex-1 px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <Send className="w-4 h-4" />
+                Yes, Submit
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Template Modal */}
       <SaveTemplateModal
