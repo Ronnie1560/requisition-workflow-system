@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useTimedMessage } from '../../hooks/useTimedMessage'
 import { useAuth } from '../../context/AuthContext'
 import { getCurrentUserProfile, updateUserProfile, changePassword } from '../../services/api/userProfile'
 import { logger } from '../../utils/logger'
@@ -13,7 +14,7 @@ export default function UserSettings() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [success, showSuccess] = useTimedMessage(3000)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
 
   // Profile form
@@ -86,16 +87,15 @@ export default function UserSettings() {
     e.preventDefault()
     setSaving(true)
     setError('')
-    setSuccess('')
+    showSuccess('')
 
     try {
       const { error } = await updateUserProfile(user.id, profileData)
       if (error) throw error
 
-      setSuccess('Profile updated successfully')
+      showSuccess('Profile updated successfully')
       setIsEditingProfile(false)
       setOriginalProfileData(profileData) // Update original data after successful save
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       logger.error('Error updating profile:', err)
       setError(err.message || 'Failed to update profile')
@@ -108,7 +108,7 @@ export default function UserSettings() {
     e.preventDefault()
     setSaving(true)
     setError('')
-    setSuccess('')
+    showSuccess('')
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
       setError('Passwords do not match')
@@ -126,13 +126,12 @@ export default function UserSettings() {
       const { error } = await changePassword(passwordData.newPassword)
       if (error) throw error
 
-      setSuccess('Password changed successfully')
+      showSuccess('Password changed successfully')
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       })
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       logger.error('Error changing password:', err)
       setError(err.message || 'Failed to change password')

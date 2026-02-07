@@ -52,16 +52,38 @@ serve(async (req) => {
       )
     }
 
-    // Check if user is admin
+    // Get inviter's profile including org_id
     const { data: profile } = await supabaseClient
       .from('users')
-      .select('role')
+      .select('role, org_id')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'super_admin') {
+    if (!profile || !profile.org_id) {
       return new Response(
-        JSON.stringify({ error: 'Forbidden: Admin access required' }),
+        JSON.stringify({ error: 'Forbidden: You must belong to an organization to invite users' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403,
+        }
+      )
+    }
+
+    // Verify inviter has admin privileges in their organization
+    const { data: membership } = await supabaseAdmin
+      .from('organization_members')
+      .select('role')
+      .eq('organization_id', profile.org_id)
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single()
+
+    const isOrgAdmin = membership && ['admin', 'owner'].includes(membership.role)
+    const isSuperAdmin = profile.role === 'super_admin'
+
+    if (!isOrgAdmin && !isSuperAdmin) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Organization admin access required' }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 403,
@@ -139,14 +161,8 @@ serve(async (req) => {
 
     // Create user profile
     if (authData.user) {
-      // Get the inviting user's organization
-      const { data: inviterProfile } = await supabaseAdmin
-        .from('users')
-        .select('org_id')
-        .eq('id', user.id)
-        .single()
-
-      const orgId = inviterProfile?.org_id
+      // Use inviter's org_id (already fetched and validated above)
+      const orgId = profile.org_id
 
       const { error: profileError } = await supabaseAdmin
         .from('users')
@@ -197,23 +213,33 @@ serve(async (req) => {
         }
       }
 
-      // Assign to projects if specified
+      // Assign to projects if specified (validate they belong to the inviter's org)
       if (projects && projects.length > 0) {
-        const assignments = projects.map((projectId: string) => ({
-          user_id: authData.user.id,
-          project_id: projectId,
-          role: 'submitter',
-          assigned_by: user.id,
-          is_active: true,
-        }))
+        // Verify all projects belong to the inviter's organization
+        const { data: validProjects } = await supabaseAdmin
+          .from('projects')
+          .select('id')
+          .eq('org_id', orgId)
+          .in('id', projects)
 
-        const { error: assignError } = await supabaseAdmin
-          .from('user_project_assignments')
-          .insert(assignments)
+        const validProjectIds = (validProjects || []).map((p: { id: string }) => p.id)
 
-        if (assignError) {
-          console.error('Project assignment error:', assignError)
-          // Don't fail the whole operation if project assignment fails
+        if (validProjectIds.length > 0) {
+          const assignments = validProjectIds.map((projectId: string) => ({
+            user_id: authData.user.id,
+            project_id: projectId,
+            role: 'submitter',
+            assigned_by: user.id,
+            is_active: true,
+          }))
+
+          const { error: assignError } = await supabaseAdmin
+            .from('user_project_assignments')
+            .insert(assignments)
+
+          if (assignError) {
+            console.error('Project assignment error:', assignError)
+          }
         }
       }
 

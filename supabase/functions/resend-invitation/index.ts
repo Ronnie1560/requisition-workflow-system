@@ -52,16 +52,38 @@ serve(async (req) => {
       )
     }
 
-    // Check if user is admin
+    // Get inviter's profile including org_id
     const { data: profile } = await supabaseClient
       .from('users')
-      .select('role')
+      .select('role, org_id')
       .eq('id', user.id)
       .single()
 
-    if (!profile || profile.role !== 'super_admin') {
+    if (!profile || !profile.org_id) {
       return new Response(
-        JSON.stringify({ error: 'Forbidden: Admin access required' }),
+        JSON.stringify({ error: 'Forbidden: You must belong to an organization' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403,
+        }
+      )
+    }
+
+    // Verify inviter has admin privileges in their organization
+    const { data: membership } = await supabaseAdmin
+      .from('organization_members')
+      .select('role')
+      .eq('organization_id', profile.org_id)
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single()
+
+    const isOrgAdmin = membership && ['admin', 'owner'].includes(membership.role)
+    const isSuperAdmin = profile.role === 'super_admin'
+
+    if (!isOrgAdmin && !isSuperAdmin) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Organization admin access required' }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 403,
@@ -83,10 +105,11 @@ serve(async (req) => {
       )
     }
 
-    // Find the user by userId or email
+    // Find the user by userId or email (scoped to inviter's organization)
     let query = supabaseAdmin
       .from('users')
       .select('id, email, full_name, role')
+      .eq('org_id', profile.org_id)
 
     if (userId) {
       query = query.eq('id', userId)

@@ -5,6 +5,7 @@
  * Extracted from CreateRequisition.jsx to improve testability and reusability
  */
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useTimedMessage } from './useTimedMessage'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import {
@@ -50,7 +51,7 @@ export function useRequisitionForm(draftId = null) {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [success, showSuccess] = useTimedMessage(3000)
   const [requisitionId, setRequisitionId] = useState(draftId)
   const [isDraft, setIsDraft] = useState(true)
   const [lastSaved, setLastSaved] = useState(null)
@@ -256,8 +257,7 @@ export function useRequisitionForm(draftId = null) {
 
       setLastSaved(new Date())
       if (!silent) {
-        setSuccess('Draft saved successfully')
-        setTimeout(() => setSuccess(''), 3000)
+        showSuccess('Draft saved successfully')
       }
     } catch (err) {
       logger.error('Error saving draft:', err)
@@ -269,7 +269,7 @@ export function useRequisitionForm(draftId = null) {
         setSaving(false)
       }
     }
-  }, [formData, lineItems, navigate, requisitionId, user?.id, validateForm])
+  }, [formData, lineItems, navigate, requisitionId, user?.id, validateForm, showSuccess])
 
   /**
    * Submit requisition for review
@@ -300,7 +300,7 @@ export function useRequisitionForm(draftId = null) {
 
       if (submitError) throw submitError
 
-      setSuccess('Requisition submitted successfully!')
+      showSuccess('Requisition submitted successfully!')
       setIsDraft(false)
 
       setTimeout(() => {
@@ -314,7 +314,7 @@ export function useRequisitionForm(draftId = null) {
         setLoading(false)
       }
     }
-  }, [requisitionId, navigate, user?.id, validateForm])
+  }, [requisitionId, navigate, user?.id, validateForm, showSuccess])
 
   /**
    * Save current requisition as template
@@ -348,13 +348,12 @@ export function useRequisitionForm(draftId = null) {
 
       if (templateError) throw templateError
 
-      setSuccess('Template saved successfully!')
-      setTimeout(() => setSuccess(''), 3000)
+      showSuccess('Template saved successfully!')
     } catch (err) {
       logger.error('Error saving template:', err)
       throw err
     }
-  }, [formData, lineItems, navigate, user?.id, validateForm])
+  }, [formData, lineItems, navigate, user?.id, validateForm, showSuccess])
 
   /**
    * Clear error message
@@ -367,8 +366,8 @@ export function useRequisitionForm(draftId = null) {
    * Clear success message
    */
   const clearSuccess = useCallback(() => {
-    setSuccess('')
-  }, [])
+    showSuccess('')
+  }, [showSuccess])
 
   // Calculate grand total
   const grandTotal = calculateGrandTotal(lineItems)

@@ -22,7 +22,7 @@ const RequisitionsList = () => {
     search: searchParams.get('search') || ''
   })
   const [showTemplateModal, setShowTemplateModal] = useState(false)
-  const [_creatingFromTemplate, setCreatingFromTemplate] = useState(false)
+
 
   // Update URL when filters change
   useEffect(() => {
@@ -102,8 +102,6 @@ const RequisitionsList = () => {
   }
 
   const handleCreateFromTemplate = async (template) => {
-    setCreatingFromTemplate(true)
-
     try {
       const { data, error } = await createRequisitionFromTemplate(template.id, user.id)
 
@@ -114,8 +112,6 @@ const RequisitionsList = () => {
     } catch (err) {
       logger.error('Error creating requisition from template:', err)
       alert(err.message || 'Failed to create requisition from template')
-    } finally {
-      setCreatingFromTemplate(false)
     }
   }
 

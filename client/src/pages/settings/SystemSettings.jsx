@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTimedMessage } from '../../hooks/useTimedMessage'
 import { useAuth } from '../../context/AuthContext'
 import {
   getApprovalWorkflows,
@@ -33,7 +34,7 @@ export default function SystemSettings() {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [success, showSuccess] = useTimedMessage(3000)
 
   // Approval workflows
   const [workflows, setWorkflows] = useState([])
@@ -104,7 +105,7 @@ export default function SystemSettings() {
   const handleWorkflowSubmit = async (workflowData) => {
     setSaving(true)
     setError('')
-    setSuccess('')
+    showSuccess('')
 
     try {
       let result
@@ -116,11 +117,10 @@ export default function SystemSettings() {
 
       if (result.error) throw result.error
 
-      setSuccess(editingWorkflow?.id ? 'Workflow updated successfully' : 'Workflow created successfully')
+      showSuccess(editingWorkflow?.id ? 'Workflow updated successfully' : 'Workflow created successfully')
       setShowWorkflowModal(false)
       setEditingWorkflow(null)
       await loadWorkflows()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       logger.error('Error saving workflow:', err)
       setError(err.message || 'Failed to save workflow')
@@ -137,9 +137,8 @@ export default function SystemSettings() {
       const { error } = await deleteApprovalWorkflow(workflowId)
       if (error) throw error
 
-      setSuccess('Workflow deleted successfully')
+      showSuccess('Workflow deleted successfully')
       await loadWorkflows()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       logger.error('Error deleting workflow:', err)
       setError(err.message || 'Failed to delete workflow')
@@ -153,9 +152,8 @@ export default function SystemSettings() {
       const { error } = await toggleWorkflowStatus(workflowId, !currentStatus)
       if (error) throw error
 
-      setSuccess('Workflow status updated')
+      showSuccess('Workflow status updated')
       await loadWorkflows()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       logger.error('Error toggling workflow:', err)
       setError(err.message || 'Failed to toggle workflow status')
@@ -165,7 +163,7 @@ export default function SystemSettings() {
   const handleCategorySubmit = async (categoryData) => {
     setSaving(true)
     setError('')
-    setSuccess('')
+    showSuccess('')
 
     try {
       let result
@@ -177,11 +175,10 @@ export default function SystemSettings() {
 
       if (result.error) throw result.error
 
-      setSuccess(editingCategory?.id ? 'Category updated successfully' : 'Category created successfully')
+      showSuccess(editingCategory?.id ? 'Category updated successfully' : 'Category created successfully')
       setShowCategoryModal(false)
       setEditingCategory(null)
       await loadCategories()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       logger.error('Error saving category:', err)
       setError(err.message || 'Failed to save category')
@@ -198,9 +195,8 @@ export default function SystemSettings() {
       const { error } = await deleteCategory(categoryId)
       if (error) throw error
 
-      setSuccess('Category deleted successfully')
+      showSuccess('Category deleted successfully')
       await loadCategories()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       logger.error('Error deleting category:', err)
       setError(err.message || 'Failed to delete category')
@@ -214,9 +210,8 @@ export default function SystemSettings() {
       const { error } = await activateCategory(categoryId, !currentStatus)
       if (error) throw error
 
-      setSuccess('Category status updated')
+      showSuccess('Category status updated')
       await loadCategories()
-      setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       logger.error('Error toggling category:', err)
       setError(err.message || 'Failed to toggle category status')

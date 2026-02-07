@@ -30,8 +30,8 @@ export default defineConfig({
         }
       }
     },
-    // Enable source maps for production debugging
-    sourcemap: true,
+    // Source maps disabled in production to protect source code
+    sourcemap: false,
     // Chunk size warning limit (1000kb = 1MB)
     // Increased to accommodate lazy-loaded libraries:
     // - ExcelJS: ~938 KB (only loads on Excel export)

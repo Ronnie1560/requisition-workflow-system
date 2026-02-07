@@ -3,6 +3,20 @@ import { getOrganizationSettings } from '../services/api/systemSettings'
 import { logger } from './logger'
 
 // ============================================================================
+// HTML Escaping (prevents stored XSS in print/export output)
+// ============================================================================
+
+const escapeHtml = (str) => {
+  if (str == null) return ''
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+// ============================================================================
 // Organization Name Helper
 // ============================================================================
 
@@ -210,16 +224,16 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
 
   // Handle both organization object and simple string name (backward compatibility)
   const isOrgObject = typeof organization === 'object' && organization !== null
-  const orgName = isOrgObject ? organization.name : organization
-  const orgEmail = isOrgObject ? organization.email : null
-  const orgPhone = isOrgObject ? organization.phone : null
-  const orgWebsite = isOrgObject ? organization.website : null
+  const orgName = escapeHtml(isOrgObject ? organization.name : organization)
+  const orgEmail = isOrgObject ? escapeHtml(organization.email) : null
+  const orgPhone = isOrgObject ? escapeHtml(organization.phone) : null
+  const orgWebsite = isOrgObject ? escapeHtml(organization.website) : null
   const orgAddress = isOrgObject && organization.address_line1 ?
     [
-      organization.address_line1,
-      organization.address_line2,
-      [organization.city, organization.state_province].filter(Boolean).join(', '),
-      [organization.postal_code, organization.country].filter(Boolean).join(', ')
+      escapeHtml(organization.address_line1),
+      escapeHtml(organization.address_line2),
+      [escapeHtml(organization.city), escapeHtml(organization.state_province)].filter(Boolean).join(', '),
+      [escapeHtml(organization.postal_code), escapeHtml(organization.country)].filter(Boolean).join(', ')
     ].filter(Boolean).join('<br>') : null
 
   return `
@@ -535,11 +549,11 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
         ` : ''}
         <div class="doc-title-row">
           <span class="doc-type">Purchase Requisition</span>
-          <span class="doc-number">${requisition.requisition_number || 'DRAFT'}</span>
+          <span class="doc-number">${escapeHtml(requisition.requisition_number) || 'DRAFT'}</span>
         </div>
         <div class="doc-title-row" style="margin-top: 8px;">
           <span style="font-size: 10px; color: #6b7280;"><strong>DATE:</strong> ${requisition.submitted_at ? formatDate(requisition.submitted_at) : formatDate(new Date().toISOString())}</span>
-          <span class="status-badge">${requisition.status?.replace('_', ' ').toUpperCase() || 'DRAFT'}</span>
+          <span class="status-badge">${escapeHtml(requisition.status?.replace('_', ' ').toUpperCase()) || 'DRAFT'}</span>
         </div>
       </div>
 
@@ -547,7 +561,7 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
       <div class="info-section">
         <div class="info-row">
           <span class="info-label">Title:</span>
-          <span class="info-value">${requisition.title || 'N/A'}</span>
+          <span class="info-value">${escapeHtml(requisition.title) || 'N/A'}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Total Amount:</span>
@@ -555,15 +569,15 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
         </div>
         <div class="info-row">
           <span class="info-label">Project:</span>
-          <span class="info-value">${requisition.project?.name || 'N/A'}<small>${requisition.project?.code || ''}</small></span>
+          <span class="info-value">${escapeHtml(requisition.project?.name) || 'N/A'}<small>${escapeHtml(requisition.project?.code)}</small></span>
         </div>
         <div class="info-row">
           <span class="info-label">Account:</span>
-          <span class="info-value">${requisition.expense_account?.name || 'N/A'}<small>${requisition.expense_account?.code || ''}</small></span>
+          <span class="info-value">${escapeHtml(requisition.expense_account?.name) || 'N/A'}<small>${escapeHtml(requisition.expense_account?.code)}</small></span>
         </div>
         <div class="info-row">
           <span class="info-label">Submitted By:</span>
-          <span class="info-value">${requisition.submitted_by_user?.full_name || 'N/A'}</span>
+          <span class="info-value">${escapeHtml(requisition.submitted_by_user?.full_name) || 'N/A'}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Required By:</span>
@@ -576,13 +590,13 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
         ${requisition.description ? `
         <div class="text-section ${!requisition.justification ? 'text-section-full' : ''}">
           <div class="text-section-title">Description</div>
-          <div class="text-section-content">${requisition.description}</div>
+          <div class="text-section-content">${escapeHtml(requisition.description)}</div>
         </div>
         ` : ''}
         ${requisition.justification ? `
         <div class="text-section ${!requisition.description ? 'text-section-full' : ''}">
           <div class="text-section-title">Justification</div>
-          <div class="text-section-content">${requisition.justification}</div>
+          <div class="text-section-content">${escapeHtml(requisition.justification)}</div>
         </div>
         ` : ''}
       </div>
@@ -607,13 +621,13 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
             ${(requisition.requisition_items || []).map(item => `
               <tr>
                 <td class="text-center">${item.line_number}</td>
-                <td>${item.item?.code || ''}</td>
+                <td>${escapeHtml(item.item?.code)}</td>
                 <td>
-                  <strong>${item.item?.name || ''}</strong>
-                  ${item.item_description ? `<br><span style="font-size: 8px; color: #6b7280;">${item.item_description}</span>` : ''}
+                  <strong>${escapeHtml(item.item?.name)}</strong>
+                  ${item.item_description ? `<br><span style="font-size: 8px; color: #6b7280;">${escapeHtml(item.item_description)}</span>` : ''}
                 </td>
                 <td class="text-right">${item.quantity}</td>
-                <td>${item.uom?.name || ''}</td>
+                <td>${escapeHtml(item.uom?.name)}</td>
                 <td class="text-right">${formatCurrency(item.unit_price)}</td>
                 <td class="text-right"><strong>${formatCurrency(item.total_price)}</strong></td>
               </tr>
