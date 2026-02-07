@@ -68,10 +68,8 @@ function RequisitionActionButtons({
           onClick={handleCancel}
           disabled={isLoading}
           className="order-2 sm:order-1 w-full sm:w-auto px-4 py-2 text-sm font-medium 
-                   text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 
-                   border border-gray-300 dark:border-gray-600 rounded-lg
-                   hover:bg-gray-50 dark:hover:bg-gray-600 
-                   focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+                   text-gray-700 bg-white border border-gray-300 rounded-lg
+                   hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                    disabled:opacity-50 disabled:cursor-not-allowed
                    transition-colors duration-200"
         >
@@ -86,10 +84,8 @@ function RequisitionActionButtons({
             onClick={handleSaveTemplateClick}
             disabled={isLoading || disabled}
             className="w-full sm:w-auto px-4 py-2 text-sm font-medium 
-                     text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 
-                     border border-gray-300 dark:border-gray-600 rounded-lg
-                     hover:bg-gray-50 dark:hover:bg-gray-600 
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+                     text-gray-700 bg-white border border-gray-300 rounded-lg
+                     hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-colors duration-200"
           >
@@ -108,10 +104,8 @@ function RequisitionActionButtons({
             onClick={() => onSaveDraft(false)}
             disabled={isLoading || disabled}
             className="w-full sm:w-auto px-4 py-2 text-sm font-medium 
-                     text-primary-700 dark:text-primary-300 bg-primary-50 dark:bg-primary-900/30 
-                     border border-primary-300 dark:border-primary-700 rounded-lg
-                     hover:bg-primary-100 dark:hover:bg-primary-900/50 
-                     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+                     text-indigo-700 bg-indigo-50 border border-indigo-300 rounded-lg
+                     hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
                      disabled:opacity-50 disabled:cursor-not-allowed
                      transition-colors duration-200"
           >
@@ -143,9 +137,9 @@ function RequisitionActionButtons({
               onClick={onSubmit}
               disabled={isLoading || disabled}
               className="w-full sm:w-auto px-6 py-2 text-sm font-medium 
-                       text-white bg-primary-600 hover:bg-primary-700 
-                       border border-transparent rounded-lg
-                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500
+                       text-white bg-green-600 hover:bg-green-700 
+                       border border-transparent rounded-lg shadow-sm
+                       focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500
                        disabled:opacity-50 disabled:cursor-not-allowed
                        transition-colors duration-200"
             >

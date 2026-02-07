@@ -67,6 +67,15 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
     }
 
     onChange(updatedItems)
+
+    // Auto-open item selector when user fills in the last item's price
+    // This makes it easier to add multiple items without clicking "Add Item" each time
+    if (field === 'unit_price' && parseFloat(value) > 0 && index === updatedItems.length - 1 && !disabled && projectAccountId) {
+      // Small delay to let the current input complete
+      setTimeout(() => {
+        setShowItemSelector(true)
+      }, 300)
+    }
   }
 
   const removeLineItem = (index) => {

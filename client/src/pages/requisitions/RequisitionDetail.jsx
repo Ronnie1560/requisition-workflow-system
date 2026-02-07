@@ -426,7 +426,12 @@ const RequisitionDetail = () => {
                     <p className="font-medium text-sm">{item.item?.name}</p>
                     <p className="text-xs text-gray-500">{item.item?.code}</p>
                   </td>
-                  <td className="px-4 py-3 text-sm">{item.item_description || '-'}</td>
+                  <td className="px-4 py-3 text-sm">
+                    {item.item_description || '-'}
+                    {item.notes && (
+                      <p className="text-xs text-indigo-600 mt-1 italic">Note: {item.notes}</p>
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-sm text-right">{item.quantity}</td>
                   <td className="px-4 py-3 text-sm">{item.uom?.name}</td>
                   <td className="px-4 py-3 text-sm text-right">{formatCurrency(item.unit_price)}</td>
