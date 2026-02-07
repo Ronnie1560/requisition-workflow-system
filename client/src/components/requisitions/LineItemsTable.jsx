@@ -3,11 +3,6 @@ import PropTypes from 'prop-types'
 import { Trash2, AlertTriangle, Package, MessageSquare, Search } from 'lucide-react'
 import { getAllItemsForRequisition, getUomTypes, calculatePriceVariance, isPriceVarianceHigh } from '../../services/api/requisitions'
 
-import { useState, useEffect, useCallback, memo, useRef } from 'react'
-import PropTypes from 'prop-types'
-import { Trash2, AlertTriangle, Package, MessageSquare, Search } from 'lucide-react'
-import { getAllItemsForRequisition, getUomTypes, calculatePriceVariance, isPriceVarianceHigh } from '../../services/api/requisitions'
-
 const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
   const [allItems, setAllItems] = useState([])
   const [uomTypes, setUomTypes] = useState([])
