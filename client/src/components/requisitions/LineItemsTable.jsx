@@ -1,6 +1,6 @@
 import { useState, useEffect, memo, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { Trash2, AlertTriangle, Package, MessageSquare, Search } from 'lucide-react'
+import { Trash2, AlertTriangle, Package, MessageSquare, Search, ChevronDown, Plus } from 'lucide-react'
 import { getAllItemsForRequisition, getUomTypes, calculatePriceVariance, isPriceVarianceHigh } from '../../services/api/requisitions'
 
 const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
@@ -130,7 +130,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-gray-900">Line Items</h2>
+          <h2 className="text-lg font-semibold text-gray-900">Item details</h2>
           {items.length > 0 && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
               {items.length} {items.length === 1 ? 'item' : 'items'}
@@ -148,7 +148,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
       {/* Table Layout */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         {/* Column Headers */}
-        <div className="hidden sm:grid sm:grid-cols-24 gap-0 bg-gray-50 border-b border-gray-200 px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wider"
+        <div className="hidden sm:grid sm:grid-cols-24 gap-0 bg-gray-50 border-b border-gray-200 px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider"
           style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
         >
           <div>#</div>
@@ -157,7 +157,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
           <div>UoM</div>
           <div>Unit Price</div>
           <div className="text-right">Total</div>
-          <div></div>
+          <div className="text-right">Actions</div>
         </div>
 
         {/* Filled Item Rows */}
@@ -332,22 +332,21 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
             )
           })}
 
-          {/* Empty "Add New Item" Row with inline search */}
+          {/* Empty "Select Item" Row with dropdown */}
           {showEmptyRow && (
-            <div className="bg-gray-50/50">
+            <div className="bg-white border-b border-gray-100">
               <div
-                className="px-4 py-3 items-center gap-3 hidden sm:grid"
+                className="px-4 py-2.5 items-center gap-3 hidden sm:grid"
                 style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
               >
                 {/* Line Number */}
-                <span className="text-xs font-medium text-gray-300">
+                <span className="text-xs font-medium text-gray-400">
                   {items.length + 1}
                 </span>
 
-                {/* Inline Search Input */}
+                {/* Select Item Dropdown */}
                 <div className="relative">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       ref={searchInputRef}
                       type="text"
@@ -357,9 +356,10 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                         setShowDropdown(true)
                       }}
                       onFocus={() => setShowDropdown(true)}
-                      placeholder="Type to search items..."
-                      className="w-full pl-8 pr-3 py-1.5 text-sm border border-dashed border-gray-300 rounded-md focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none bg-white placeholder-gray-400"
+                      placeholder="Select item"
+                      className="w-full px-3 pr-8 py-1.5 text-sm border border-gray-300 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-white placeholder-gray-400"
                     />
+                    <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                   </div>
 
                   {/* Dropdown */}
@@ -398,18 +398,17 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                   )}
                 </div>
 
-                {/* Placeholder columns */}
-                <div className="text-xs text-gray-300 text-center">—</div>
-                <div className="text-xs text-gray-300 text-center">—</div>
-                <div className="text-xs text-gray-300 text-center">—</div>
-                <div className="text-xs text-gray-300 text-right">—</div>
+                {/* Empty input placeholders matching the row style */}
+                <input type="number" disabled placeholder="" className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-300" />
+                <input type="text" disabled placeholder="" className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-300" />
+                <input type="number" disabled placeholder="" className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-300" />
+                <div></div>
                 <div></div>
               </div>
 
               {/* Mobile empty row */}
               <div className="sm:hidden px-4 py-3">
                 <div className="relative">
-                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                   <input
                     type="text"
                     value={emptyRowSearch}
@@ -418,9 +417,10 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                       setShowDropdown(true)
                     }}
                     onFocus={() => setShowDropdown(true)}
-                    placeholder="Type to search and add items..."
-                    className="w-full pl-8 pr-3 py-2 text-sm border border-dashed border-gray-300 rounded-md focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none bg-white placeholder-gray-400"
+                    placeholder="Select item"
+                    className="w-full px-3 pr-8 py-2 text-sm border border-gray-300 rounded focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none bg-white placeholder-gray-400"
                   />
+                  <ChevronDown className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
                   {showDropdown && (
                     <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       {filteredItems.length === 0 ? (
@@ -438,6 +438,26 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Ghost row — visual hint that more items can be added */}
+          {showEmptyRow && (
+            <div className="bg-white/60 border-b border-dashed border-gray-100">
+              <div
+                className="px-4 py-2.5 items-center gap-3 hidden sm:grid opacity-40"
+                style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
+              >
+                <span className="text-xs font-medium text-gray-300">
+                  {items.length + 2}
+                </span>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
               </div>
             </div>
           )}
@@ -466,6 +486,34 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
           </div>
         )}
       </div>
+
+      {/* Add lines / Clear all lines buttons */}
+      {projectAccountId && !disabled && (
+        <div className="flex items-center gap-3 mt-3">
+          <button
+            type="button"
+            onClick={() => {
+              if (searchInputRef.current) {
+                searchInputRef.current.focus()
+                setShowDropdown(true)
+              }
+            }}
+            className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add lines
+          </button>
+          {items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Clear all lines
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Price Variance Warning */}
       {items.some(item => isPriceVarianceHigh(item.unit_price, item.preferred_price)) && (
