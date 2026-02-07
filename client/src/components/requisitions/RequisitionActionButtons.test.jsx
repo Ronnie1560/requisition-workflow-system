@@ -102,11 +102,18 @@ describe('RequisitionActionButtons', () => {
       expect(onSaveDraft).toHaveBeenCalledWith(false)
     })
 
-    it('should call onSubmit when Submit is clicked', () => {
+    it('should call onSubmit when Submit is clicked and confirmed', async () => {
       const onSubmit = vi.fn()
       renderComponent({ onSubmit, isDraft: true, hasRequisitionId: true })
 
+      // Click submit to open confirmation dialog
       fireEvent.click(screen.getByRole('button', { name: /submit for review/i }))
+
+      // Confirm in the dialog
+      await waitFor(() => {
+        expect(screen.getByText(/submit requisition for review/i)).toBeInTheDocument()
+      })
+      fireEvent.click(screen.getByRole('button', { name: /^yes, submit$/i }))
 
       expect(onSubmit).toHaveBeenCalled()
     })

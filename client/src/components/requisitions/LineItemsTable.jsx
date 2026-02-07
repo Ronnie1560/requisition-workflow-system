@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo, useRef } from 'react'
+import { useState, useEffect, memo, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { Trash2, AlertTriangle, Package, MessageSquare, Search } from 'lucide-react'
 import { getAllItemsForRequisition, getUomTypes, calculatePriceVariance, isPriceVarianceHigh } from '../../services/api/requisitions'
@@ -14,24 +14,20 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
   const dropdownRef = useRef(null)
   const tempIdCounterRef = useRef(0)
 
-  const loadAllItems = useCallback(async () => {
-    const { data, error } = await getAllItemsForRequisition()
-    if (!error && data) {
-      setAllItems(data)
-    }
-  }, [])
-
-  const loadUomTypes = useCallback(async () => {
-    const { data, error } = await getUomTypes()
-    if (!error && data) {
-      setUomTypes(data)
-    }
-  }, [])
-
   useEffect(() => {
-    loadUomTypes()
-    loadAllItems()
-  }, [loadUomTypes, loadAllItems])
+    let cancelled = false
+    const loadData = async () => {
+      const [itemsResult, uomResult] = await Promise.all([
+        getAllItemsForRequisition(),
+        getUomTypes()
+      ])
+      if (cancelled) return
+      if (!itemsResult.error && itemsResult.data) setAllItems(itemsResult.data)
+      if (!uomResult.error && uomResult.data) setUomTypes(uomResult.data)
+    }
+    loadData()
+    return () => { cancelled = true }
+  }, [])
 
   // Close dropdown when clicking outside
   useEffect(() => {
