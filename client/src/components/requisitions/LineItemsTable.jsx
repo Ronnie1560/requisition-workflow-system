@@ -1,14 +1,22 @@
 import { useState, useEffect, useCallback, memo, useRef } from 'react'
 import PropTypes from 'prop-types'
-import { Plus, Trash2, AlertTriangle, Search, Package, MessageSquare } from 'lucide-react'
+import { Trash2, AlertTriangle, Package, MessageSquare, Search } from 'lucide-react'
+import { getAllItemsForRequisition, getUomTypes, calculatePriceVariance, isPriceVarianceHigh } from '../../services/api/requisitions'
+
+import { useState, useEffect, useCallback, memo, useRef } from 'react'
+import PropTypes from 'prop-types'
+import { Trash2, AlertTriangle, Package, MessageSquare, Search } from 'lucide-react'
 import { getAllItemsForRequisition, getUomTypes, calculatePriceVariance, isPriceVarianceHigh } from '../../services/api/requisitions'
 
 const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
   const [allItems, setAllItems] = useState([])
   const [uomTypes, setUomTypes] = useState([])
-  const [showItemSelector, setShowItemSelector] = useState(false)
-  const [searchTerm, setSearchTerm] = useState('')
   const [expandedNotes, setExpandedNotes] = useState({})
+  // Track the search text and active dropdown for empty rows
+  const [emptyRowSearch, setEmptyRowSearch] = useState('')
+  const [showDropdown, setShowDropdown] = useState(false)
+  const searchInputRef = useRef(null)
+  const dropdownRef = useRef(null)
   const tempIdCounterRef = useRef(0)
 
   const loadAllItems = useCallback(async () => {
@@ -26,13 +34,25 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
   }, [])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
     loadUomTypes()
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
     loadAllItems()
   }, [loadUomTypes, loadAllItems])
 
-  const addLineItem = (item) => {
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        dropdownRef.current && !dropdownRef.current.contains(e.target) &&
+        searchInputRef.current && !searchInputRef.current.contains(e.target)
+      ) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const selectItem = (item) => {
     tempIdCounterRef.current += 1
     const newItem = {
       id: `temp-${tempIdCounterRef.current}`,
@@ -42,15 +62,15 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
       quantity: 1,
       uom_id: item.default_uom_id,
       uom_name: item.uom?.name || '',
-      unit_price: 0, // User will enter the price
+      unit_price: 0,
       total_price: 0,
       line_number: items.length + 1,
       notes: ''
     }
 
     onChange([...items, newItem])
-    setShowItemSelector(false)
-    setSearchTerm('')
+    setEmptyRowSearch('')
+    setShowDropdown(false)
   }
 
   const updateLineItem = (index, field, value) => {
@@ -60,7 +80,6 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
       [field]: value
     }
 
-    // Recalculate total
     if (field === 'quantity' || field === 'unit_price') {
       const quantity = field === 'quantity' ? parseFloat(value) || 0 : updatedItems[index].quantity
       const unitPrice = field === 'unit_price' ? parseFloat(value) || 0 : updatedItems[index].unit_price
@@ -68,20 +87,10 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
     }
 
     onChange(updatedItems)
-
-    // Auto-open item selector when user fills in the last item's price
-    // This makes it easier to add multiple items without clicking "Add Item" each time
-    if (field === 'unit_price' && parseFloat(value) > 0 && index === updatedItems.length - 1 && !disabled && projectAccountId) {
-      // Small delay to let the current input complete
-      setTimeout(() => {
-        setShowItemSelector(true)
-      }, 300)
-    }
   }
 
   const removeLineItem = (index) => {
     const updatedItems = items.filter((_, i) => i !== index)
-    // Renumber items
     updatedItems.forEach((item, i) => {
       item.line_number = i + 1
     })
@@ -98,17 +107,31 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
     }
   }
 
-  const filteredItems = allItems.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (item.category && item.category.toLowerCase().includes(searchTerm.toLowerCase()))
-  )
-
   const toggleNotes = (itemId) => {
     setExpandedNotes(prev => ({ ...prev, [itemId]: !prev[itemId] }))
   }
 
-  // Calculate running total
+  // Filter items for the inline search dropdown
+  const filteredItems = allItems.filter(item => {
+    if (!emptyRowSearch.trim()) return true
+    const term = emptyRowSearch.toLowerCase()
+    return (
+      item.name.toLowerCase().includes(term) ||
+      item.code.toLowerCase().includes(term) ||
+      (item.category && item.category.toLowerCase().includes(term))
+    )
+  })
+
+  // Determine if the last filled row is complete (has item + qty > 0 + price > 0)
+  const lastFilledItem = items.length > 0 ? items[items.length - 1] : null
+  const lastRowComplete = lastFilledItem
+    ? lastFilledItem.item_id && lastFilledItem.quantity > 0 && lastFilledItem.unit_price > 0
+    : true // show empty row if no items at all
+
+  // Show the empty "new item" row when: project selected, not disabled, and last row is complete (or no items yet)
+  const showEmptyRow = projectAccountId && !disabled && lastRowComplete
+
+  // Running total
   const runningTotal = items.reduce((sum, item) => sum + (item.total_price || 0), 0)
 
   return (
@@ -123,14 +146,6 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
             </span>
           )}
         </div>
-        <button
-          onClick={() => setShowItemSelector(true)}
-          disabled={disabled || !projectAccountId}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Item
-        </button>
       </div>
 
       {!projectAccountId && (
@@ -139,103 +154,23 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
         </div>
       )}
 
-      {/* Item Selector Modal */}
-      {showItemSelector && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-900">
-                  Select Item
-                </h3>
-                <span className="text-sm text-gray-500">
-                  {filteredItems.length} available
-                </span>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search by name, code, or category..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <div className="p-4 overflow-y-auto max-h-[50vh]">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {filteredItems.length === 0 ? (
-                  <div className="col-span-full text-center py-8">
-                    <Package className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-gray-500">No items found. Try a different search term.</p>
-                  </div>
-                ) : (
-                  filteredItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => addLineItem(item)}
-                      className="text-left p-3 border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-300 transition-all group"
-                    >
-                      <p className="font-medium text-gray-900 group-hover:text-indigo-700 text-sm">
-                        {item.name}
-                      </p>
-                      <div className="flex items-center justify-between mt-1">
-                        <p className="text-xs text-gray-500">
-                          {item.code}
-                          {item.category && ` • ${item.category}`}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {item.uom?.name || 'No UOM'}
-                        </p>
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t bg-gray-50">
-              <button
-                onClick={() => {
-                  setShowItemSelector(false)
-                  setSearchTerm('')
-                }}
-                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
+      {/* Table Layout */}
+      <div className="border border-gray-200 rounded-lg overflow-hidden">
+        {/* Column Headers */}
+        <div className="hidden sm:grid sm:grid-cols-24 gap-0 bg-gray-50 border-b border-gray-200 px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wider"
+          style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
+        >
+          <div>#</div>
+          <div>Item</div>
+          <div>Qty</div>
+          <div>UoM</div>
+          <div>Unit Price</div>
+          <div className="text-right">Total</div>
+          <div></div>
         </div>
-      )}
 
-      {/* Line Items - Card Layout */}
-      {items.length === 0 ? (
-        <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center">
-          <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium mb-1">No items added yet</p>
-          <p className="text-sm text-gray-400">
-            {projectAccountId 
-              ? 'Click "Add Item" to add line items to this requisition'
-              : 'Select a project above to start adding items'
-            }
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {/* Column Headers */}
-          <div className="hidden sm:grid sm:grid-cols-12 gap-3 px-4 py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-            <div className="col-span-4">Item</div>
-            <div className="col-span-2">Qty &amp; UoM</div>
-            <div className="col-span-2">Unit Price</div>
-            <div className="col-span-2 text-right">Total</div>
-            <div className="col-span-2"></div>
-          </div>
-
-          {/* Item Cards */}
+        {/* Filled Item Rows */}
+        <div className="divide-y divide-gray-100">
           {items.map((item, index) => {
             const priceVariance = calculatePriceVariance(item.unit_price, item.preferred_price)
             const hasHighVariance = isPriceVarianceHigh(item.unit_price, item.preferred_price)
@@ -245,56 +180,53 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
             return (
               <div
                 key={item.id}
-                className={`border rounded-lg transition-all ${
-                  hasHighVariance
-                    ? 'border-yellow-300 bg-yellow-50'
-                    : 'border-gray-200 bg-white hover:border-gray-300'
-                }`}
+                className={hasHighVariance ? 'bg-yellow-50' : 'bg-white'}
               >
                 {/* Main Row */}
-                <div className="p-4 grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                <div
+                  className="px-4 py-3 items-center gap-3 hidden sm:grid"
+                  style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
+                >
+                  {/* Line Number */}
+                  <span className="text-xs font-medium text-gray-400">
+                    {item.line_number}
+                  </span>
+
                   {/* Item Info */}
-                  <div className="sm:col-span-4 flex items-center gap-3">
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100 text-xs font-medium text-gray-600 flex-shrink-0">
-                      {item.line_number}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {item.item_name}
-                      </p>
-                      <p className="text-xs text-gray-500">{item.item_code}</p>
-                    </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {item.item_name}
+                    </p>
+                    <p className="text-xs text-gray-400">{item.item_code}</p>
                   </div>
 
-                  {/* Quantity + UoM */}
-                  <div className="sm:col-span-2 flex items-center gap-2">
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
-                      disabled={disabled}
-                      min="0"
-                      step="0.01"
-                      className="w-20 px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
-                      aria-label="Quantity"
-                    />
-                    <select
-                      value={item.uom_id}
-                      onChange={(e) => updateUom(index, e.target.value)}
-                      disabled={disabled}
-                      className="w-24 px-1 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
-                      aria-label="Unit of Measure"
-                    >
-                      {uomTypes.map((uom) => (
-                        <option key={uom.id} value={uom.id}>
-                          {uom.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Quantity */}
+                  <input
+                    type="number"
+                    value={item.quantity}
+                    onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
+                    disabled={disabled}
+                    min="0"
+                    step="0.01"
+                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
+                  />
+
+                  {/* UoM */}
+                  <select
+                    value={item.uom_id}
+                    onChange={(e) => updateUom(index, e.target.value)}
+                    disabled={disabled}
+                    className="w-full px-1 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
+                  >
+                    {uomTypes.map((uom) => (
+                      <option key={uom.id} value={uom.id}>
+                        {uom.name}
+                      </option>
+                    ))}
+                  </select>
 
                   {/* Unit Price */}
-                  <div className="sm:col-span-2">
+                  <div>
                     <input
                       type="number"
                       value={item.unit_price}
@@ -303,36 +235,33 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                       min="0"
                       step="0.01"
                       className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
-                      aria-label="Unit Price"
                     />
                     {hasHighVariance && (
                       <div className="flex items-center gap-1 mt-1">
                         <AlertTriangle className="w-3 h-3 text-yellow-600" />
                         <span className="text-xs text-yellow-700">
-                          {priceVariance > 0 ? '+' : ''}{priceVariance.toFixed(1)}% variance
+                          {priceVariance > 0 ? '+' : ''}{priceVariance.toFixed(1)}%
                         </span>
                       </div>
                     )}
                   </div>
 
                   {/* Total */}
-                  <div className="sm:col-span-2 text-right">
-                    <p className="text-sm font-semibold text-gray-900">
-                      UGX {item.total_price.toLocaleString()}
-                    </p>
-                  </div>
+                  <p className="text-sm font-semibold text-gray-900 text-right">
+                    UGX {item.total_price.toLocaleString()}
+                  </p>
 
                   {/* Actions */}
-                  <div className="sm:col-span-2 flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-0.5">
                     <button
                       type="button"
                       onClick={() => toggleNotes(item.id)}
                       disabled={disabled}
                       className={`p-1.5 rounded-md transition-colors ${
-                        hasNotes 
-                          ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100' 
+                        hasNotes
+                          ? 'text-indigo-600 bg-indigo-50 hover:bg-indigo-100'
                           : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                      } disabled:opacity-50`}
                       title={isNotesExpanded ? 'Hide notes' : 'Add/edit notes'}
                     >
                       <MessageSquare className="w-4 h-4" />
@@ -341,7 +270,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                       type="button"
                       onClick={() => removeLineItem(index)}
                       disabled={disabled}
-                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
                       title="Remove item"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -349,17 +278,62 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                   </div>
                 </div>
 
-                {/* Expandable Notes Row */}
+                {/* Mobile layout */}
+                <div className="sm:hidden px-4 py-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-gray-900">{item.line_number}. {item.item_name}</p>
+                      <p className="text-xs text-gray-400">{item.item_code}</p>
+                    </div>
+                    <div className="flex items-center gap-1 ml-2">
+                      <button type="button" onClick={() => toggleNotes(item.id)} disabled={disabled}
+                        className={`p-1.5 rounded-md ${hasNotes ? 'text-indigo-600 bg-indigo-50' : 'text-gray-400'}`}
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </button>
+                      <button type="button" onClick={() => removeLineItem(index)} disabled={disabled}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-md"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    <input type="number" value={item.quantity}
+                      onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
+                      disabled={disabled} min="0" step="0.01" placeholder="Qty"
+                      className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-100"
+                    />
+                    <select value={item.uom_id} onChange={(e) => updateUom(index, e.target.value)}
+                      disabled={disabled}
+                      className="px-1 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-100"
+                    >
+                      {uomTypes.map((uom) => (
+                        <option key={uom.id} value={uom.id}>{uom.name}</option>
+                      ))}
+                    </select>
+                    <input type="number" value={item.unit_price}
+                      onChange={(e) => updateLineItem(index, 'unit_price', e.target.value)}
+                      disabled={disabled} min="0" step="0.01" placeholder="Price"
+                      className="px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-100"
+                    />
+                    <p className="text-sm font-semibold text-gray-900 text-right self-center">
+                      UGX {item.total_price.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Expandable Notes */}
                 {isNotesExpanded && (
-                  <div className="px-4 pb-4 pt-0 border-t border-gray-100">
-                    <label className="block text-xs font-medium text-gray-500 mb-1 mt-3">Note for this item</label>
+                  <div className="px-4 pb-3 border-t border-gray-100">
+                    <label className="block text-xs font-medium text-gray-500 mb-1 mt-2">Note</label>
                     <textarea
                       value={item.notes || ''}
                       onChange={(e) => updateLineItem(index, 'notes', e.target.value)}
                       disabled={disabled}
-                      placeholder="Add a note for this item (e.g., specifications, preferred brand, delivery instructions)..."
+                      placeholder="Specifications, preferred brand, delivery instructions..."
                       rows={2}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100 resize-none"
+                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none disabled:bg-gray-100 resize-none"
                     />
                   </div>
                 )}
@@ -367,8 +341,131 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
             )
           })}
 
-          {/* Running Total Footer */}
-          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg">
+          {/* Empty "Add New Item" Row with inline search */}
+          {showEmptyRow && (
+            <div className="bg-gray-50/50">
+              <div
+                className="px-4 py-3 items-center gap-3 hidden sm:grid"
+                style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
+              >
+                {/* Line Number */}
+                <span className="text-xs font-medium text-gray-300">
+                  {items.length + 1}
+                </span>
+
+                {/* Inline Search Input */}
+                <div className="relative">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      value={emptyRowSearch}
+                      onChange={(e) => {
+                        setEmptyRowSearch(e.target.value)
+                        setShowDropdown(true)
+                      }}
+                      onFocus={() => setShowDropdown(true)}
+                      placeholder="Type to search items..."
+                      className="w-full pl-8 pr-3 py-1.5 text-sm border border-dashed border-gray-300 rounded-md focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none bg-white placeholder-gray-400"
+                    />
+                  </div>
+
+                  {/* Dropdown */}
+                  {showDropdown && (
+                    <div
+                      ref={dropdownRef}
+                      className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    >
+                      {filteredItems.length === 0 ? (
+                        <div className="px-4 py-6 text-center">
+                          <p className="text-sm text-gray-500">No items found</p>
+                        </div>
+                      ) : (
+                        filteredItems.slice(0, 50).map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => selectItem(item)}
+                            className="w-full text-left px-3 py-2 hover:bg-indigo-50 transition-colors border-b border-gray-50 last:border-0"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
+                                <p className="text-xs text-gray-400">
+                                  {item.code}
+                                  {item.category && ` • ${item.category}`}
+                                </p>
+                              </div>
+                              <span className="text-xs text-gray-400 ml-2 flex-shrink-0">
+                                {item.uom?.name || ''}
+                              </span>
+                            </div>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Placeholder columns */}
+                <div className="text-xs text-gray-300 text-center">—</div>
+                <div className="text-xs text-gray-300 text-center">—</div>
+                <div className="text-xs text-gray-300 text-center">—</div>
+                <div className="text-xs text-gray-300 text-right">—</div>
+                <div></div>
+              </div>
+
+              {/* Mobile empty row */}
+              <div className="sm:hidden px-4 py-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    value={emptyRowSearch}
+                    onChange={(e) => {
+                      setEmptyRowSearch(e.target.value)
+                      setShowDropdown(true)
+                    }}
+                    onFocus={() => setShowDropdown(true)}
+                    placeholder="Type to search and add items..."
+                    className="w-full pl-8 pr-3 py-2 text-sm border border-dashed border-gray-300 rounded-md focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 outline-none bg-white placeholder-gray-400"
+                  />
+                  {showDropdown && (
+                    <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {filteredItems.length === 0 ? (
+                        <div className="px-4 py-4 text-center text-sm text-gray-500">No items found</div>
+                      ) : (
+                        filteredItems.slice(0, 30).map((item) => (
+                          <button key={item.id} onClick={() => selectItem(item)}
+                            className="w-full text-left px-3 py-2 hover:bg-indigo-50 border-b border-gray-50 last:border-0"
+                          >
+                            <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                            <p className="text-xs text-gray-400">{item.code}</p>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* No items empty state (only when no project or disabled) */}
+        {items.length === 0 && !showEmptyRow && (
+          <div className="p-12 text-center">
+            <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 font-medium mb-1">No items added yet</p>
+            <p className="text-sm text-gray-400">
+              Select a project above to start adding items
+            </p>
+          </div>
+        )}
+
+        {/* Running Total Footer */}
+        {items.length > 0 && (
+          <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-t border-gray-200">
             <span className="text-sm font-medium text-gray-600">
               Total ({items.length} {items.length === 1 ? 'item' : 'items'})
             </span>
@@ -376,8 +473,8 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
               UGX {runningTotal.toLocaleString()}
             </span>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Price Variance Warning */}
       {items.some(item => isPriceVarianceHigh(item.unit_price, item.preferred_price)) && (
