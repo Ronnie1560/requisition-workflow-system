@@ -89,31 +89,30 @@ WHERE id IN (
 );
 
 -- 8. Remove remaining demo expense accounts by hardcoded ID
---    First delete ALL children referencing demo parents (not just the hardcoded sub-categories)
+--    Use recursive CTE to find ALL descendants at any nesting depth,
+--    then delete deepest children first (reverse depth order)
+WITH RECURSIVE demo_tree AS (
+  -- Anchor: the demo parent accounts
+  SELECT id, parent_id, 0 AS depth
+  FROM expense_accounts
+  WHERE id IN (
+    '11111111-1111-1111-1111-111111111101',
+    '11111111-1111-1111-1111-111111111102',
+    '11111111-1111-1111-1111-111111111103',
+    '11111111-1111-1111-1111-111111111104',
+    '11111111-1111-1111-1111-111111111105',
+    '11111111-1111-1111-1111-111111111106',
+    '11111111-1111-1111-1111-111111111107',
+    '11111111-1111-1111-1111-111111111108'
+  )
+  UNION ALL
+  -- Recurse: find all children at every level
+  SELECT ea.id, ea.parent_id, dt.depth + 1
+  FROM expense_accounts ea
+  JOIN demo_tree dt ON ea.parent_id = dt.id
+)
 DELETE FROM expense_accounts
-WHERE parent_id IN (
-  '11111111-1111-1111-1111-111111111101',
-  '11111111-1111-1111-1111-111111111102',
-  '11111111-1111-1111-1111-111111111103',
-  '11111111-1111-1111-1111-111111111104',
-  '11111111-1111-1111-1111-111111111105',
-  '11111111-1111-1111-1111-111111111106',
-  '11111111-1111-1111-1111-111111111107',
-  '11111111-1111-1111-1111-111111111108'
-);
-
---    Then delete the demo parent accounts
-DELETE FROM expense_accounts
-WHERE id IN (
-  '11111111-1111-1111-1111-111111111101',
-  '11111111-1111-1111-1111-111111111102',
-  '11111111-1111-1111-1111-111111111103',
-  '11111111-1111-1111-1111-111111111104',
-  '11111111-1111-1111-1111-111111111105',
-  '11111111-1111-1111-1111-111111111106',
-  '11111111-1111-1111-1111-111111111107',
-  '11111111-1111-1111-1111-111111111108'
-);
+WHERE id IN (SELECT id FROM demo_tree);
 
 COMMIT;
 
