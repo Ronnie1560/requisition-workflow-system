@@ -202,7 +202,7 @@ serve(async (req) => {
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
     <p style="color: #666; font-size: 12px; text-align: center;">
-      This invitation was sent from the PCM Requisition System.<br>
+      This invitation was sent from the Requisition Workflow System.<br>
       If you did not request this, please contact your system administrator.
     </p>
   </div>
@@ -220,7 +220,7 @@ serve(async (req) => {
         body: JSON.stringify({
           from: FROM_EMAIL,
           to: [existingUser.email],
-          subject: 'PCM Requisition System - Set Your Password',
+          subject: 'Requisition Workflow System - Set Your Password',
           html: emailHtml,
         }),
       })

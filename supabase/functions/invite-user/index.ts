@@ -277,7 +277,7 @@ serve(async (req) => {
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
     <p style="font-size: 16px;">Hello <strong>${fullName}</strong>,</p>
     
-    <p>You have been invited to join the PASSION CHRISTIAN MINISTRIES Requisition System.</p>
+    <p>You have been invited to join the Requisition Workflow System.</p>
     
     <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
       <p style="margin: 0;"><strong>Your Role:</strong> ${role.replace('_', ' ').toUpperCase()}</p>

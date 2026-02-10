@@ -509,7 +509,7 @@ serve(async (req) => {
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
     <p style="font-size: 16px;">Hello <strong>${sanitizedAdmin.fullName}</strong>,</p>
 
-    <p>Thank you for creating your organization <strong>${sanitizedOrg.name}</strong> on PCM Requisition System!</p>
+    <p>Thank you for creating your organization <strong>${sanitizedOrg.name}</strong> on Requisition Workflow System!</p>
 
     <p>To complete your registration and activate your account, please verify your email address by clicking the button below:</p>
 
@@ -546,7 +546,7 @@ serve(async (req) => {
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
     <p style="color: #666; font-size: 12px; text-align: center;">
-      This email was sent from the PCM Requisition System.<br>
+      This email was sent from the Requisition Workflow System.<br>
       If you did not create this organization, please ignore this email or contact support.
     </p>
   </div>
@@ -564,7 +564,7 @@ serve(async (req) => {
             body: JSON.stringify({
               from: FROM_EMAIL,
               to: [sanitizedAdmin.email],
-              subject: `Verify your email - ${sanitizedOrg.name} | PCM Requisition System`,
+              subject: `Verify your email - ${sanitizedOrg.name} | Requisition Workflow System`,
               html: verificationEmailHtml,
             }),
           })
