@@ -104,8 +104,30 @@ WHERE id IN (
   '44444444-4444-4444-4444-444444444410'
 );
 
--- 9. Remove demo expense accounts (the 16 hardcoded IDs: 8 parents + 8 sub-categories)
---    Step A: Break ALL parent_id references pointing to any demo account
+-- 9. Detach any requisitions still referencing demo expense accounts
+--    (these are requisitions on real projects that used a demo expense account)
+UPDATE requisitions SET expense_account_id = NULL
+WHERE expense_account_id IN (
+  '11111111-1111-1111-1111-111111111101',
+  '11111111-1111-1111-1111-111111111102',
+  '11111111-1111-1111-1111-111111111103',
+  '11111111-1111-1111-1111-111111111104',
+  '11111111-1111-1111-1111-111111111105',
+  '11111111-1111-1111-1111-111111111106',
+  '11111111-1111-1111-1111-111111111107',
+  '11111111-1111-1111-1111-111111111108',
+  '22222222-2222-2222-2222-222222222201',
+  '22222222-2222-2222-2222-222222222202',
+  '22222222-2222-2222-2222-222222222203',
+  '22222222-2222-2222-2222-222222222204',
+  '22222222-2222-2222-2222-222222222205',
+  '22222222-2222-2222-2222-222222222206',
+  '22222222-2222-2222-2222-222222222207',
+  '22222222-2222-2222-2222-222222222208'
+);
+
+-- 10. Remove demo expense accounts (the 16 hardcoded IDs: 8 parents + 8 sub-categories)
+--     Step A: Break ALL parent_id references pointing to any demo account
 UPDATE expense_accounts SET parent_id = NULL
 WHERE parent_id IN (
   '11111111-1111-1111-1111-111111111101',
@@ -126,7 +148,7 @@ WHERE parent_id IN (
   '22222222-2222-2222-2222-222222222208'
 );
 
---    Step B: Now safely delete the 16 demo accounts
+--     Step B: Now safely delete the 16 demo accounts
 DELETE FROM expense_accounts
 WHERE id IN (
   '22222222-2222-2222-2222-222222222201',
