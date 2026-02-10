@@ -56,7 +56,15 @@ WHERE project_id IN (
   '33333333-3333-3333-3333-333333333303'
 );
 
--- 5. Remove demo projects
+-- 5. Remove expense accounts linked to demo projects
+DELETE FROM expense_accounts
+WHERE project_id IN (
+  '33333333-3333-3333-3333-333333333301',
+  '33333333-3333-3333-3333-333333333302',
+  '33333333-3333-3333-3333-333333333303'
+);
+
+-- 6. Remove demo projects
 --    (user_project_assignments cascade automatically)
 DELETE FROM projects
 WHERE id IN (
@@ -65,7 +73,7 @@ WHERE id IN (
   '33333333-3333-3333-3333-333333333303'
 );
 
--- 6. Remove demo catalog items
+-- 7. Remove demo catalog items
 DELETE FROM items
 WHERE id IN (
   '44444444-4444-4444-4444-444444444401',
@@ -80,7 +88,7 @@ WHERE id IN (
   '44444444-4444-4444-4444-444444444410'
 );
 
--- 7. Remove demo expense accounts (sub-categories first, then parents)
+-- 8. Remove remaining demo expense accounts by hardcoded ID (sub-categories first, then parents)
 DELETE FROM expense_accounts
 WHERE id IN (
   '22222222-2222-2222-2222-222222222201',
