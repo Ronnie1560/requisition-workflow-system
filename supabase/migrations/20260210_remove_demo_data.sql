@@ -9,23 +9,7 @@
 
 BEGIN;
 
--- 1. Remove pre-approved item pricing (account_items)
---    These reference demo project_accounts and demo items.
-DELETE FROM account_items
-WHERE item_id IN (
-  '44444444-4444-4444-4444-444444444401',
-  '44444444-4444-4444-4444-444444444402',
-  '44444444-4444-4444-4444-444444444403',
-  '44444444-4444-4444-4444-444444444404',
-  '44444444-4444-4444-4444-444444444405',
-  '44444444-4444-4444-4444-444444444406',
-  '44444444-4444-4444-4444-444444444407',
-  '44444444-4444-4444-4444-444444444408',
-  '44444444-4444-4444-4444-444444444409',
-  '44444444-4444-4444-4444-444444444410'
-);
-
--- 2. Remove project-account budget assignments for demo projects
+-- 1. Remove project-account budget assignments for demo projects
 DELETE FROM project_accounts
 WHERE project_id IN (
   '33333333-3333-3333-3333-333333333301',
@@ -33,7 +17,7 @@ WHERE project_id IN (
   '33333333-3333-3333-3333-333333333303'
 );
 
--- 3. Remove demo projects
+-- 2. Remove demo projects
 DELETE FROM projects
 WHERE id IN (
   '33333333-3333-3333-3333-333333333301',
@@ -41,7 +25,7 @@ WHERE id IN (
   '33333333-3333-3333-3333-333333333303'
 );
 
--- 4. Remove demo catalog items
+-- 3. Remove demo catalog items
 DELETE FROM items
 WHERE id IN (
   '44444444-4444-4444-4444-444444444401',
@@ -56,7 +40,7 @@ WHERE id IN (
   '44444444-4444-4444-4444-444444444410'
 );
 
--- 5. Remove demo expense accounts (sub-categories first, then parents)
+-- 4. Remove demo expense accounts (sub-categories first, then parents)
 DELETE FROM expense_accounts
 WHERE id IN (
   '22222222-2222-2222-2222-222222222201',
