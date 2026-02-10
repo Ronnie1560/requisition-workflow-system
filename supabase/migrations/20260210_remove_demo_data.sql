@@ -21,7 +21,6 @@ TRUNCATE
   user_project_assignments,
   items,
   projects,
-  profiles,
   organizations
 CASCADE;
 
