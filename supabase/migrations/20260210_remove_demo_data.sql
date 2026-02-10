@@ -9,7 +9,55 @@
 
 BEGIN;
 
--- 1. Remove demo projects
+-- Demo project IDs
+-- '33333333-3333-3333-3333-333333333301' = Main Office Operations
+-- '33333333-3333-3333-3333-333333333302' = Software Development Project
+-- '33333333-3333-3333-3333-333333333303' = Marketing Campaign 2024
+
+-- 1. Remove receipt_transactions linked to POs linked to requisitions on demo projects
+DELETE FROM receipt_transactions
+WHERE po_id IN (
+  SELECT id FROM purchase_orders
+  WHERE requisition_id IN (
+    SELECT id FROM requisitions
+    WHERE project_id IN (
+      '33333333-3333-3333-3333-333333333301',
+      '33333333-3333-3333-3333-333333333302',
+      '33333333-3333-3333-3333-333333333303'
+    )
+  )
+);
+
+-- 2. Remove purchase_orders linked to requisitions on demo projects
+DELETE FROM purchase_orders
+WHERE requisition_id IN (
+  SELECT id FROM requisitions
+  WHERE project_id IN (
+    '33333333-3333-3333-3333-333333333301',
+    '33333333-3333-3333-3333-333333333302',
+    '33333333-3333-3333-3333-333333333303'
+  )
+);
+
+-- 3. Remove requisitions on demo projects
+--    (requisition_items, comments, attachments cascade automatically)
+DELETE FROM requisitions
+WHERE project_id IN (
+  '33333333-3333-3333-3333-333333333301',
+  '33333333-3333-3333-3333-333333333302',
+  '33333333-3333-3333-3333-333333333303'
+);
+
+-- 4. Remove requisition templates on demo projects
+DELETE FROM requisition_templates
+WHERE project_id IN (
+  '33333333-3333-3333-3333-333333333301',
+  '33333333-3333-3333-3333-333333333302',
+  '33333333-3333-3333-3333-333333333303'
+);
+
+-- 5. Remove demo projects
+--    (user_project_assignments cascade automatically)
 DELETE FROM projects
 WHERE id IN (
   '33333333-3333-3333-3333-333333333301',
@@ -17,7 +65,7 @@ WHERE id IN (
   '33333333-3333-3333-3333-333333333303'
 );
 
--- 2. Remove demo catalog items
+-- 6. Remove demo catalog items
 DELETE FROM items
 WHERE id IN (
   '44444444-4444-4444-4444-444444444401',
@@ -32,7 +80,7 @@ WHERE id IN (
   '44444444-4444-4444-4444-444444444410'
 );
 
--- 3. Remove demo expense accounts (sub-categories first, then parents)
+-- 7. Remove demo expense accounts (sub-categories first, then parents)
 DELETE FROM expense_accounts
 WHERE id IN (
   '22222222-2222-2222-2222-222222222201',
