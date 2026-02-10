@@ -9,15 +9,7 @@
 
 BEGIN;
 
--- 1. Remove project-account budget assignments for demo projects
-DELETE FROM project_accounts
-WHERE project_id IN (
-  '33333333-3333-3333-3333-333333333301',
-  '33333333-3333-3333-3333-333333333302',
-  '33333333-3333-3333-3333-333333333303'
-);
-
--- 2. Remove demo projects
+-- 1. Remove demo projects
 DELETE FROM projects
 WHERE id IN (
   '33333333-3333-3333-3333-333333333301',
@@ -25,7 +17,7 @@ WHERE id IN (
   '33333333-3333-3333-3333-333333333303'
 );
 
--- 3. Remove demo catalog items
+-- 2. Remove demo catalog items
 DELETE FROM items
 WHERE id IN (
   '44444444-4444-4444-4444-444444444401',
@@ -40,7 +32,7 @@ WHERE id IN (
   '44444444-4444-4444-4444-444444444410'
 );
 
--- 4. Remove demo expense accounts (sub-categories first, then parents)
+-- 3. Remove demo expense accounts (sub-categories first, then parents)
 DELETE FROM expense_accounts
 WHERE id IN (
   '22222222-2222-2222-2222-222222222201',
