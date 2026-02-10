@@ -1,179 +1,35 @@
 -- =====================================================
--- Remove Demo/Seed Data for Production
+-- Wipe ALL Business Data for Production Launch
 -- Date: 2026-02-10
--- Purpose: Delete hardcoded demo projects, items, expense
---          accounts, and their relationships so that new
---          client organizations start with a clean slate.
---          UOM types (reference data) are intentionally KEPT.
+-- Purpose: Remove ALL existing data (demo AND real) so
+--          that new client organizations start completely
+--          fresh. UOM types (reference data) are KEPT.
+--          Schema, functions, and RLS policies are UNTOUCHED.
 -- =====================================================
 
 BEGIN;
 
--- Demo project IDs
--- '33333333-3333-3333-3333-333333333301' = Main Office Operations
--- '33333333-3333-3333-3333-333333333302' = Software Development Project
--- '33333333-3333-3333-3333-333333333303' = Marketing Campaign 2024
-
--- 1. Remove receipt_transactions linked to POs linked to requisitions on demo projects
-DELETE FROM receipt_transactions
-WHERE po_id IN (
-  SELECT id FROM purchase_orders
-  WHERE requisition_id IN (
-    SELECT id FROM requisitions
-    WHERE project_id IN (
-      '33333333-3333-3333-3333-333333333301',
-      '33333333-3333-3333-3333-333333333302',
-      '33333333-3333-3333-3333-333333333303'
-    )
-  )
-);
-
--- 2. Remove purchase_orders linked to requisitions on demo projects
-DELETE FROM purchase_orders
-WHERE requisition_id IN (
-  SELECT id FROM requisitions
-  WHERE project_id IN (
-    '33333333-3333-3333-3333-333333333301',
-    '33333333-3333-3333-3333-333333333302',
-    '33333333-3333-3333-3333-333333333303'
-  )
-);
-
--- 3. Remove requisitions on demo projects
---    (requisition_items, comments, attachments cascade automatically)
-DELETE FROM requisitions
-WHERE project_id IN (
-  '33333333-3333-3333-3333-333333333301',
-  '33333333-3333-3333-3333-333333333302',
-  '33333333-3333-3333-3333-333333333303'
-);
-
--- 4. Remove requisition templates on demo projects
-DELETE FROM requisition_templates
-WHERE project_id IN (
-  '33333333-3333-3333-3333-333333333301',
-  '33333333-3333-3333-3333-333333333302',
-  '33333333-3333-3333-3333-333333333303'
-);
-
--- 5. Remove expense accounts linked to demo projects
-DELETE FROM expense_accounts
-WHERE project_id IN (
-  '33333333-3333-3333-3333-333333333301',
-  '33333333-3333-3333-3333-333333333302',
-  '33333333-3333-3333-3333-333333333303'
-);
-
--- 6. Remove demo projects
---    (user_project_assignments cascade automatically)
-DELETE FROM projects
-WHERE id IN (
-  '33333333-3333-3333-3333-333333333301',
-  '33333333-3333-3333-3333-333333333302',
-  '33333333-3333-3333-3333-333333333303'
-);
-
--- 7. Remove requisition_items that reference demo catalog items
---    (covers requisitions on ANY project, not just demo projects)
-DELETE FROM requisition_items
-WHERE item_id IN (
-  '44444444-4444-4444-4444-444444444401',
-  '44444444-4444-4444-4444-444444444402',
-  '44444444-4444-4444-4444-444444444403',
-  '44444444-4444-4444-4444-444444444404',
-  '44444444-4444-4444-4444-444444444405',
-  '44444444-4444-4444-4444-444444444406',
-  '44444444-4444-4444-4444-444444444407',
-  '44444444-4444-4444-4444-444444444408',
-  '44444444-4444-4444-4444-444444444409',
-  '44444444-4444-4444-4444-444444444410'
-);
-
--- 8. Remove demo catalog items
-DELETE FROM items
-WHERE id IN (
-  '44444444-4444-4444-4444-444444444401',
-  '44444444-4444-4444-4444-444444444402',
-  '44444444-4444-4444-4444-444444444403',
-  '44444444-4444-4444-4444-444444444404',
-  '44444444-4444-4444-4444-444444444405',
-  '44444444-4444-4444-4444-444444444406',
-  '44444444-4444-4444-4444-444444444407',
-  '44444444-4444-4444-4444-444444444408',
-  '44444444-4444-4444-4444-444444444409',
-  '44444444-4444-4444-4444-444444444410'
-);
-
--- 9. Detach any requisitions still referencing demo expense accounts
---    (these are requisitions on real projects that used a demo expense account)
-UPDATE requisitions SET expense_account_id = NULL
-WHERE expense_account_id IN (
-  '11111111-1111-1111-1111-111111111101',
-  '11111111-1111-1111-1111-111111111102',
-  '11111111-1111-1111-1111-111111111103',
-  '11111111-1111-1111-1111-111111111104',
-  '11111111-1111-1111-1111-111111111105',
-  '11111111-1111-1111-1111-111111111106',
-  '11111111-1111-1111-1111-111111111107',
-  '11111111-1111-1111-1111-111111111108',
-  '22222222-2222-2222-2222-222222222201',
-  '22222222-2222-2222-2222-222222222202',
-  '22222222-2222-2222-2222-222222222203',
-  '22222222-2222-2222-2222-222222222204',
-  '22222222-2222-2222-2222-222222222205',
-  '22222222-2222-2222-2222-222222222206',
-  '22222222-2222-2222-2222-222222222207',
-  '22222222-2222-2222-2222-222222222208'
-);
-
--- 10. Remove demo expense accounts (the 16 hardcoded IDs: 8 parents + 8 sub-categories)
---     Step A: Break ALL parent_id references pointing to any demo account
-UPDATE expense_accounts SET parent_id = NULL
-WHERE parent_id IN (
-  '11111111-1111-1111-1111-111111111101',
-  '11111111-1111-1111-1111-111111111102',
-  '11111111-1111-1111-1111-111111111103',
-  '11111111-1111-1111-1111-111111111104',
-  '11111111-1111-1111-1111-111111111105',
-  '11111111-1111-1111-1111-111111111106',
-  '11111111-1111-1111-1111-111111111107',
-  '11111111-1111-1111-1111-111111111108',
-  '22222222-2222-2222-2222-222222222201',
-  '22222222-2222-2222-2222-222222222202',
-  '22222222-2222-2222-2222-222222222203',
-  '22222222-2222-2222-2222-222222222204',
-  '22222222-2222-2222-2222-222222222205',
-  '22222222-2222-2222-2222-222222222206',
-  '22222222-2222-2222-2222-222222222207',
-  '22222222-2222-2222-2222-222222222208'
-);
-
---     Step B: Now safely delete the 16 demo accounts
-DELETE FROM expense_accounts
-WHERE id IN (
-  '22222222-2222-2222-2222-222222222201',
-  '22222222-2222-2222-2222-222222222202',
-  '22222222-2222-2222-2222-222222222203',
-  '22222222-2222-2222-2222-222222222204',
-  '22222222-2222-2222-2222-222222222205',
-  '22222222-2222-2222-2222-222222222206',
-  '22222222-2222-2222-2222-222222222207',
-  '22222222-2222-2222-2222-222222222208',
-  '11111111-1111-1111-1111-111111111101',
-  '11111111-1111-1111-1111-111111111102',
-  '11111111-1111-1111-1111-111111111103',
-  '11111111-1111-1111-1111-111111111104',
-  '11111111-1111-1111-1111-111111111105',
-  '11111111-1111-1111-1111-111111111106',
-  '11111111-1111-1111-1111-111111111107',
-  '11111111-1111-1111-1111-111111111108'
-);
+-- TRUNCATE all business tables in one statement.
+-- CASCADE automatically handles foreign-key dependencies.
+TRUNCATE
+  receipt_transactions,
+  purchase_orders,
+  requisition_items,
+  requisitions,
+  requisition_templates,
+  expense_accounts,
+  user_project_assignments,
+  items,
+  projects,
+  profiles,
+  organizations
+CASCADE;
 
 COMMIT;
 
 -- =====================================================
 -- KEPT INTENTIONALLY:
---   - UOM types (PCS, KG, L, M, etc.) — universal reference data
---   - Database schema, functions, RLS policies — untouched
---   - All real organization data — untouched
+--   - uom_types (PCS, KG, L, M, etc.) — universal reference data
+--   - Database schema, functions, triggers, RLS policies
+--   - auth.users (managed separately in Supabase Dashboard)
 -- =====================================================
