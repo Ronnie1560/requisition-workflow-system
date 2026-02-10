@@ -73,7 +73,23 @@ WHERE id IN (
   '33333333-3333-3333-3333-333333333303'
 );
 
--- 7. Remove demo catalog items
+-- 7. Remove requisition_items that reference demo catalog items
+--    (covers requisitions on ANY project, not just demo projects)
+DELETE FROM requisition_items
+WHERE item_id IN (
+  '44444444-4444-4444-4444-444444444401',
+  '44444444-4444-4444-4444-444444444402',
+  '44444444-4444-4444-4444-444444444403',
+  '44444444-4444-4444-4444-444444444404',
+  '44444444-4444-4444-4444-444444444405',
+  '44444444-4444-4444-4444-444444444406',
+  '44444444-4444-4444-4444-444444444407',
+  '44444444-4444-4444-4444-444444444408',
+  '44444444-4444-4444-4444-444444444409',
+  '44444444-4444-4444-4444-444444444410'
+);
+
+-- 8. Remove demo catalog items
 DELETE FROM items
 WHERE id IN (
   '44444444-4444-4444-4444-444444444401',
@@ -88,7 +104,7 @@ WHERE id IN (
   '44444444-4444-4444-4444-444444444410'
 );
 
--- 8. Remove demo expense accounts (the 16 hardcoded IDs: 8 parents + 8 sub-categories)
+-- 9. Remove demo expense accounts (the 16 hardcoded IDs: 8 parents + 8 sub-categories)
 --    Step A: Break ALL parent_id references pointing to any demo account
 UPDATE expense_accounts SET parent_id = NULL
 WHERE parent_id IN (
