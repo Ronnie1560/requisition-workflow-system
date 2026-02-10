@@ -50,6 +50,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
       item_id: item.id,
       item_name: item.name,
       item_code: item.code,
+      item_description: item.description || '',
       quantity: 1,
       uom_id: item.default_uom_id,
       uom_name: item.uom?.name || '',
@@ -148,11 +149,12 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
       {/* Table Layout */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         {/* Column Headers */}
-        <div className="hidden sm:grid sm:grid-cols-24 gap-0 bg-gray-50 border-b border-gray-200 px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider"
-          style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
+        <div className="hidden sm:grid items-center gap-3 bg-gray-50 border-b border-gray-200 px-4 py-2.5 text-xs font-semibold text-gray-600 uppercase tracking-wider"
+          style={{ gridTemplateColumns: '2.5rem minmax(8rem, 1fr) minmax(8rem, 1fr) 5.5rem 7rem 7rem 7rem 5.5rem' }}
         >
           <div>#</div>
           <div>Item</div>
+          <div>Description</div>
           <div>Qty</div>
           <div>UoM</div>
           <div>Unit Price</div>
@@ -176,7 +178,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                 {/* Main Row */}
                 <div
                   className="px-4 py-3 items-center gap-3 hidden sm:grid"
-                  style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
+                  style={{ gridTemplateColumns: '2.5rem minmax(8rem, 1fr) minmax(8rem, 1fr) 5.5rem 7rem 7rem 7rem 5.5rem' }}
                 >
                   {/* Line Number */}
                   <span className="text-xs font-medium text-gray-400">
@@ -189,6 +191,18 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                       {item.item_name}
                     </p>
                     <p className="text-xs text-gray-400">{item.item_code}</p>
+                  </div>
+
+                  {/* Description */}
+                  <div className="min-w-0">
+                    <input
+                      type="text"
+                      value={item.item_description || ''}
+                      onChange={(e) => updateLineItem(index, 'item_description', e.target.value)}
+                      disabled={disabled}
+                      placeholder="—"
+                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100 truncate"
+                    />
                   </div>
 
                   {/* Quantity */}
@@ -337,7 +351,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
             <div className="bg-white border-b border-gray-100">
               <div
                 className="px-4 py-2.5 items-center gap-3 hidden sm:grid"
-                style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
+                style={{ gridTemplateColumns: '2.5rem minmax(8rem, 1fr) minmax(8rem, 1fr) 5.5rem 7rem 7rem 7rem 5.5rem' }}
               >
                 {/* Line Number */}
                 <span className="text-xs font-medium text-gray-400">
@@ -399,6 +413,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                 </div>
 
                 {/* Empty input placeholders matching the row style */}
+                <input type="text" disabled placeholder="" className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-300" />
                 <input type="number" disabled placeholder="" className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-300" />
                 <input type="text" disabled placeholder="" className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-300" />
                 <input type="number" disabled placeholder="" className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded bg-white text-gray-300" />
@@ -447,11 +462,12 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
             <div className="bg-white/60 border-b border-dashed border-gray-100">
               <div
                 className="px-4 py-2.5 items-center gap-3 hidden sm:grid opacity-40"
-                style={{ gridTemplateColumns: '2rem 1fr 5rem 6.5rem 7rem 7rem 5rem' }}
+                style={{ gridTemplateColumns: '2.5rem minmax(8rem, 1fr) minmax(8rem, 1fr) 5.5rem 7rem 7rem 7rem 5.5rem' }}
               >
                 <span className="text-xs font-medium text-gray-300">
                   {items.length + 2}
                 </span>
+                <div></div>
                 <div></div>
                 <div></div>
                 <div></div>
@@ -540,6 +556,7 @@ LineItemsTable.propTypes = {
     item_id: PropTypes.string,
     item_name: PropTypes.string.isRequired,
     item_code: PropTypes.string,
+    item_description: PropTypes.string,
     quantity: PropTypes.number.isRequired,
     uom_id: PropTypes.string,
     uom_name: PropTypes.string,

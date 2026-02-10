@@ -611,8 +611,8 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
               <th style="width: 25px;" class="text-center">#</th>
               <th style="width: 80px;">Code</th>
               <th>Item Description</th>
-              <th style="width: 40px;" class="text-right">Qty</th>
-              <th style="width: 35px;">UOM</th>
+              <th style="width: 50px; padding-right: 12px;" class="text-right">Qty</th>
+              <th style="width: 45px;">UOM</th>
               <th style="width: 70px;" class="text-right">Unit Price</th>
               <th style="width: 75px;" class="text-right">Total</th>
             </tr>
@@ -626,7 +626,7 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
                   <strong>${escapeHtml(item.item?.name)}</strong>
                   ${item.item_description ? `<br><span style="font-size: 8px; color: #6b7280;">${escapeHtml(item.item_description)}</span>` : ''}
                 </td>
-                <td class="text-right">${item.quantity}</td>
+                <td class="text-right" style="padding-right: 12px;">${item.quantity}</td>
                 <td>${escapeHtml(item.uom?.name)}</td>
                 <td class="text-right">${formatCurrency(item.unit_price)}</td>
                 <td class="text-right"><strong>${formatCurrency(item.total_price)}</strong></td>
