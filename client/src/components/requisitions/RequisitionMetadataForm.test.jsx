@@ -2,7 +2,7 @@
  * Tests for RequisitionMetadataForm Component
  */
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, within } from '@testing-library/react'
 import RequisitionMetadataForm from './RequisitionMetadataForm'
 
 // Mock the logger
@@ -77,6 +77,9 @@ describe('RequisitionMetadataForm', () => {
       const projectSelect = screen.getByLabelText(/^Project/i)
       expect(projectSelect).toBeInTheDocument()
 
+      // Open dropdown to see options
+      fireEvent.click(projectSelect)
+
       // Check that project options are rendered
       expect(screen.getByText('PRJ001 - Project Alpha')).toBeInTheDocument()
       expect(screen.getByText('PRJ002 - Project Beta')).toBeInTheDocument()
@@ -144,8 +147,10 @@ describe('RequisitionMetadataForm', () => {
         />
       )
 
+      // Open the project dropdown and click an option
       const projectSelect = screen.getByLabelText(/^Project/i)
-      fireEvent.change(projectSelect, { target: { value: 'proj-1' } })
+      fireEvent.click(projectSelect)
+      fireEvent.click(screen.getByText('PRJ001 - Project Alpha'))
 
       expect(handleChange).toHaveBeenCalled()
     })
@@ -184,6 +189,10 @@ describe('RequisitionMetadataForm', () => {
           expenseAccounts={mockExpenseAccounts}
         />
       )
+
+      // Open the expense account dropdown
+      const expenseSelect = screen.getByLabelText(/Expense Account/i)
+      fireEvent.click(expenseSelect)
 
       // Should show accounts for proj-1 only
       expect(screen.getByText('EXP001 - Office Supplies')).toBeInTheDocument()

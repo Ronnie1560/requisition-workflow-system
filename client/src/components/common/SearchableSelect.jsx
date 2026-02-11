@@ -160,10 +160,14 @@ function SearchableSelect({
   }, [disabled])
 
   return (
-    <div ref={containerRef} className="relative" id={id}>
+    <div ref={containerRef} className="relative">
       {/* Trigger button — shows selected value or placeholder */}
       <button
         type="button"
+        id={id}
+        role="combobox"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         onClick={isOpen ? () => { setIsOpen(false); setSearch('') } : openDropdown}
         onKeyDown={handleKeyDown}
         disabled={disabled}
