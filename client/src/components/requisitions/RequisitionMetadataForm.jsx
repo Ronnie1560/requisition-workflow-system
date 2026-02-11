@@ -12,6 +12,7 @@
 import React, { useMemo } from 'react'
 import PropTypes from 'prop-types'
 import { logger } from '../../utils/logger'
+import SearchableSelect from '../common/SearchableSelect'
 
 /**
  * RequisitionMetadataForm - Form fields for requisition metadata
@@ -93,26 +94,21 @@ function RequisitionMetadataForm({
             >
               Project <span className="text-red-500">*</span>
             </label>
-            <select
+            <SearchableSelect
               id="project_id"
               name="project_id"
               value={formData.project_id}
               onChange={handleProjectChange}
+              options={projects}
               disabled={disabled || loadingProjects}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                       focus:ring-2 focus:ring-primary-500 focus:border-primary-500
-                       bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                       disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
-            >
-              <option value="">
-                {loadingProjects ? 'Loading projects...' : 'Select a project'}
-              </option>
-              {projects.map(project => (
-                <option key={project.id} value={project.id}>
-                  {project.code} - {project.name}
-                </option>
-              ))}
-            </select>
+              placeholder={loadingProjects ? 'Loading projects...' : 'Select a project'}
+              labelFn={(p) => `${p.code} - ${p.name}`}
+              filterFn={(p, term) =>
+                p.code?.toLowerCase().includes(term) ||
+                p.name?.toLowerCase().includes(term)
+              }
+              emptyMessage="No projects found"
+            />
           </div>
 
           {/* Expense Account */}
@@ -123,32 +119,30 @@ function RequisitionMetadataForm({
             >
               Expense Account <span className="text-red-500">*</span>
             </label>
-            <select
+            <SearchableSelect
               id="expense_account_id"
               name="expense_account_id"
               value={formData.expense_account_id}
               onChange={onChange}
+              options={filteredExpenseAccounts}
               disabled={disabled || loadingExpenseAccounts || !formData.project_id}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
-                       focus:ring-2 focus:ring-primary-500 focus:border-primary-500
-                       bg-white dark:bg-gray-700 text-gray-900 dark:text-white
-                       disabled:bg-gray-100 dark:disabled:bg-gray-600 disabled:cursor-not-allowed"
-            >
-              <option value="">
-                {!formData.project_id
+              placeholder={
+                !formData.project_id
                   ? 'Select a project first'
                   : loadingExpenseAccounts
                     ? 'Loading accounts...'
                     : filteredExpenseAccounts.length === 0
                       ? 'No expense accounts for this project'
-                      : 'Select an expense account'}
-              </option>
-              {filteredExpenseAccounts.map(account => (
-                <option key={account.id} value={account.id}>
-                  {account.code} - {account.name}
-                </option>
-              ))}
-            </select>
+                      : 'Search expense accounts...'
+              }
+              labelFn={(a) => `${a.code} - ${a.name}`}
+              filterFn={(a, term) =>
+                a.code?.toLowerCase().includes(term) ||
+                a.name?.toLowerCase().includes(term) ||
+                a.description?.toLowerCase().includes(term)
+              }
+              emptyMessage="No matching expense accounts"
+            />
           </div>
         </div>
 

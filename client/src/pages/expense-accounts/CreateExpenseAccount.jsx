@@ -9,6 +9,7 @@ import {
 } from '../../services/api/expenseAccounts'
 import { getAllProjects } from '../../services/api/projects'
 import { logger } from '../../utils/logger'
+import SearchableSelect from '../../components/common/SearchableSelect'
 
 const CreateExpenseAccount = () => {
   const navigate = useNavigate()
@@ -240,20 +241,19 @@ const CreateExpenseAccount = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Project *
                 </label>
-                <select
+                <SearchableSelect
                   name="project_id"
                   value={formData.project_id}
                   onChange={handleChange}
-                  required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                >
-                  <option value="">Select a project...</option>
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.code} - {project.name}
-                    </option>
-                  ))}
-                </select>
+                  options={projects}
+                  placeholder="Select a project..."
+                  labelFn={(p) => `${p.code} - ${p.name}`}
+                  filterFn={(p, term) =>
+                    p.code?.toLowerCase().includes(term) ||
+                    p.name?.toLowerCase().includes(term)
+                  }
+                  emptyMessage="No projects found"
+                />
                 <p className="text-xs text-gray-500 mt-1">
                   Each expense account must belong to one project
                 </p>
