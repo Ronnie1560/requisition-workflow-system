@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useOrganization } from '../../context/OrganizationContext'
-import { PLAN_TIERS, PLAN_ORDER, formatPrice, formatLimit } from '../../config/plans'
+import { PLAN_TIERS, PLAN_ORDER, formatLimit } from '../../config/plans'
 import { createCheckoutSession } from '../../services/api/billing'
 import {
   Check,
@@ -57,7 +57,7 @@ const PricingPlans = () => {
 
     // Redirect to Stripe Checkout
     if (data?.url) {
-      window.location.href = data.url
+      globalThis.location.assign(data.url)
     }
     setLoadingPlan(null)
   }

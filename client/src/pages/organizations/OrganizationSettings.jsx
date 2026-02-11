@@ -11,7 +11,7 @@ import {
   updateFiscalYearSettings
 } from '../../services/api/systemSettings'
 import { getOrganizationUsage, getBillingHistory, createPortalSession } from '../../services/api/billing'
-import { getPlanConfig, formatLimit, formatPrice, PLAN_ORDER } from '../../config/plans'
+import { getPlanConfig, formatPrice, PLAN_ORDER } from '../../config/plans'
 
 /**
  * Organization Settings Page
@@ -139,6 +139,7 @@ export default function OrganizationSettings() {
   useEffect(() => {
     const checkout = searchParams.get('checkout')
     if (checkout === 'success') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- One-time sync from URL param, not a cascading render
       setSuccess('Your subscription has been activated! It may take a moment to reflect.')
       setActiveTab('billing')
       // Refresh org data to get updated plan
@@ -668,7 +669,9 @@ export default function OrganizationSettings() {
                         max: currentOrg.max_requisitions_per_month || 100,
                         icon: TrendingUp,
                       },
-                    ].map(({ label, current, max, icon: Icon }) => {
+                    ].map((item) => {
+                      const IconComp = item.icon
+                      const { label, current, max } = item
                       const isUnlimited = max === -1
                       const percentage = isUnlimited ? 0 : (typeof current === 'number' ? (current / max) * 100 : 0)
                       const isNearLimit = !isUnlimited && percentage >= 80
@@ -678,7 +681,7 @@ export default function OrganizationSettings() {
                         <div key={label} className="p-4 bg-white border border-gray-200 rounded-xl">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <Icon className="w-4 h-4 text-gray-400" />
+                              <IconComp className="w-4 h-4 text-gray-400" />
                               <p className="text-sm text-gray-500">{label}</p>
                             </div>
                             {isAtLimit && <AlertTriangle className="w-4 h-4 text-red-500" />}
