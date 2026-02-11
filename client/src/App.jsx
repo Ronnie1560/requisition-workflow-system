@@ -54,6 +54,9 @@ const ItemDetail = lazy(() => import('./pages/items/ItemDetail'))
 const UserSettings = lazy(() => import('./pages/settings/UserSettings'))
 const SystemSettings = lazy(() => import('./pages/settings/SystemSettings'))
 
+// Billing
+const PricingPlans = lazy(() => import('./pages/billing/PricingPlans'))
+
 // Reports - heavy component, good candidate for lazy loading
 const ReportsEnhanced = lazy(() => import('./pages/reports/ReportsEnhanced'))
 
@@ -140,6 +143,9 @@ function App() {
               <Route path="settings" element={<UserSettings />} />
               <Route path="profile" element={<UserSettings />} />
               <Route path="admin/system-settings" element={<SystemSettings />} />
+
+              {/* Billing */}
+              <Route path="billing/plans" element={<PricingPlans />} />
             </Route>
 
             {/* Catch all - redirect to dashboard */}

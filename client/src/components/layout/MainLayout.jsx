@@ -7,6 +7,7 @@ import ToastContainer from '../notifications/ToastContainer'
 import OrganizationSwitcher from '../organizations/OrganizationSwitcher'
 import CreateOrganizationPrompt from '../organizations/CreateOrganizationPrompt'
 import ReportsQuickViewDialog from '../dialogs/ReportsQuickViewDialog'
+import TrialBanner from '../billing/TrialBanner'
 import {
   Menu,
   X,
@@ -261,9 +262,12 @@ const MainLayout = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8">
-          <div className="max-w-7xl mx-auto">
-            <Outlet />
+        <main className="flex-1 flex flex-col">
+          <TrialBanner />
+          <div className="flex-1 p-8">
+            <div className="max-w-7xl mx-auto">
+              <Outlet />
+            </div>
           </div>
         </main>
       </div>
