@@ -91,7 +91,7 @@ export const getRequisitionById = async (requisitionId) => {
           total_price,
           line_number,
           notes,
-          item:items(id, code, name, category),
+          item:items(id, code, name, description, category),
           uom:uom_types(id, code, name)
         ),
         comments(

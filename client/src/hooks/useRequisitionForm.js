@@ -167,6 +167,7 @@ export function useRequisitionForm(draftId = null) {
           item_id: item.item_id,
           item_name: item.item?.name || '',
           item_code: item.item?.code || '',
+          item_description: item.item_description || item.item?.description || '',
           quantity: item.quantity,
           uom_id: item.uom_id,
           uom_name: item.uom?.name || '',
@@ -246,7 +247,7 @@ export function useRequisitionForm(draftId = null) {
           total_price: item.total_price,
           line_number: item.line_number,
           notes: item.notes || '',
-          item_description: item.item_name
+          item_description: item.item_description || item.item_name
         }))
 
         const itemsResult = await addRequisitionItems(itemsData)
