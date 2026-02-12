@@ -611,10 +611,10 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
               <th style="width: 25px;" class="text-center">#</th>
               <th style="width: 80px;">Code</th>
               <th>Item Description</th>
-              <th style="width: 60px; padding-right: 16px;" class="text-right">Qty</th>
-              <th style="width: 60px; padding-left: 8px;">UOM</th>
-              <th style="width: 70px;" class="text-right">Unit Price</th>
-              <th style="width: 75px;" class="text-right">Total</th>
+              <th style="width: 60px;" class="text-center">Qty</th>
+              <th style="width: 60px;" class="text-center">UOM</th>
+              <th style="width: 80px;" class="text-center">Unit Price</th>
+              <th style="width: 80px;" class="text-center">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -626,17 +626,17 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
                   <strong>${escapeHtml(item.item?.name)}</strong>
                   ${item.item_description ? `<br><span style="font-size: 8px; color: #6b7280;">${escapeHtml(item.item_description)}</span>` : ''}
                 </td>
-                <td class="text-right" style="padding-right: 16px;">${item.quantity}</td>
-                <td style="padding-left: 8px;">${escapeHtml(item.uom?.name)}</td>
-                <td class="text-right">${formatCurrency(item.unit_price)}</td>
-                <td class="text-right"><strong>${formatCurrency(item.total_price)}</strong></td>
+                <td class="text-center">${item.quantity}</td>
+                <td class="text-center">${escapeHtml(item.uom?.name)}</td>
+                <td class="text-center">${formatCurrency(item.unit_price)}</td>
+                <td class="text-center"><strong>${formatCurrency(item.total_price)}</strong></td>
               </tr>
             `).join('')}
           </tbody>
           <tfoot>
             <tr>
               <td colspan="6" class="text-right">GRAND TOTAL:</td>
-              <td class="text-right total-value"><span style="white-space: nowrap;">UGX: ${formatCurrency(requisition.total_amount, false)}</span></td>
+              <td class="text-center total-value"><span style="white-space: nowrap;">UGX: ${formatCurrency(requisition.total_amount, false)}</span></td>
             </tr>
             <tr>
               <td colspan="7" class="total-words">Amount in Words: <strong>${amountToWords(requisition.total_amount)}</strong></td>
