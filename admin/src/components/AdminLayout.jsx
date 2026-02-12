@@ -11,6 +11,7 @@ import {
   MessageSquareText,
   LogOut,
   Shield,
+  ShieldCheck,
   Menu,
   X,
 } from 'lucide-react'
@@ -25,6 +26,7 @@ const navItems = [
   { to: '/audit-log', icon: ScrollText, label: 'Audit Log' },
   { to: '/announcements', icon: Megaphone, label: 'Announcements' },
   { to: '/feedback', icon: MessageSquareText, label: 'Feedback' },
+  { to: '/security', icon: ShieldCheck, label: 'Security' },
 ]
 
 export default function AdminLayout({ children }) {

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { Shield, AlertCircle, Loader } from 'lucide-react'
+import { Shield, AlertCircle, Loader, Lock, Clock } from 'lucide-react'
 
 export default function LoginPage() {
   const { signIn, isAuthenticated } = useAuth()
@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [lockedUntil, setLockedUntil] = useState(null)
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -20,13 +21,20 @@ export default function LoginPage() {
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    setLockedUntil(null)
     setLoading(true)
 
     try {
       await signIn(email, password)
       // Auth state change will trigger redirect via ProtectedRoute
     } catch (err) {
-      setError(err.message || 'Invalid credentials or not a platform admin')
+      const msg = err.message || 'Invalid credentials or not a platform admin'
+      setError(msg)
+      // Parse lockout time if present
+      const lockMatch = msg.match(/Try again after (.+)\./)
+      if (lockMatch) {
+        setLockedUntil(lockMatch[1])
+      }
     } finally {
       setLoading(false)
     }
@@ -49,7 +57,21 @@ export default function LoginPage() {
           onSubmit={handleSubmit}
           className="bg-gray-800 rounded-xl border border-gray-700 p-6 space-y-4"
         >
-          {error && (
+          {/* Lockout warning */}
+          {lockedUntil && (
+            <div className="flex items-start gap-3 p-3 bg-yellow-900/30 border border-yellow-800 rounded-lg text-sm text-yellow-300">
+              <Lock className="h-5 w-5 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium">Account temporarily locked</p>
+                <p className="text-yellow-400/80 mt-1 flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" /> Try again after {lockedUntil}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* General error */}
+          {error && !lockedUntil && (
             <div className="flex items-center gap-2 p-3 bg-red-900/30 border border-red-800 rounded-lg text-sm text-red-300">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
               {error}
@@ -104,6 +126,8 @@ export default function LoginPage() {
 
           <p className="text-xs text-gray-500 text-center mt-4">
             Access restricted to platform administrators only.
+            <br />
+            <span className="text-gray-600">5 failed attempts will lock your account for 15 minutes.</span>
           </p>
         </form>
       </div>

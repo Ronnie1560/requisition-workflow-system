@@ -25,7 +25,7 @@ export default function TenantDetailPage() {
       const [orgsRes, membersRes] = await Promise.all([
         supabase.rpc('get_all_organizations_with_stats'),
         supabase.from('organization_members').select(`
-          id, role, is_active, accepted_at, created_at,
+          id, role, workflow_role, is_active, accepted_at, created_at,
           user_id
         `).eq('organization_id', id),
       ])
@@ -217,6 +217,16 @@ export default function TenantDetailPage() {
                   }`}>
                     {m.role}
                   </span>
+                  {m.workflow_role && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                      m.workflow_role === 'approver' ? 'bg-green-100 text-green-700' :
+                      m.workflow_role === 'reviewer' ? 'bg-yellow-100 text-yellow-700' :
+                      m.workflow_role === 'finance' ? 'bg-indigo-100 text-indigo-700' :
+                      'bg-gray-100 text-gray-600'
+                    }`}>
+                      {m.workflow_role}
+                    </span>
+                  )}
                   {!m.is_active && (
                     <span className="text-xs text-red-500">Inactive</span>
                   )}

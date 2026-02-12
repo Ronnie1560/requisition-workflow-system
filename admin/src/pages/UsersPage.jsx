@@ -17,7 +17,7 @@ export default function UsersPage() {
       const { data, error } = await supabase
         .from('organization_members')
         .select(`
-          id, role, is_active, created_at, accepted_at, user_id,
+          id, role, workflow_role, is_active, created_at, accepted_at, user_id,
           organizations ( id, name, slug, plan, status )
         `)
         .order('created_at', { ascending: false })
@@ -38,7 +38,8 @@ export default function UsersPage() {
       u.user_id?.toLowerCase().includes(term) ||
       u.organizations?.name?.toLowerCase().includes(term) ||
       u.organizations?.slug?.toLowerCase().includes(term) ||
-      u.role?.toLowerCase().includes(term)
+      u.role?.toLowerCase().includes(term) ||
+      u.workflow_role?.toLowerCase().includes(term)
     )
   })
 
@@ -75,7 +76,8 @@ export default function UsersPage() {
               <tr className="text-left text-gray-500 dark:text-gray-400 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
                 <th className="px-4 py-3 font-medium">User ID</th>
                 <th className="px-4 py-3 font-medium">Organization</th>
-                <th className="px-4 py-3 font-medium">Role</th>
+                <th className="px-4 py-3 font-medium">Org Role</th>
+                <th className="px-4 py-3 font-medium">Workflow Role</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Joined</th>
               </tr>
@@ -105,6 +107,20 @@ export default function UsersPage() {
                     }`}>
                       {u.role}
                     </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    {u.workflow_role ? (
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                        u.workflow_role === 'approver' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        u.workflow_role === 'reviewer' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                        u.workflow_role === 'finance' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' :
+                        'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                      }`}>
+                        {u.workflow_role}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {u.is_active ? (

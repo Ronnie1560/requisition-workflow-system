@@ -11,6 +11,7 @@ import AnalyticsPage from './pages/AnalyticsPage'
 import AuditLogPage from './pages/AuditLogPage'
 import AnnouncementsPage from './pages/AnnouncementsPage'
 import FeedbackPage from './pages/FeedbackPage'
+import SecuritySettingsPage from './pages/SecuritySettingsPage'
 
 function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth()
@@ -49,6 +50,7 @@ export default function App() {
                 <Route path="/audit-log" element={<AuditLogPage />} />
                 <Route path="/announcements" element={<AnnouncementsPage />} />
                 <Route path="/feedback" element={<FeedbackPage />} />
+                <Route path="/security" element={<SecuritySettingsPage />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </AdminLayout>
