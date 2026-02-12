@@ -119,7 +119,7 @@ export const getUserById = async (userId) => {
 }
 
 /**
- * Get user statistics
+ * Get user statistics (using org-scoped workflow roles)
  */
 export const getUserStats = async () => {
   try {
@@ -129,23 +129,30 @@ export const getUserStats = async () => {
       return { data: { total: 0, active: 0, inactive: 0, byRole: { submitter: 0, reviewer: 0, approver: 0, store_manager: 0, super_admin: 0 } }, error: null }
     }
 
+    // Get user stats with workflow_role from organization_members
     const { data, error } = await supabase
-      .from('users')
-      .select('role, is_active')
-      .eq('org_id', orgId)
+      .from('organization_members')
+      .select(`
+        workflow_role,
+        is_active,
+        user:user_id (
+          is_active
+        )
+      `)
+      .eq('organization_id', orgId)
 
     if (error) throw error
 
     const stats = {
       total: data.length,
-      active: data.filter(u => u.is_active).length,
-      inactive: data.filter(u => !u.is_active).length,
+      active: data.filter(u => u.is_active && u.user?.is_active).length,
+      inactive: data.filter(u => !u.is_active || !u.user?.is_active).length,
       byRole: {
-        submitter: data.filter(u => u.role === 'submitter').length,
-        reviewer: data.filter(u => u.role === 'reviewer').length,
-        approver: data.filter(u => u.role === 'approver').length,
-        store_manager: data.filter(u => u.role === 'store_manager').length,
-        super_admin: data.filter(u => u.role === 'super_admin').length
+        submitter: data.filter(u => u.workflow_role === 'submitter').length,
+        reviewer: data.filter(u => u.workflow_role === 'reviewer').length,
+        approver: data.filter(u => u.workflow_role === 'approver').length,
+        store_manager: data.filter(u => u.workflow_role === 'store_manager').length,
+        super_admin: data.filter(u => u.workflow_role === 'super_admin').length
       }
     }
 
@@ -271,7 +278,9 @@ export const updateUser = async (userId, updates) => {
 }
 
 /**
- * Update user role
+ * Update user workflow role (per-organization)
+ * Uses the update_member_workflow_role RPC function which updates both
+ * organization_members.workflow_role and users.role (for backwards compat)
  */
 export const updateUserRole = async (userId, newRole) => {
   try {
@@ -281,12 +290,11 @@ export const updateUserRole = async (userId, newRole) => {
     }
 
     const { data, error } = await supabase
-      .from('users')
-      .update({ role: newRole })
-      .eq('id', userId)
-      .eq('org_id', orgId)
-      .select()
-      .single()
+      .rpc('update_member_workflow_role', {
+        p_org_id: orgId,
+        p_user_id: userId,
+        p_workflow_role: newRole
+      })
 
     if (error) throw error
     return { data, error: null }

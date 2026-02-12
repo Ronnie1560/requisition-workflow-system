@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useWorkflowRole } from '../../hooks/useWorkflowRole'
 import { Plus, FileText, Filter, Search, Download } from 'lucide-react'
 import { getRequisitionsForReview } from '../../services/api/requisitions'
 import { createRequisitionFromTemplate } from '../../services/api/templates'
@@ -12,7 +13,8 @@ import { logger } from '../../utils/logger'
 
 const RequisitionsList = () => {
   const navigate = useNavigate()
-  const { user, profile: _profile, userRole } = useAuth()
+  const { user } = useAuth()
+  const { workflowRole } = useWorkflowRole()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [requisitions, setRequisitions] = useState([])
@@ -39,7 +41,7 @@ const RequisitionsList = () => {
   const loadRequisitions = async () => {
     setLoading(true)
     try {
-      const { data, error } = await getRequisitionsForReview(user.id, userRole, {
+      const { data, error } = await getRequisitionsForReview(user.id, workflowRole, {
         status: filters.status
       })
 
@@ -121,15 +123,15 @@ const RequisitionsList = () => {
       <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {userRole === 'reviewer' ? 'Requisitions for Review' :
-             userRole === 'approver' ? 'Requisitions for Approval' :
-             userRole === 'super_admin' ? 'All Requisitions' :
+            {workflowRole === 'reviewer' ? 'Requisitions for Review' :
+             workflowRole === 'approver' ? 'Requisitions for Approval' :
+             workflowRole === 'super_admin' ? 'All Requisitions' :
              'My Requisitions'}
           </h1>
           <p className="text-sm text-gray-600 mt-1">
-            {userRole === 'reviewer' ? 'Review and process pending requisitions' :
-             userRole === 'approver' ? 'Approve or reject requisitions' :
-             userRole === 'super_admin' ? 'Manage all requisitions in the system' :
+            {workflowRole === 'reviewer' ? 'Review and process pending requisitions' :
+             workflowRole === 'approver' ? 'Approve or reject requisitions' :
+             workflowRole === 'super_admin' ? 'Manage all requisitions in the system' :
              'Manage your purchase requisitions and expense claims'}
           </p>
         </div>

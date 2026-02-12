@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useWorkflowRole } from '../../hooks/useWorkflowRole'
 import {
   ArrowLeft,
   User,
@@ -30,6 +31,7 @@ const UserDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { profile } = useAuth()
+  const { isAdmin } = useWorkflowRole()
 
   const [userData, setUserData] = useState(null)
   const [allProjects, setAllProjects] = useState([])
@@ -48,9 +50,6 @@ const UserDetail = () => {
     phone: '',
     department: ''
   })
-
-  // Check if user is admin
-  const isAdmin = profile?.role === 'super_admin'
 
   const loadUserData = useCallback(async () => {
     setLoading(true)

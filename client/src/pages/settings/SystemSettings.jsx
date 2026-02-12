@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTimedMessage } from '../../hooks/useTimedMessage'
 import { useAuth } from '../../context/AuthContext'
+import { useWorkflowRole } from '../../hooks/useWorkflowRole'
 import {
   getApprovalWorkflows,
   updateApprovalWorkflow,
@@ -21,6 +22,7 @@ import { logger } from '../../utils/logger'
 
 export default function SystemSettings() {
   const { profile } = useAuth()
+  const { isAdmin } = useWorkflowRole()
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState('workflows')
@@ -48,10 +50,10 @@ export default function SystemSettings() {
 
   // Check if user is admin
   useEffect(() => {
-    if (profile && profile.role !== 'super_admin') {
+    if (profile && !isAdmin) {
       navigate('/dashboard')
     }
-  }, [profile, navigate])
+  }, [profile, isAdmin, navigate])
 
   // Load data for the active tab only
   useEffect(() => {

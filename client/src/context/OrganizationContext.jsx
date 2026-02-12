@@ -321,9 +321,12 @@ export function OrganizationProvider({ children }) {
     }
   }, [isAuthenticated, fetchOrganizations])
 
-  // Check if user can manage org
+  // Check if user can manage org (org-level role: owner/admin/member)
   const canManageOrg = currentOrg?.member_role === 'owner' || currentOrg?.member_role === 'admin'
   const isOwner = currentOrg?.member_role === 'owner'
+
+  // Workflow role for the current org (submitter/reviewer/approver/store_manager/super_admin)
+  const workflowRole = currentOrg?.workflow_role || null
 
   const value = {
     // State
@@ -340,6 +343,7 @@ export function OrganizationProvider({ children }) {
     orgId: currentOrg?.id,
     orgSlug: currentOrg?.slug,
     orgName: currentOrg?.name,
+    workflowRole, // Per-org workflow role (replaces global users.role)
 
     // Actions
     switchOrganization,

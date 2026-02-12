@@ -87,14 +87,14 @@ serve(async (req) => {
     // Verify inviter has admin privileges in their organization
     const { data: membership } = await supabaseAdmin
       .from('organization_members')
-      .select('role')
+      .select('role, workflow_role')
       .eq('organization_id', profile.org_id)
       .eq('user_id', user.id)
       .eq('is_active', true)
       .single()
 
     const isOrgAdmin = membership && ['admin', 'owner'].includes(membership.role)
-    const isSuperAdmin = profile.role === 'super_admin'
+    const isSuperAdmin = membership?.workflow_role === 'super_admin' || profile.role === 'super_admin'
 
     if (!isOrgAdmin && !isSuperAdmin) {
       return new Response(

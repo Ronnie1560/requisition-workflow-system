@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useWorkflowRole } from '../../hooks/useWorkflowRole'
 import { useOrganization } from '../../context/OrganizationContext'
 import {
   FileText, CheckCircle, Clock, XCircle, DollarSign, Users,
@@ -16,7 +17,8 @@ import { logger } from '../../utils/logger'
 
 const DashboardEnhanced = () => {
   const navigate = useNavigate()
-  const { user, profile, userRole } = useAuth()
+  const { user, profile } = useAuth()
+  const { workflowRole } = useWorkflowRole()
   const { currentOrg, loading: orgLoading } = useOrganization()
 
   const [dashboardData, setDashboardData] = useState(null)
@@ -35,15 +37,15 @@ const DashboardEnhanced = () => {
       loadDashboardData()
       loadProjects()
     }
-  }, [user, userRole, dateRange, customStartDate, customEndDate, currentOrg, orgLoading])
+  }, [user, workflowRole, dateRange, customStartDate, customEndDate, currentOrg, orgLoading])
 
   const loadDashboardData = async () => {
-    if (!user || !userRole) return
+    if (!user || !workflowRole) return
 
     setLoading(true)
     setError(null)
     try {
-      const { data, error: err } = await getDashboardData(userRole, user.id)
+      const { data, error: err } = await getDashboardData(workflowRole, user.id)
       if (err) throw err
       setDashboardData(data)
     } catch (err) {
@@ -58,7 +60,7 @@ const DashboardEnhanced = () => {
     if (!user || !profile) return
 
     try {
-      const { data, error: err } = await getUserProjects(user.id, profile.role)
+      const { data, error: err } = await getUserProjects(user.id, workflowRole)
       if (err) throw err
       setProjects(data || [])
       if (data && data.length > 0) {
@@ -117,7 +119,7 @@ const DashboardEnhanced = () => {
 
     const { stats } = dashboardData
 
-    if (userRole === 'super_admin') {
+    if (workflowRole === 'super_admin') {
       return [
         {
           label: 'Total Requisitions',
@@ -305,7 +307,7 @@ const DashboardEnhanced = () => {
             Welcome back, {profile?.full_name}!
           </h1>
           <p className="text-gray-600 mt-1">
-            {userRole === 'super_admin' ? 'System Overview' : "Here's your dashboard"}
+            {workflowRole === 'super_admin' ? 'System Overview' : "Here's your dashboard"}
           </p>
         </div>
         <div className="flex gap-3">
@@ -530,7 +532,7 @@ const DashboardEnhanced = () => {
         <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
           <h2 className="text-lg font-bold text-gray-900 mb-6">Quick Stats</h2>
           <div className="space-y-4">
-            {userRole === 'super_admin' && dashboardData?.stats && (
+            {workflowRole === 'super_admin' && dashboardData?.stats && (
               <>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

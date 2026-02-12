@@ -205,7 +205,7 @@ serve(async (req) => {
 
       // Add user to organization_members table
       if (orgId) {
-        // Map user role to org member role
+        // Map user role to org member role (owner/admin/member)
         const orgMemberRole = role === 'super_admin' ? 'admin' : 
                               role === 'approver' ? 'admin' : 
                               role === 'reviewer' ? 'admin' : 'member'
@@ -216,6 +216,7 @@ serve(async (req) => {
             organization_id: orgId,
             user_id: authData.user.id,
             role: orgMemberRole,
+            workflow_role: role, // Per-org workflow role (submitter/reviewer/approver/store_manager/super_admin)
             invited_by: user.id,
             invited_at: new Date().toISOString(),
             accepted_at: new Date().toISOString(), // Pre-accept since admin invited them

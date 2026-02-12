@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useWorkflowRole } from '../../hooks/useWorkflowRole'
 import { useOrganization } from '../../context/OrganizationContext'
 import {
   ArrowLeft,
@@ -33,6 +34,7 @@ const RequisitionDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const { user, profile } = useAuth()
+  const { isAdmin, isReviewer: hasReviewerRole, isApprover: hasApproverRole } = useWorkflowRole()
   const { currentOrg } = useOrganization()
 
   const [requisition, setRequisition] = useState(null)
@@ -170,15 +172,15 @@ const RequisitionDetail = () => {
   const canReview = () => {
     if (!profile || !requisition || !user) return false
     const status = requisition.status
-    const isReviewer = ['reviewer', 'super_admin'].includes(profile.role)
+    const canReviewRole = hasReviewerRole || isAdmin
     const isOwnRequisition = requisition.submitted_by === user.id
 
     // Reviewers cannot review their own requisitions (conflict of interest)
-    if (isOwnRequisition && profile.role === 'reviewer') {
+    if (isOwnRequisition && hasReviewerRole && !isAdmin) {
       return false
     }
 
-    return isReviewer && (status === 'pending' || status === 'under_review')
+    return canReviewRole && (status === 'pending' || status === 'under_review')
   }
 
   // Check if user can edit this draft
@@ -194,18 +196,17 @@ const RequisitionDetail = () => {
     const isOwnRequisition = requisition.submitted_by === user.id
 
     // Super admin can approve at any stage
-    if (profile.role === 'super_admin') {
+    if (isAdmin) {
       return status === 'reviewed' || status === 'pending' || status === 'under_review'
     }
 
     // Approvers cannot approve their own requisitions (conflict of interest)
-    if (isOwnRequisition && profile.role === 'approver') {
+    if (isOwnRequisition && hasApproverRole) {
       return false
     }
 
     // Regular approvers can only approve reviewed requisitions
-    const isApprover = profile.role === 'approver'
-    return isApprover && status === 'reviewed'
+    return hasApproverRole && status === 'reviewed'
   }
 
   const canReject = () => {
@@ -214,21 +215,19 @@ const RequisitionDetail = () => {
     const isOwnRequisition = requisition.submitted_by === user.id
 
     // Super admin can reject at any stage
-    if (profile.role === 'super_admin') {
+    if (isAdmin) {
       return status === 'pending' || status === 'under_review' || status === 'reviewed'
     }
 
     // Reviewers can reject during review, but NOT their own requisitions
-    const isReviewer = profile.role === 'reviewer'
-    if (isReviewer) {
+    if (hasReviewerRole) {
       // Cannot reject own requisitions
       if (isOwnRequisition) return false
       return status === 'pending' || status === 'under_review'
     }
 
     // Approvers can reject reviewed requisitions, but NOT their own
-    const isApprover = profile.role === 'approver'
-    if (isApprover) {
+    if (hasApproverRole) {
       // Cannot reject own requisitions
       if (isOwnRequisition) return false
       return status === 'reviewed'

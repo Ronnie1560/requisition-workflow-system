@@ -11,6 +11,7 @@
 import { useEffect, useCallback, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { useWorkflowRole } from '../../hooks/useWorkflowRole'
 import { ArrowLeft, AlertCircle, CheckCircle, Loader } from 'lucide-react'
 
 // Custom hook for form logic
@@ -35,7 +36,8 @@ import { logger } from '../../utils/logger'
 const CreateRequisition = () => {
   const navigate = useNavigate()
   const { id: draftId } = useParams()
-  const { user, profile } = useAuth()
+  const { user } = useAuth()
+  const { workflowRole } = useWorkflowRole()
 
   // Use custom hook for form management
   const {
@@ -72,7 +74,7 @@ const CreateRequisition = () => {
       
       setLoadingProjects(true)
       try {
-        const { data, error: loadError } = await getUserProjects(user.id, profile?.role)
+        const { data, error: loadError } = await getUserProjects(user.id, workflowRole)
         if (loadError) {
           logger.error('Failed to load projects:', loadError)
         } else {
@@ -83,7 +85,7 @@ const CreateRequisition = () => {
       }
     }
     loadProjects()
-  }, [user?.id, profile?.role])
+  }, [user?.id, workflowRole])
 
   // Load expense accounts when project changes
   useEffect(() => {

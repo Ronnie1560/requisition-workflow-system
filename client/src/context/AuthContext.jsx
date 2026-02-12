@@ -480,7 +480,9 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     validateSession,
     isAuthenticated: !!user,
+    /** @deprecated Use useWorkflowRole() or useOrganization().workflowRole instead */
     isAdmin: profile?.role === 'super_admin',
+    /** @deprecated Use useWorkflowRole() or useOrganization().workflowRole instead */
     userRole: profile?.role,
     // Inactivity timeout controls
     pauseInactivityTimer: pauseTimer,

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useWorkflowRole } from '../../hooks/useWorkflowRole'
 import {
   Mail,
   User,
@@ -15,7 +15,7 @@ import { USER_ROLES, ROLE_LABELS } from '../../utils/constants'
 
 const InviteUser = () => {
   const navigate = useNavigate()
-  const { profile, user: _user } = useAuth()
+  const { isAdmin } = useWorkflowRole()
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -28,9 +28,6 @@ const InviteUser = () => {
     role: USER_ROLES.SUBMITTER,
     projects: []
   })
-
-  // Check if user is admin
-  const isAdmin = profile?.role === 'super_admin'
 
   useEffect(() => {
     const loadData = async () => {
