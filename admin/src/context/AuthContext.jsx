@@ -11,15 +11,24 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [sessionId, setSessionId] = useState(null)
   const keepAliveRef = useRef(null)
+  const checkingRef = useRef(false) // prevent duplicate checkPlatformAdmin calls
 
   // Session keepalive
   const startKeepAlive = useCallback((sid) => {
     if (keepAliveRef.current) clearInterval(keepAliveRef.current)
     keepAliveRef.current = setInterval(async () => {
-      const { data } = await supabase.rpc('touch_admin_session', { p_session_id: sid })
-      if (!data) {
-        // Session expired — force logout
-        await signOut()
+      try {
+        const { data } = await supabase.rpc('touch_admin_session', { p_session_id: sid })
+        if (data === false) {
+          // Session explicitly expired — sign out
+          if (keepAliveRef.current) {
+            clearInterval(keepAliveRef.current)
+            keepAliveRef.current = null
+          }
+          await supabase.auth.signOut()
+        }
+      } catch {
+        // Network error — ignore, retry on next interval
       }
     }, SESSION_KEEPALIVE_MS)
   }, [])
@@ -32,27 +41,26 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user)
-        checkPlatformAdmin(session.user.id)
-      } else {
-        setLoading(false)
-      }
-    })
-
-    // Listen for auth changes
+    // Use onAuthStateChange as the single source of truth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          setUser(session.user)
-          await checkPlatformAdmin(session.user.id)
-        } else {
+      async (event, session) => {
+        if (event === 'SIGNED_OUT') {
           setUser(null)
           setPlatformAdmin(null)
           setSessionId(null)
           stopKeepAlive()
+          setLoading(false)
+          return
+        }
+
+        if (session?.user) {
+          // Set loading BEFORE setting user to prevent the race condition
+          // where ProtectedRoute sees user!=null, platformAdmin=null, loading=false
+          setLoading(true)
+          setUser(session.user)
+          await checkPlatformAdmin(session.user.id)
+        } else if (event === 'INITIAL_SESSION') {
+          // No session on initial load
           setLoading(false)
         }
       }
@@ -65,6 +73,10 @@ export function AuthProvider({ children }) {
   }, [stopKeepAlive])
 
   async function checkPlatformAdmin(userId) {
+    // Prevent duplicate concurrent checks
+    if (checkingRef.current) return
+    checkingRef.current = true
+
     try {
       const { data, error } = await supabase
         .from('platform_admins')
@@ -78,26 +90,21 @@ export function AuthProvider({ children }) {
       } else {
         setPlatformAdmin(data)
 
-        // Create admin session for tracking
-        try {
-          const { data: sid } = await supabase.rpc('create_admin_session', {
-            p_ip: null,
-            p_user_agent: navigator.userAgent,
-          })
+        // Create admin session for tracking (best-effort, don't block)
+        supabase.rpc('create_admin_session', {
+          p_ip: null,
+          p_user_agent: navigator.userAgent,
+        }).then(({ data: sid }) => {
           if (sid) {
             setSessionId(sid)
             startKeepAlive(sid)
           }
-        } catch {
-          // Session creation is best-effort
-        }
-
-        // Record login (legacy – keep for audit)
-        await supabase.rpc('record_platform_admin_login').catch(() => {})
+        }).catch(() => {})
       }
     } catch {
       setPlatformAdmin(null)
     } finally {
+      checkingRef.current = false
       setLoading(false)
     }
   }
