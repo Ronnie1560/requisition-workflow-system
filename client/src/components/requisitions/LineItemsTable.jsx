@@ -128,17 +128,14 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-semibold text-gray-900">Item details</h2>
-          {items.length > 0 && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
-              {items.length} {items.length === 1 ? 'item' : 'items'}
-            </span>
-          )}
+      {/* Item count badge */}
+      {items.length > 0 && (
+        <div className="mb-4">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+            {items.length} {items.length === 1 ? 'item' : 'items'}
+          </span>
         </div>
-      </div>
+      )}
 
       {!projectAccountId && (
         <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
@@ -155,11 +152,11 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
           <div>#</div>
           <div>Item</div>
           <div>Description</div>
-          <div>Qty</div>
-          <div>UoM</div>
-          <div>Unit Price</div>
-          <div className="text-right">Total</div>
-          <div className="text-right">Actions</div>
+          <div className="text-center">Qty</div>
+          <div className="text-center">UoM</div>
+          <div className="text-center">Unit Price</div>
+          <div className="text-center">Total</div>
+          <div className="text-center">Actions</div>
         </div>
 
         {/* Filled Item Rows */}
@@ -205,7 +202,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                     />
                   </div>
 
-                  {/* Quantity */}
+                  {/* Qty */}
                   <input
                     type="number"
                     value={item.quantity}
@@ -213,7 +210,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                     disabled={disabled}
                     min="0"
                     step="0.01"
-                    className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
+                    className="w-full px-2 py-1.5 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
                   />
 
                   {/* UoM */}
@@ -221,7 +218,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                     value={item.uom_id}
                     onChange={(e) => updateUom(index, e.target.value)}
                     disabled={disabled}
-                    className="w-full px-1 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
+                    className="w-full px-1 py-1.5 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
                   >
                     {uomTypes.map((uom) => (
                       <option key={uom.id} value={uom.id}>
@@ -239,7 +236,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                       disabled={disabled}
                       min="0"
                       step="0.01"
-                      className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
+                      className="w-full px-2 py-1.5 text-sm text-center border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none disabled:bg-gray-100"
                     />
                     {hasHighVariance && (
                       <div className="flex items-center gap-1 mt-1">
@@ -252,7 +249,7 @@ const LineItemsTable = ({ items, projectAccountId, onChange, disabled }) => {
                   </div>
 
                   {/* Total */}
-                  <p className="text-sm font-semibold text-gray-900 text-right">
+                  <p className="text-sm font-semibold text-gray-900 text-center">
                     UGX {item.total_price.toLocaleString()}
                   </p>
 

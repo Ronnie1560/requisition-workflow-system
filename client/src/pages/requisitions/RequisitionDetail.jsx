@@ -8,7 +8,6 @@ import {
   User,
   Building,
   FileText,
-  Package,
   DollarSign,
   AlertCircle,
   CheckCircle,
@@ -401,10 +400,11 @@ const RequisitionDetail = () => {
 
       {/* Line Items */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Package className="w-5 h-5" />
-          Line Items ({requisition.requisition_items?.length || 0})
-        </h2>
+        <div className="mb-4">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+            {requisition.requisition_items?.length || 0} {(requisition.requisition_items?.length || 0) === 1 ? 'item' : 'items'}
+          </span>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
@@ -412,10 +412,10 @@ const RequisitionDetail = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Item</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">UOM</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Unit Price</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Total</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Qty</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">UOM</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Unit Price</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Total</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -432,10 +432,10 @@ const RequisitionDetail = () => {
                       <p className="text-xs text-indigo-600 mt-1 italic">Note: {item.notes}</p>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-right">{item.quantity}</td>
-                  <td className="px-4 py-3 text-sm">{item.uom?.name}</td>
-                  <td className="px-4 py-3 text-sm text-right">{formatCurrency(item.unit_price)}</td>
-                  <td className="px-4 py-3 text-sm text-right font-medium">
+                  <td className="px-4 py-3 text-sm text-center">{item.quantity}</td>
+                  <td className="px-4 py-3 text-sm text-center">{item.uom?.name}</td>
+                  <td className="px-4 py-3 text-sm text-center">{formatCurrency(item.unit_price)}</td>
+                  <td className="px-4 py-3 text-sm text-center font-medium">
                     {formatCurrency(item.total_price)}
                   </td>
                 </tr>

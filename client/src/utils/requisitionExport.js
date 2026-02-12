@@ -160,8 +160,7 @@ export const exportRequisitionToCSV = async (requisition, organizationName = DEF
     ['Description', requisition.description || ''],
     ['Justification', requisition.justification || ''],
     [],
-    ['Line Items'],
-    ['#', 'Item Code', 'Item Name', 'Description', 'Quantity', 'UOM', 'Unit Price', 'Total Price']
+    ['#', 'Item Code', 'Item Name', 'Description', 'Qty', 'UOM', 'Unit Price', 'Total Price']
   ]
 
   // Add line items
@@ -604,7 +603,6 @@ export const generatePrintableHTML = (requisition, organization = DEFAULT_ORG_NA
 
       <!-- Line Items -->
       <div class="items-section">
-        <div class="section-header">Line Items</div>
         <table>
           <thead>
             <tr>
