@@ -225,6 +225,8 @@ export function AuthProvider({ children }) {
       setUser(null)
       setPlatformAdmin(null)
       setSigningOut(false)
+      // Force redirect to login — don't rely solely on reactive state
+      window.location.href = '/login'
     }
   }
 
