@@ -30,7 +30,7 @@ const navItems = [
 ]
 
 export default function AdminLayout({ children }) {
-  const { platformAdmin, signOut } = useAuth()
+  const { platformAdmin, signOut, signingOut } = useAuth()
   const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -98,10 +98,19 @@ export default function AdminLayout({ children }) {
           <div className="text-xs text-gray-500 truncate">{platformAdmin?.email}</div>
           <button
             onClick={signOut}
-            className="mt-3 flex items-center gap-2 text-sm text-gray-400 hover:text-red-400 transition-colors"
+            disabled={signingOut}
+            className={`mt-3 flex items-center gap-2 text-sm transition-colors ${
+              signingOut
+                ? 'text-gray-600 cursor-not-allowed'
+                : 'text-gray-400 hover:text-red-400'
+            }`}
           >
-            <LogOut className="h-4 w-4" />
-            Sign Out
+            {signingOut ? (
+              <div className="h-4 w-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <LogOut className="h-4 w-4" />
+            )}
+            {signingOut ? 'Signing out...' : 'Sign Out'}
           </button>
         </div>
       </aside>

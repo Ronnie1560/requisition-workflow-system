@@ -201,24 +201,38 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const [signingOut, setSigningOut] = useState(false)
+
   async function signOut() {
-    // Invalidate admin session
-    if (sessionId) {
-      await supabase.rpc('invalidate_admin_session', { p_session_id: sessionId }).catch(() => {})
+    if (signingOut) return // Prevent double-click
+    setSigningOut(true)
+    try {
+      // Invalidate admin session (best-effort)
+      if (sessionId) {
+        await supabase.rpc('invalidate_admin_session', { p_session_id: sessionId }).catch(() => {})
+      }
+      stopKeepAlive()
+      setSessionId(null)
+      setCachedAdmin(null)
+      cachedAdmin.current = null
+      try {
+        await supabase.auth.signOut()
+      } catch (e) {
+        console.error('Sign out error:', e)
+      }
+    } finally {
+      // Always clear auth state, even if network calls fail
+      setUser(null)
+      setPlatformAdmin(null)
+      setSigningOut(false)
     }
-    stopKeepAlive()
-    setSessionId(null)
-    setCachedAdmin(null)
-    cachedAdmin.current = null
-    await supabase.auth.signOut()
-    setUser(null)
-    setPlatformAdmin(null)
   }
 
   const value = {
     user,
     platformAdmin,
     loading,
+    signingOut,
     sessionId,
     isAuthenticated: !!user && !!platformAdmin,
     signIn,
