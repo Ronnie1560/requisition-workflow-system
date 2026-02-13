@@ -4,14 +4,43 @@ import { supabase } from '../lib/supabase'
 const AuthContext = createContext(null)
 
 const SESSION_KEEPALIVE_MS = 5 * 60 * 1000 // 5 minutes
+const ADMIN_CACHE_KEY = 'lw_admin_cache'
+
+// Restore cached admin data for instant render (validated in background)
+function getCachedAdmin() {
+  try {
+    const raw = sessionStorage.getItem(ADMIN_CACHE_KEY)
+    if (!raw) return null
+    const cached = JSON.parse(raw)
+    // Max 1 hour cache
+    if (Date.now() - cached.ts > 3600_000) {
+      sessionStorage.removeItem(ADMIN_CACHE_KEY)
+      return null
+    }
+    return cached.admin
+  } catch {
+    return null
+  }
+}
+
+function setCachedAdmin(admin) {
+  try {
+    if (admin) {
+      sessionStorage.setItem(ADMIN_CACHE_KEY, JSON.stringify({ admin, ts: Date.now() }))
+    } else {
+      sessionStorage.removeItem(ADMIN_CACHE_KEY)
+    }
+  } catch { /* quota */ }
+}
 
 export function AuthProvider({ children }) {
+  const cachedAdmin = useRef(getCachedAdmin())
   const [user, setUser] = useState(null)
-  const [platformAdmin, setPlatformAdmin] = useState(null)
+  const [platformAdmin, setPlatformAdmin] = useState(cachedAdmin.current)
   const [loading, setLoading] = useState(true)
   const [sessionId, setSessionId] = useState(null)
   const keepAliveRef = useRef(null)
-  const checkingRef = useRef(false) // prevent duplicate checkPlatformAdmin calls
+  const checkingRef = useRef(false)
 
   // Session keepalive
   const startKeepAlive = useCallback((sid) => {
@@ -41,12 +70,12 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    // Use onAuthStateChange as the single source of truth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
           setUser(null)
           setPlatformAdmin(null)
+          setCachedAdmin(null)
           setSessionId(null)
           stopKeepAlive()
           setLoading(false)
@@ -54,13 +83,23 @@ export function AuthProvider({ children }) {
         }
 
         if (session?.user) {
-          // Set loading BEFORE setting user to prevent the race condition
-          // where ProtectedRoute sees user!=null, platformAdmin=null, loading=false
-          setLoading(true)
           setUser(session.user)
-          await checkPlatformAdmin(session.user.id)
+
+          // If we have a cached admin, show the app immediately
+          // and revalidate in background
+          if (cachedAdmin.current) {
+            setPlatformAdmin(cachedAdmin.current)
+            setLoading(false)
+            // Background revalidation
+            checkPlatformAdmin(session.user.id, true)
+          } else {
+            setLoading(true)
+            await checkPlatformAdmin(session.user.id, false)
+          }
         } else if (event === 'INITIAL_SESSION') {
           // No session on initial load
+          setCachedAdmin(null)
+          setPlatformAdmin(null)
           setLoading(false)
         }
       }
@@ -72,8 +111,7 @@ export function AuthProvider({ children }) {
     }
   }, [stopKeepAlive])
 
-  async function checkPlatformAdmin(userId) {
-    // Prevent duplicate concurrent checks
+  async function checkPlatformAdmin(userId, isBackground = false) {
     if (checkingRef.current) return
     checkingRef.current = true
 
@@ -87,8 +125,10 @@ export function AuthProvider({ children }) {
 
       if (error || !data) {
         setPlatformAdmin(null)
+        setCachedAdmin(null)
       } else {
         setPlatformAdmin(data)
+        setCachedAdmin(data)
 
         // Create admin session for tracking (best-effort, don't block)
         supabase.rpc('create_admin_session', {
@@ -102,10 +142,13 @@ export function AuthProvider({ children }) {
         }).catch(() => {})
       }
     } catch {
-      setPlatformAdmin(null)
+      if (!isBackground) {
+        setPlatformAdmin(null)
+        setCachedAdmin(null)
+      }
     } finally {
       checkingRef.current = false
-      setLoading(false)
+      if (!isBackground) setLoading(false)
     }
   }
 
@@ -165,6 +208,8 @@ export function AuthProvider({ children }) {
     }
     stopKeepAlive()
     setSessionId(null)
+    setCachedAdmin(null)
+    cachedAdmin.current = null
     await supabase.auth.signOut()
     setUser(null)
     setPlatformAdmin(null)

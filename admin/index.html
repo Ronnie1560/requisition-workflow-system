@@ -7,9 +7,22 @@
     <link rel="dns-prefetch" href="https://winfoubqhkrigtgjwrpm.supabase.co" />
     <link rel="preconnect" href="https://winfoubqhkrigtgjwrpm.supabase.co" crossorigin />
     <title>LedgerWorkflow Admin</title>
+    <style>
+      /* Inline critical CSS — instant loading indicator before any JS/CSS loads */
+      .app-loader{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#111827;flex-direction:column;gap:16px}
+      .app-loader .spinner{width:36px;height:36px;border-radius:50%;border:3px solid #374151;border-top-color:#6366f1;animation:spin .7s linear infinite}
+      .app-loader p{color:#9ca3af;font-family:system-ui,sans-serif;font-size:13px}
+      @keyframes spin{to{transform:rotate(360deg)}}
+    </style>
   </head>
   <body class="bg-gray-50 dark:bg-gray-900">
-    <div id="root"></div>
+    <div id="root">
+      <!-- Instant loading indicator — removed once React mounts -->
+      <div class="app-loader">
+        <div class="spinner"></div>
+        <p>Loading admin&hellip;</p>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
