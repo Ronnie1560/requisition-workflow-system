@@ -438,6 +438,7 @@ serve(async (req) => {
         organization_id: orgId,
         user_id: userId,
         role: 'owner',
+        workflow_role: 'super_admin', // Org creator gets full workflow permissions
         accepted_at: new Date().toISOString(),
         is_active: true,
       })

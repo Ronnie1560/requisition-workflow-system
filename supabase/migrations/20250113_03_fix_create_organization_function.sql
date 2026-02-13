@@ -27,8 +27,8 @@ BEGIN
   RETURNING id INTO v_org_id;
 
   -- Add creator as owner
-  INSERT INTO organization_members (organization_id, user_id, role, accepted_at)
-  VALUES (v_org_id, v_user_id, 'owner', NOW());
+  INSERT INTO organization_members (organization_id, user_id, role, workflow_role, accepted_at)
+  VALUES (v_org_id, v_user_id, 'owner', 'super_admin', NOW());
 
   -- Create default organization settings
   INSERT INTO organization_settings (org_id, organization_name)
