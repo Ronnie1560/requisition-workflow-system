@@ -26,7 +26,8 @@ import {
   Box,
   Sliders,
   BarChart3,
-  Building2
+  Building2,
+  MessageSquareText
 } from 'lucide-react'
 
 const MainLayout = () => {
@@ -55,6 +56,7 @@ const MainLayout = () => {
     { name: 'Receipts', href: '/receipts', icon: Receipt },
     { name: 'Reports', href: '/reports', icon: BarChart3 },
     { name: 'Users', href: '/users', icon: Users, adminOnly: true },
+    { name: 'Feedback', href: '/feedback', icon: MessageSquareText },
     { name: 'Organization', href: '/settings/organization', icon: Building2, orgAdmin: true },
     { name: 'System', href: '/admin/system-settings', icon: Sliders, adminOnly: true },
     { name: 'Settings', href: '/settings', icon: Settings }

@@ -60,6 +60,9 @@ const PricingPlans = lazy(() => import('./pages/billing/PricingPlans'))
 // Reports - heavy component, good candidate for lazy loading
 const ReportsEnhanced = lazy(() => import('./pages/reports/ReportsEnhanced'))
 
+// Feedback
+const FeedbackPage = lazy(() => import('./pages/feedback/FeedbackPage'))
+
 // Connection Test (for testing)
 const ConnectionTest = lazy(() => import('./pages/ConnectionTest'))
 
@@ -138,6 +141,9 @@ function App() {
 
               {/* Reports */}
               <Route path="reports" element={<ReportsEnhanced />} />
+
+              {/* Feedback */}
+              <Route path="feedback" element={<FeedbackPage />} />
 
               {/* Settings */}
               <Route path="settings" element={<UserSettings />} />
