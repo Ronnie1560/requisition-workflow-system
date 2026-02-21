@@ -375,7 +375,8 @@ export const assignUserToProject = async (userId, projectId, role, assignedBy) =
         project_id: projectId,
         role: role,
         assigned_by: assignedBy,
-        is_active: true
+        is_active: true,
+        org_id: orgId
       })
       .select()
       .single()
@@ -467,7 +468,8 @@ export const assignUserToMultipleProjects = async (userId, projectIds, role, ass
       project_id: projectId,
       role: role,
       assigned_by: assignedBy,
-      is_active: true
+      is_active: true,
+      org_id: orgId
     }))
 
     const { data, error } = await supabase

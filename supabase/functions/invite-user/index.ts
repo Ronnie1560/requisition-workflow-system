@@ -247,6 +247,7 @@ serve(async (req) => {
             role: 'submitter',
             assigned_by: user.id,
             is_active: true,
+            org_id: orgId,
           }))
 
           const { error: assignError } = await supabaseAdmin

@@ -285,13 +285,19 @@ export const getProjectTeam = async (projectId) => {
  */
 export const assignUserToProject = async (projectId, userId, projectRole = 'member') => {
   try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
     const { data, error } = await supabase
       .from('user_project_assignments')
       .insert([{
         project_id: projectId,
         user_id: userId,
         project_role: projectRole,
-        is_active: true
+        is_active: true,
+        org_id: orgId
       }])
       .select()
       .single()
