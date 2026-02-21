@@ -32,7 +32,7 @@ SET search_path = ''
 AS $$
 DECLARE
   claims jsonb;
-  user_id uuid;
+  v_user_id uuid;
   v_org_id uuid;
   v_org_role text;
   v_workflow_role text;
@@ -40,12 +40,12 @@ DECLARE
 BEGIN
   -- Extract current claims and user_id
   claims := event->'claims';
-  user_id := (event->>'user_id')::uuid;
+  v_user_id := (event->>'user_id')::uuid;
 
   -- Check if user is a platform admin
   SELECT EXISTS (
-    SELECT 1 FROM public.platform_admins
-    WHERE auth_user_id = user_id AND is_active = true
+    SELECT 1 FROM public.platform_admins pa
+    WHERE pa.user_id = v_user_id AND pa.is_active = true
   ) INTO v_is_platform_admin;
 
   -- Get active org from user_metadata (set by frontend on org switch)
@@ -56,7 +56,7 @@ BEGIN
   IF v_org_id IS NULL THEN
     SELECT om.organization_id INTO v_org_id
     FROM public.organization_members om
-    WHERE om.user_id = user_id AND om.is_active = true
+    WHERE om.user_id = v_user_id AND om.is_active = true
     ORDER BY om.created_at ASC
     LIMIT 1;
   END IF;
@@ -66,7 +66,7 @@ BEGIN
     SELECT om.role, om.workflow_role
     INTO v_org_role, v_workflow_role
     FROM public.organization_members om
-    WHERE om.user_id = user_id
+    WHERE om.user_id = v_user_id
       AND om.organization_id = v_org_id
       AND om.is_active = true;
 
