@@ -67,11 +67,30 @@ export function OrganizationProvider({ children }) {
       const savedOrgId = localStorage.getItem(SELECTED_ORG_KEY)
       const savedOrg = data?.find(org => org.id === savedOrgId)
       
+      let activeOrg = null
       if (savedOrg) {
-        setCurrentOrg(savedOrg)
+        activeOrg = savedOrg
       } else if (data?.length > 0) {
-        setCurrentOrg(data[0])
-        localStorage.setItem(SELECTED_ORG_KEY, data[0].id)
+        activeOrg = data[0]
+      }
+
+      if (activeOrg) {
+        setCurrentOrg(activeOrg)
+        localStorage.setItem(SELECTED_ORG_KEY, activeOrg.id)
+
+        // Ensure JWT has the active org context on initial load
+        // (the hook reads user_metadata.active_org_id)
+        try {
+          const { data: { session } } = await supabase.auth.getSession()
+          const currentJwtOrg = session?.user?.user_metadata?.active_org_id
+          if (currentJwtOrg !== activeOrg.id) {
+            await supabase.auth.updateUser({ data: { active_org_id: activeOrg.id } })
+            await supabase.auth.refreshSession()
+            logger.debug('[OrganizationContext] Synced initial org to JWT', { orgId: activeOrg.id })
+          }
+        } catch (syncErr) {
+          logger.warn('[OrganizationContext] Failed to sync initial org to JWT', syncErr)
+        }
       }
 
       logger.debug('[OrganizationContext] Loaded organizations', { count: data?.length })
@@ -84,14 +103,36 @@ export function OrganizationProvider({ children }) {
   }, [])
 
   /**
+   * Sync active org to JWT by updating user_metadata and refreshing the session.
+   * The custom_access_token_hook reads user_metadata.active_org_id to inject
+   * org_id, org_role, and workflow_role into the JWT claims.
+   */
+  const syncOrgToJwt = useCallback(async (orgId) => {
+    try {
+      await supabase.auth.updateUser({
+        data: { active_org_id: orgId }
+      })
+      // Refresh session so the hook runs and mints a new JWT with the org claims
+      await supabase.auth.refreshSession()
+      logger.debug('[OrganizationContext] Synced org to JWT', { orgId })
+    } catch (err) {
+      // Non-fatal: RLS will still work via fallback in the hook
+      logger.warn('[OrganizationContext] Failed to sync org to JWT', err)
+    }
+  }, [])
+
+  /**
    * Switch to a different organization
    */
-  const switchOrganization = useCallback((orgId) => {
+  const switchOrganization = useCallback(async (orgId) => {
     const org = organizations.find(o => o.id === orgId)
     if (org) {
       setCurrentOrg(org)
       localStorage.setItem(SELECTED_ORG_KEY, orgId)
       logger.info('[OrganizationContext] Switched to organization', { orgId, name: org.name })
+
+      // Sync to JWT so RLS policies get the new org context
+      await syncOrgToJwt(orgId)
 
       // Increment version to trigger data refresh in components
       setOrgVersion(v => v + 1)
@@ -101,7 +142,7 @@ export function OrganizationProvider({ children }) {
         detail: { orgId, orgName: org.name }
       }))
     }
-  }, [organizations])
+  }, [organizations, syncOrgToJwt])
 
   /**
    * Create a new organization

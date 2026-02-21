@@ -227,6 +227,15 @@ serve(async (req) => {
           console.error('Organization membership error:', memberError)
           // Don't fail the whole operation if membership fails - DB trigger should handle it
         }
+
+        // Set active_org_id in user metadata so JWT hook picks it up on first login
+        await supabaseAdmin.auth.admin.updateUserById(authData.user.id, {
+          user_metadata: {
+            full_name: fullName,
+            role: role,
+            active_org_id: orgId,
+          },
+        })
       }
 
       // Assign to projects if specified (validate they belong to the inviter's org)

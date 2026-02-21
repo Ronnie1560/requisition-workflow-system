@@ -450,6 +450,16 @@ serve(async (req) => {
 
     console.log('Added user as organization owner')
 
+    // Step 4b: Set active_org_id in user metadata so JWT hook picks it up
+    await supabaseAdmin.auth.admin.updateUserById(userId, {
+      user_metadata: {
+        full_name: sanitizedAdmin.fullName,
+        phone: sanitizedAdmin.phone,
+        active_org_id: orgId,
+      },
+    })
+    console.log('Set active_org_id in user metadata')
+
     // Step 5: Create organization settings
     const { error: settingsError } = await supabaseAdmin
       .from('organization_settings')
