@@ -24,7 +24,7 @@ const ImportItems = () => {
   const [invalidRows, setInvalidRows] = useState([])
   const [categories, setCategories] = useState([])
   const [uomTypes, setUomTypes] = useState([])
-  const [importing, setImporting] = useState(false)
+  const [_Importing, setImporting] = useState(false)
   const [results, setResults] = useState(null)
   const [error, setError] = useState('')
   const [dragActive, setDragActive] = useState(false)
