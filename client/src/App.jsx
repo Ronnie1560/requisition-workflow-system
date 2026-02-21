@@ -48,6 +48,7 @@ const ExpenseAccountDetail = lazy(() => import('./pages/expense-accounts/Expense
 // Items
 const ItemsList = lazy(() => import('./pages/items/ItemsList'))
 const CreateItem = lazy(() => import('./pages/items/CreateItem'))
+const ImportItems = lazy(() => import('./pages/items/ImportItems'))
 const ItemDetail = lazy(() => import('./pages/items/ItemDetail'))
 
 // Settings
@@ -127,6 +128,7 @@ function App() {
               {/* Items routes */}
               <Route path="items" element={<ItemsList />} />
               <Route path="items/create" element={<CreateItem />} />
+              <Route path="items/import" element={<ImportItems />} />
               <Route path="items/edit/:id" element={<CreateItem />} />
               <Route path="items/:id" element={<ItemDetail />} />
 

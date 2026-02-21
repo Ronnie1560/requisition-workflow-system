@@ -359,6 +359,69 @@ export const getItemCategories = async () => {
 }
 
 // =====================================================
+// BULK IMPORT OPERATIONS
+// =====================================================
+
+/**
+ * Bulk create items from import data
+ * @param {Array} items - Array of item objects with { code, name, description, category_id, default_uom_id }
+ * @returns {{ data: Array, errors: Array }}
+ */
+export const bulkCreateItems = async (items) => {
+  try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    const results = { created: [], errors: [] }
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i]
+      try {
+        const sanitized = {
+          name: item.name?.trim(),
+          description: item.description?.trim() || null,
+          code: item.code?.trim() || null,
+          category_id: item.category_id || null,
+          default_uom_id: item.default_uom_id || null,
+          is_active: true,
+          org_id: orgId,
+        }
+
+        if (!sanitized.name) {
+          results.errors.push({ row: i + 1, name: item.name, error: 'Item name is required' })
+          continue
+        }
+
+        // Auto-generate code if not provided
+        if (!sanitized.code) {
+          const { data: generatedCode, error: codeError } = await supabase.rpc('generate_item_code')
+          if (codeError) throw codeError
+          sanitized.code = generatedCode
+        }
+
+        const { data, error } = await supabase
+          .from('items')
+          .insert([sanitized])
+          .select('id, code, name')
+          .single()
+
+        if (error) throw error
+        results.created.push(data)
+      } catch (err) {
+        results.errors.push({ row: i + 1, name: item.name, error: err.message })
+      }
+    }
+
+    return { data: results, error: null }
+  } catch (error) {
+    logger.error('Error bulk creating items:', error)
+    return { data: null, error }
+  }
+}
+
+// =====================================================
 // [REMOVED] ACCOUNT ITEMS OPERATIONS
 // The account_items table and project_accounts system was deprecated
 // in favor of flexible project-level budgeting.

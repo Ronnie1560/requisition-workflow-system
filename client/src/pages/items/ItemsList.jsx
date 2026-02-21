@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Plus, Package, Search, Filter, AlertCircle, Tag } from 'lucide-react'
+import { Plus, Package, Search, Filter, AlertCircle, Tag, Upload } from 'lucide-react'
 import { getAllItems } from '../../services/api/items'
 import { getActiveCategories } from '../../services/api/categories'
 import { logger } from '../../utils/logger'
@@ -144,13 +144,22 @@ const ItemsList = () => {
           </p>
         </div>
         {canCreateItem && (
-          <button
-            onClick={() => navigate('/items/create')}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            <Plus className="w-5 h-5" />
-            New Item
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/items/import')}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            >
+              <Upload className="w-5 h-5" />
+              Import
+            </button>
+            <button
+              onClick={() => navigate('/items/create')}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+            >
+              <Plus className="w-5 h-5" />
+              New Item
+            </button>
+          </div>
         )}
       </div>
 

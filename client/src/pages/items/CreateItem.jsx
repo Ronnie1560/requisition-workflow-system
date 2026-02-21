@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Save, ArrowLeft, AlertCircle, CheckCircle, Loader } from 'lucide-react'
+import { Save, ArrowLeft, AlertCircle, CheckCircle, Loader, FilePlus } from 'lucide-react'
 import {
   createItem,
   updateItem,
@@ -31,6 +31,8 @@ const CreateItem = () => {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [saveAction, setSaveAction] = useState('close') // 'close' or 'new'
+  const nameInputRef = useRef(null)
   const isEditMode = !!id
 
   useEffect(() => {
@@ -112,7 +114,21 @@ const CreateItem = () => {
     return true
   }
 
-  const handleSubmit = async (e) => {
+  const resetForm = () => {
+    setFormData({
+      code: '',
+      name: '',
+      description: '',
+      category_id: '',
+      default_uom_id: '',
+      is_active: true
+    })
+    setError('')
+    // Focus name input for quick entry
+    setTimeout(() => nameInputRef.current?.focus(), 100)
+  }
+
+  const handleSubmit = async (e, action = 'close') => {
     e.preventDefault()
 
     if (!validateForm()) {
@@ -120,6 +136,7 @@ const CreateItem = () => {
     }
 
     setSaving(true)
+    setSaveAction(action)
     setError('')
     setSuccess('')
 
@@ -138,11 +155,15 @@ const CreateItem = () => {
 
       if (result.error) throw result.error
 
-      setSuccess(isEditMode ? 'Item updated successfully!' : 'Item created successfully!')
-
-      setTimeout(() => {
-        navigate('/items')
-      }, 1500)
+      if (action === 'new' && !isEditMode) {
+        setSuccess('Item created successfully! Ready for next item.')
+        resetForm()
+      } else {
+        setSuccess(isEditMode ? 'Item updated successfully!' : 'Item created successfully!')
+        setTimeout(() => {
+          navigate('/items')
+        }, 1500)
+      }
     } catch (err) {
       logger.error('Error saving item:', err)
       setError(err.message || 'Failed to save item')
@@ -203,7 +224,7 @@ const CreateItem = () => {
       )}
 
       {/* Form */}
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={(e) => handleSubmit(e, 'close')}>
         <div className="bg-white rounded-lg shadow border border-gray-200 p-6 space-y-6">
           {/* Basic Information */}
           <div>
@@ -238,6 +259,7 @@ const CreateItem = () => {
                 <input
                   type="text"
                   name="name"
+                  ref={nameInputRef}
                   value={formData.name}
                   onChange={handleChange}
                   required
@@ -336,12 +358,32 @@ const CreateItem = () => {
             >
               Cancel
             </button>
+            {!isEditMode && (
+              <button
+                type="button"
+                onClick={(e) => handleSubmit(e, 'new')}
+                disabled={saving}
+                className="flex items-center gap-2 px-6 py-2 border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving && saveAction === 'new' ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FilePlus className="w-5 h-5" />
+                    Save &amp; New
+                  </>
+                )}
+              </button>
+            )}
             <button
               type="submit"
               disabled={saving}
               className="flex items-center gap-2 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {saving ? (
+              {saving && saveAction === 'close' ? (
                 <>
                   <Loader className="w-5 h-5 animate-spin" />
                   Saving...
@@ -349,7 +391,7 @@ const CreateItem = () => {
               ) : (
                 <>
                   <Save className="w-5 h-5" />
-                  {isEditMode ? 'Update Item' : 'Create Item'}
+                  {isEditMode ? 'Update Item' : 'Save & Close'}
                 </>
               )}
             </button>
