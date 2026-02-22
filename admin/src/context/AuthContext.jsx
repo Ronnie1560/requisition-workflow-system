@@ -206,20 +206,27 @@ export function AuthProvider({ children }) {
   async function signOut() {
     if (signingOut) return // Prevent double-click
     setSigningOut(true)
+
+    // Helper: race a promise against a timeout so sign-out never hangs
+    const withTimeout = (promise, ms = 3000) =>
+      Promise.race([promise, new Promise(resolve => setTimeout(resolve, ms))])
+
     try {
-      // Invalidate admin session (best-effort)
+      // Invalidate admin session (best-effort, 3s max)
       if (sessionId) {
-        await supabase.rpc('invalidate_admin_session', { p_session_id: sessionId }).catch(() => {})
+        await withTimeout(
+          supabase.rpc('invalidate_admin_session', { p_session_id: sessionId }).catch(() => {})
+        )
       }
       stopKeepAlive()
       setSessionId(null)
       setCachedAdmin(null)
       cachedAdmin.current = null
-      try {
-        await supabase.auth.signOut()
-      } catch (e) {
-        console.error('Sign out error:', e)
-      }
+
+      // Clear Supabase auth (3s max)
+      await withTimeout(supabase.auth.signOut().catch(() => {}))
+    } catch {
+      // Swallow — we always redirect below
     } finally {
       // Always clear auth state, even if network calls fail
       setUser(null)
