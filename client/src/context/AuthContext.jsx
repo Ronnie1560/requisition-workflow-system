@@ -81,6 +81,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true)
   const [sessionExpired, setSessionExpired] = useState(false)
   const sessionValidationRef = useRef(null)
+  const signingOutRef = useRef(false)
 
   // Use cached organization settings hook
   const { orgSettings } = useOrganizationSettings()
@@ -119,29 +120,44 @@ export const AuthProvider = ({ children }) => {
    */
   const forceLogout = useCallback(async (reason = 'session_expired') => {
     logger.warn(`Force logout triggered: ${reason}`)
-    
+
+    // Guard: prevent auth listener from restoring session during sign-out
+    signingOutRef.current = true
+
     // Track logout event for analytics
     captureMessage('User logged out', {
       level: 'info',
       tags: { event: 'auth.logout', reason }
     })
-    
+
     // Clear state immediately (synchronous)
     clearAuthState()
-    
+
     // Only set sessionExpired for non-user-initiated logouts
     if (reason !== 'user_initiated') {
       setSessionExpired(true)
     }
-    
-    // Sign out from Supabase and wait for completion
+
+    // Sign out from Supabase (scope: 'global' revokes token server-side)
     try {
-      await supabase.auth.signOut()
+      await supabase.auth.signOut({ scope: 'global' })
       logger.info('Supabase signOut completed successfully')
     } catch (error) {
       logger.error('Error during force signOut:', error)
-      // Even on error, the local state is cleared, so user can still sign in
     }
+
+    // Belt-and-suspenders: explicitly clear any residual Supabase auth tokens
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('sb-')) {
+          localStorage.removeItem(key)
+        }
+      })
+    } catch {
+      // Ignore localStorage errors
+    }
+
+    signingOutRef.current = false
   }, [clearAuthState])
 
   // Register global logout callback for API interceptors
@@ -244,6 +260,14 @@ export const AuthProvider = ({ children }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return
+
+        // During sign-out, only process SIGNED_OUT events.
+        // This prevents stale SIGNED_IN/TOKEN_REFRESHED events from
+        // restoring the session (Chrome race condition).
+        if (signingOutRef.current && event !== 'SIGNED_OUT') {
+          logger.debug(`Ignoring ${event} event during sign-out`)
+          return
+        }
 
         // Handle TOKEN_REFRESHED: update user but DON'T refetch profile
         if (event === 'TOKEN_REFRESHED') {
