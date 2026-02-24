@@ -1,13 +1,36 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Mail, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react'
+
+const COOLDOWN_SECONDS = 60
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [cooldown, setCooldown] = useState(0)
+  const cooldownRef = useRef(null)
+
+  const startCooldown = useCallback(() => {
+    setCooldown(COOLDOWN_SECONDS)
+    cooldownRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current)
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -24,6 +47,7 @@ const ForgotPassword = () => {
         setError(error.message)
       } else {
         setSuccess(true)
+        startCooldown()
       }
     } catch {
       setError('An unexpected error occurred. Please try again.')
@@ -86,14 +110,15 @@ const ForgotPassword = () => {
                 Check your email
               </h3>
               <p className="text-sm text-green-700 mt-1">
-                We've sent a password reset link to {email}
+                If an account exists for {email}, we've sent a password reset link.
+                Please check your inbox and spam folder.
               </p>
             </div>
           </div>
         )}
 
         {/* Form */}
-        {!success && (
+        {(!success || cooldown === 0) && (
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
@@ -121,13 +146,18 @@ const ForgotPassword = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || cooldown > 0}
               className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Sending...
+                </>
+              ) : cooldown > 0 ? (
+                <>
+                  <Mail className="w-5 h-5" />
+                  Resend in {cooldown}s
                 </>
               ) : (
                 <>

@@ -15,62 +15,52 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
 
-  // Check for session on mount (handles invitation/recovery tokens)
+  // Listen for Supabase to process the recovery token from the URL hash.
+  // Supabase's detectSessionInUrl (enabled in our client config) automatically
+  // parses the #access_token hash fragment — we just listen for the result.
   useEffect(() => {
-    let cancelled = false
-
-    const waitForSession = async (maxAttempts = 10, interval = 500) => {
-      for (let i = 0; i < maxAttempts; i++) {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (session) return session
-        await new Promise(resolve => setTimeout(resolve, interval))
-      }
-      return null
+    // Clear token from URL immediately to prevent replay / browser history exposure
+    if (window.location.hash) {
+      window.history.replaceState(null, '', window.location.pathname)
     }
 
-    const checkSession = async () => {
-      try {
-        // Check if there's already a session
-        const { data: { session } } = await supabase.auth.getSession()
-
-        if (session) {
-          logger.info('Session found')
-          if (!cancelled) setSessionReady(true)
-          return
-        }
-
-        // If no session, check URL for token (hash fragment)
-        const hashParams = new URLSearchParams(window.location.hash.substring(1))
-        const accessToken = hashParams.get('access_token')
-        const type = hashParams.get('type')
-
-        logger.info('URL hash params:', { accessToken: accessToken ? 'present' : 'missing', type })
-
-        if (accessToken) {
-          // Clear token from URL to prevent replay and browser history exposure
-          window.history.replaceState(null, '', window.location.pathname)
-
-          // Poll for session establishment with retry
-          const newSession = await waitForSession()
-          if (cancelled) return
-
-          if (newSession) {
-            logger.info('Session established from token')
-            setSessionReady(true)
-          } else {
-            setError('Could not establish session. Please try clicking the link again.')
-          }
-        } else {
-          if (!cancelled) setError('Auth session missing! Please use the link from your email.')
-        }
-      } catch (err) {
-        logger.error('Session check error:', err)
-        if (!cancelled) setError('Failed to verify authentication. Please try clicking the link again.')
+    // Check if session already exists (e.g., page refresh after token was consumed)
+    const checkExisting = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        logger.info('Existing session found')
+        setSessionReady(true)
       }
     }
 
-    checkSession()
-    return () => { cancelled = true }
+    checkExisting()
+
+    // Listen for Supabase to exchange the token for a session
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        logger.info('Password recovery session established')
+        setSessionReady(true)
+      } else if (event === 'SIGNED_IN' && session) {
+        // Fallback — some Supabase versions emit SIGNED_IN for recovery
+        logger.info('Session established via sign-in event')
+        setSessionReady(true)
+      }
+    })
+
+    // If neither fires within 10s, show an error
+    const timeout = setTimeout(() => {
+      setSessionReady(prev => {
+        if (!prev) {
+          setError('Auth session missing! Please use the link from your email.')
+        }
+        return prev
+      })
+    }, 10000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [])
 
   // Password strength calculation

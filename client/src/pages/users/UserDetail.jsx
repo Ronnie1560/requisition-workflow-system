@@ -110,7 +110,14 @@ const UserDetail = () => {
     })
 
     if (updateError) {
-      setError('Failed to update user profile')
+      const msg = updateError.message || updateError.details || 'Unknown error'
+      if (updateError.code === '23505') {
+        setError('Employee ID is already in use by another user.')
+      } else if (msg.includes('0 rows')) {
+        setError('Failed to update: permission denied or user not found in this organization.')
+      } else {
+        setError(`Failed to update user profile: ${msg}`)
+      }
       setSaving(false)
       return
     }
