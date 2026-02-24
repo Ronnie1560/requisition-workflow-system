@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useWorkflowRole } from '../../hooks/useWorkflowRole'
+import { useOrganization } from '../../context/OrganizationContext'
 import {
   Users as UsersIcon,
   Plus,
@@ -10,7 +11,8 @@ import {
   UserCheck,
   UserX,
   Shield,
-  Mail
+  Mail,
+  AlertCircle
 } from 'lucide-react'
 import { getAllUsers, getUserStats, toggleUserStatus, resendInvitation } from '../../services/api/users'
 import { formatDate } from '../../utils/formatters'
@@ -20,6 +22,7 @@ import { logger } from '../../utils/logger'
 const UsersList = () => {
   const navigate = useNavigate()
   const { isAdmin } = useWorkflowRole()
+  const { currentOrg, loading: orgLoading } = useOrganization()
 
   const [users, setUsers] = useState([])
   const [stats, setStats] = useState(null)
@@ -57,10 +60,11 @@ const UsersList = () => {
       navigate('/dashboard')
       return
     }
+    if (orgLoading || !currentOrg) return
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Initial data load is intentional
     loadUsers()
     loadStats()
-  }, [isAdmin, navigate, loadUsers])
+  }, [isAdmin, navigate, loadUsers, orgLoading, currentOrg])
 
   const handleToggleStatus = async (userId, currentStatus) => {
     const { error } = await toggleUserStatus(userId, !currentStatus)
@@ -123,6 +127,35 @@ const UsersList = () => {
 
   if (!isAdmin) {
     return null
+  }
+
+  if (orgLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="inline-block w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-600 ml-4">Loading organization...</p>
+      </div>
+    )
+  }
+
+  if (!currentOrg) {
+    return (
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <div className="flex items-center gap-3">
+          <AlertCircle className="w-6 h-6 text-yellow-600" />
+          <div>
+            <h3 className="text-yellow-900 font-semibold">No Organization Selected</h3>
+            <p className="text-yellow-700 text-sm mt-1">Please select or create an organization to manage users.</p>
+          </div>
+        </div>
+        <button
+          onClick={() => navigate('/organizations/new')}
+          className="mt-4 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+        >
+          Create Organization
+        </button>
+      </div>
+    )
   }
 
   return (

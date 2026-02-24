@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-> See [AI_CONTEXT.md](../../AI_CONTEXT.md) for full project context, database credentials pattern, and architecture details.
+> See [AI_CONTEXT.md](../AI_CONTEXT.md) for full project context, database credentials pattern, and architecture details.
 
 ## Quick Reference
 

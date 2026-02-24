@@ -6,6 +6,7 @@ import { OrganizationProvider } from './context/OrganizationContext'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import MainLayout from './components/layout/MainLayout'
 import ErrorBoundary from './components/common/ErrorBoundary'
+import RequireOrganization from './components/auth/RequireOrganization'
 import PageLoader from './components/common/PageLoader'
 
 // Auth pages - loaded eagerly for fast initial load
@@ -97,8 +98,11 @@ function App() {
                     <Route index element={<Navigate to="/dashboard" replace />} />
                     <Route path="dashboard" element={<Dashboard />} />
 
-                    {/* Organization routes */}
+                    {/* Organization routes - no org required */}
                     <Route path="organizations/new" element={<CreateOrganization />} />
+
+                    {/* Routes that require an organization to be selected */}
+                    <Route element={<RequireOrganization />}>
                     <Route path="settings/organization" element={<OrganizationSettings />} />
 
                     {/* Requisitions routes */}
@@ -148,9 +152,12 @@ function App() {
               <Route path="feedback" element={<FeedbackPage />} />
 
               {/* Settings */}
+              <Route path="admin/system-settings" element={<SystemSettings />} />
+                    </Route>
+
+                    {/* Routes that don't require an org */}
               <Route path="settings" element={<UserSettings />} />
               <Route path="profile" element={<UserSettings />} />
-              <Route path="admin/system-settings" element={<SystemSettings />} />
 
               {/* Billing */}
               <Route path="billing/plans" element={<PricingPlans />} />
