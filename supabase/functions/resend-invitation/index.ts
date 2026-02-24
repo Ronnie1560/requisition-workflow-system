@@ -1,6 +1,10 @@
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
 
+// Prevent HTML injection in email templates (org names, user names, etc.)
+const escapeHtml = (str: string): string =>
+  str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@passionchristianministries.org'
 const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://requisition-workflow.vercel.app'
@@ -113,7 +117,7 @@ serve(async (req) => {
       .eq('id', profile.org_id)
       .single()
 
-    const orgName = org?.name || 'Requisition Workflow System'
+    const orgName = escapeHtml(org?.name || 'Requisition Workflow System')
 
     // Get request body
     const { userId, email, appOrigin } = await req.json()
@@ -192,6 +196,9 @@ serve(async (req) => {
     }
 
     const resetLink = resetData?.properties?.action_link || `${resolvedBaseUrl}/login`
+    const safeName = escapeHtml(existingUser.full_name || '')
+    const safeEmail = escapeHtml(existingUser.email)
+    const safeRole = escapeHtml(existingUser.role.replace('_', ' ').toUpperCase())
 
     const emailHtml = `
 <!DOCTYPE html>
@@ -206,13 +213,13 @@ serve(async (req) => {
   </div>
 
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
-    <p style="font-size: 16px;">Hello <strong>${existingUser.full_name}</strong>,</p>
+    <p style="font-size: 16px;">Hello <strong>${safeName}</strong>,</p>
 
     <p>A new password reset link has been generated for your account in <strong>${orgName}</strong>.</p>
 
     <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
-      <p style="margin: 0;"><strong>Your Role:</strong> ${existingUser.role.replace('_', ' ').toUpperCase()}</p>
-      <p style="margin: 10px 0 0;"><strong>Email:</strong> ${existingUser.email}</p>
+      <p style="margin: 0;"><strong>Your Role:</strong> ${safeRole}</p>
+      <p style="margin: 10px 0 0;"><strong>Email:</strong> ${safeEmail}</p>
     </div>
 
     <p>To set or reset your password, please click the button below:</p>
