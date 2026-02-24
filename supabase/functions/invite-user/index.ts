@@ -106,6 +106,15 @@ serve(async (req) => {
       )
     }
 
+    // Fetch the inviter's organization name for email personalization
+    const { data: org } = await supabaseAdmin
+      .from('organizations')
+      .select('name')
+      .eq('id', profile.org_id)
+      .single()
+
+    const orgName = org?.name || 'Requisition Workflow System'
+
     // Get request body
     const { email, fullName, role, projects, appOrigin } = await req.json()
 
@@ -302,13 +311,13 @@ serve(async (req) => {
 </head>
 <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
   <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-    <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to Requisition Workflow System</h1>
+    <h1 style="color: white; margin: 0; font-size: 24px;">Welcome to ${orgName}</h1>
   </div>
   
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
     <p style="font-size: 16px;">Hello <strong>${fullName}</strong>,</p>
     
-    <p>You have been invited to join the Requisition Workflow System.</p>
+    <p>You have been invited to join <strong>${orgName}</strong>.</p>
     
     <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
       <p style="margin: 0;"><strong>Your Role:</strong> ${role.replace('_', ' ').toUpperCase()}</p>
@@ -327,7 +336,7 @@ serve(async (req) => {
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
     
     <p style="color: #666; font-size: 12px; text-align: center;">
-      This invitation was sent from the Requisition Workflow System.<br>
+      This invitation was sent from ${orgName}.<br>
       If you did not expect this invitation, please ignore this email.
     </p>
   </div>
@@ -345,7 +354,7 @@ serve(async (req) => {
             body: JSON.stringify({
               from: FROM_EMAIL,
               to: [email],
-              subject: 'Welcome to Requisition Workflow System - Set Your Password',
+              subject: `Welcome to ${orgName} - Set Your Password`,
               html: emailHtml,
             }),
           })

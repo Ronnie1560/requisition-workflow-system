@@ -106,6 +106,15 @@ serve(async (req) => {
       )
     }
 
+    // Fetch the inviter's organization name for email personalization
+    const { data: org } = await supabaseAdmin
+      .from('organizations')
+      .select('name')
+      .eq('id', profile.org_id)
+      .single()
+
+    const orgName = org?.name || 'Requisition Workflow System'
+
     // Get request body
     const { userId, email, appOrigin } = await req.json()
 
@@ -199,7 +208,7 @@ serve(async (req) => {
   <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
     <p style="font-size: 16px;">Hello <strong>${existingUser.full_name}</strong>,</p>
 
-    <p>A new password reset link has been generated for your account in the PASSION CHRISTIAN MINISTRIES Requisition System.</p>
+    <p>A new password reset link has been generated for your account in <strong>${orgName}</strong>.</p>
 
     <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
       <p style="margin: 0;"><strong>Your Role:</strong> ${existingUser.role.replace('_', ' ').toUpperCase()}</p>
@@ -222,7 +231,7 @@ serve(async (req) => {
     <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
 
     <p style="color: #666; font-size: 12px; text-align: center;">
-      This invitation was sent from the Requisition Workflow System.<br>
+      This invitation was sent from ${orgName}.<br>
       If you did not request this, please contact your system administrator.
     </p>
   </div>
@@ -240,7 +249,7 @@ serve(async (req) => {
         body: JSON.stringify({
           from: FROM_EMAIL,
           to: [existingUser.email],
-          subject: 'Requisition Workflow System - Set Your Password',
+          subject: `${orgName} - Set Your Password`,
           html: emailHtml,
         }),
       })
