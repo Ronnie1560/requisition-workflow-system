@@ -107,7 +107,12 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { email, fullName, role, projects } = await req.json()
+    const { email, fullName, role, projects, appOrigin } = await req.json()
+
+    // Use the frontend's origin if provided and allowed, otherwise fall back to APP_BASE_URL
+    const resolvedBaseUrl = (appOrigin && ALLOWED_ORIGINS.includes(appOrigin))
+      ? appOrigin
+      : APP_BASE_URL
 
     // Validate required fields
     if (!email || !fullName || !role) {
@@ -276,7 +281,7 @@ serve(async (req) => {
         type: 'recovery',
         email: email,
         options: {
-          redirectTo: `${APP_BASE_URL}/reset-password`,
+          redirectTo: `${resolvedBaseUrl}/reset-password`,
         },
       })
 
@@ -286,7 +291,7 @@ serve(async (req) => {
 
       // Send invitation email via Resend
       if (RESEND_API_KEY) {
-        const resetLink = resetData?.properties?.action_link || `${APP_BASE_URL}/login`
+        const resetLink = resetData?.properties?.action_link || `${resolvedBaseUrl}/login`
         
         const emailHtml = `
 <!DOCTYPE html>

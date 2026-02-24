@@ -107,7 +107,12 @@ serve(async (req) => {
     }
 
     // Get request body
-    const { userId, email } = await req.json()
+    const { userId, email, appOrigin } = await req.json()
+
+    // Use the frontend's origin if provided and allowed, otherwise fall back to APP_BASE_URL
+    const resolvedBaseUrl = (appOrigin && ALLOWED_ORIGINS.includes(appOrigin))
+      ? appOrigin
+      : APP_BASE_URL
 
     // Validate that at least one identifier is provided
     if (!userId && !email) {
@@ -151,7 +156,7 @@ serve(async (req) => {
       type: 'recovery',
       email: existingUser.email,
       options: {
-        redirectTo: `${APP_BASE_URL}/reset-password`,
+        redirectTo: `${resolvedBaseUrl}/reset-password`,
       },
     })
 
@@ -177,7 +182,7 @@ serve(async (req) => {
       )
     }
 
-    const resetLink = resetData?.properties?.action_link || `${APP_BASE_URL}/login`
+    const resetLink = resetData?.properties?.action_link || `${resolvedBaseUrl}/login`
 
     const emailHtml = `
 <!DOCTYPE html>

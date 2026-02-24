@@ -187,7 +187,8 @@ export const inviteUser = async (inviteData) => {
         email,
         fullName,
         role,
-        projects: projects || []
+        projects: projects || [],
+        appOrigin: window.location.origin
       }
     })
 
@@ -225,7 +226,8 @@ export const resendInvitation = async (userId, email) => {
     const { data, error } = await supabase.functions.invoke('resend-invitation', {
       body: {
         userId,
-        email
+        email,
+        appOrigin: window.location.origin
       }
     })
 
