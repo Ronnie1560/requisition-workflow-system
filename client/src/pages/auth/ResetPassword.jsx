@@ -15,13 +15,23 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
 
-  // Listen for Supabase to process the recovery token from the URL hash.
-  // Supabase's detectSessionInUrl (enabled in our client config) automatically
-  // parses the #access_token hash fragment — we just listen for the result.
-  useEffect(() => {
-    // Clear token from URL immediately to prevent replay / browser history exposure
+  // Helper: clear token from URL to prevent replay and browser history exposure
+  const clearHashFromUrl = () => {
     if (window.location.hash) {
       window.history.replaceState(null, '', window.location.pathname)
+    }
+  }
+
+  // Listen for Supabase to process the recovery token from the URL hash.
+  // Supabase's detectSessionInUrl (enabled in our client config) automatically
+  // parses the #access_token hash fragment — we listen for the result.
+  // IMPORTANT: Do NOT clear the hash before Supabase processes it — there is
+  // an async gap in Supabase's _initialize() that would cause a race condition.
+  useEffect(() => {
+    const handleSession = (session) => {
+      setSessionReady(true)
+      clearHashFromUrl()
+      return session
     }
 
     // Check if session already exists (e.g., page refresh after token was consumed)
@@ -29,7 +39,7 @@ const ResetPassword = () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
         logger.info('Existing session found')
-        setSessionReady(true)
+        handleSession(session)
       }
     }
 
@@ -39,23 +49,24 @@ const ResetPassword = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY' && session) {
         logger.info('Password recovery session established')
-        setSessionReady(true)
+        handleSession(session)
       } else if (event === 'SIGNED_IN' && session) {
         // Fallback — some Supabase versions emit SIGNED_IN for recovery
         logger.info('Session established via sign-in event')
-        setSessionReady(true)
+        handleSession(session)
       }
     })
 
-    // If neither fires within 10s, show an error
+    // If neither fires within 15s, show an error
     const timeout = setTimeout(() => {
       setSessionReady(prev => {
         if (!prev) {
+          clearHashFromUrl()
           setError('Auth session missing! Please use the link from your email.')
         }
         return prev
       })
-    }, 10000)
+    }, 15000)
 
     return () => {
       subscription.unsubscribe()
