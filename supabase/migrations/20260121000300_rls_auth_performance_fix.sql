@@ -808,12 +808,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = '';
 
 -- create_notification function (FIXED)
+-- notifications table has: related_table (varchar), related_id (uuid) — NOT related_requisition_id
 CREATE OR REPLACE FUNCTION create_notification(
   p_user_id UUID,
   p_title VARCHAR(255),
   p_message TEXT,
   p_type VARCHAR(50) DEFAULT 'info',
-  p_related_requisition_id UUID DEFAULT NULL
+  p_related_id UUID DEFAULT NULL
 )
 RETURNS UUID AS $$
 DECLARE
@@ -824,14 +825,16 @@ BEGIN
     title,
     message,
     type,
-    related_requisition_id
+    related_table,
+    related_id
   )
   VALUES (
     p_user_id,
     p_title,
     p_message,
     p_type::public.notification_type,
-    p_related_requisition_id
+    CASE WHEN p_related_id IS NOT NULL THEN 'requisitions' ELSE NULL END,
+    p_related_id
   )
   RETURNING id INTO notif_id;
 
