@@ -13,7 +13,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@requisition-system.com'
 const FROM_NAME = Deno.env.get('FROM_NAME') || 'Requisition System'
-const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://requisition-workflow.vercel.app'
+const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://ledgerworkflow.com'
 
 interface EmailNotification {
   id: string

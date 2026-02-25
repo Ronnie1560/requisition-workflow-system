@@ -7,7 +7,7 @@ const escapeHtml = (str: string): string =>
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const FROM_EMAIL = Deno.env.get('FROM_EMAIL') || 'noreply@passionchristianministries.org'
-const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://requisition-workflow.vercel.app'
+const APP_BASE_URL = Deno.env.get('APP_BASE_URL') || 'https://ledgerworkflow.com'
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [

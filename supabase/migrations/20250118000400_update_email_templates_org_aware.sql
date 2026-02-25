@@ -56,7 +56,7 @@ BEGIN
   FROM organization_settings
   LIMIT 1;
 
-  base_url := COALESCE(base_url, 'https://requisition-workflow.vercel.app');
+  base_url := COALESCE(base_url, 'https://ledgerworkflow.com');
   org_name := COALESCE(req.organization_name, 'Requisition Workflow');
 
   RETURN QUERY SELECT
@@ -123,7 +123,7 @@ BEGIN
   FROM organization_settings
   LIMIT 1;
 
-  base_url := COALESCE(base_url, 'https://requisition-workflow.vercel.app');
+  base_url := COALESCE(base_url, 'https://ledgerworkflow.com');
   org_name := COALESCE(req.organization_name, 'Requisition Workflow');
 
   RETURN QUERY SELECT
@@ -189,7 +189,7 @@ BEGIN
   FROM organization_settings
   LIMIT 1;
 
-  base_url := COALESCE(base_url, 'https://requisition-workflow.vercel.app');
+  base_url := COALESCE(base_url, 'https://ledgerworkflow.com');
   org_name := COALESCE(req.organization_name, 'Requisition Workflow');
 
   RETURN QUERY SELECT

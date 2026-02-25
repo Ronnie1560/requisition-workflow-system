@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS organization_settings (
   item_code_next_number INTEGER DEFAULT 1,
   item_code_padding INTEGER DEFAULT 3,
   -- App settings
-  app_base_url TEXT DEFAULT 'https://requisition-workflow.vercel.app',
+  app_base_url TEXT DEFAULT 'https://ledgerworkflow.com',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -342,7 +342,7 @@ CREATE POLICY "System can update email notifications"
 
 -- Default organization settings (only insert if not exists)
 INSERT INTO organization_settings (organization_name, country, app_base_url)
-SELECT 'Passion Christian Ministries', 'United States', 'https://requisition-workflow.vercel.app'
+SELECT 'Passion Christian Ministries', 'United States', 'https://ledgerworkflow.com'
 WHERE NOT EXISTS (SELECT 1 FROM organization_settings);
 
 -- Default fiscal year settings

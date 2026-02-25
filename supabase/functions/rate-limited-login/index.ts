@@ -18,6 +18,8 @@ const LOCKOUT_MINUTES = 30      // How long to lock out after max attempts
 
 // Allowed origins for CORS
 const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [
+  'https://www.ledgerworkflow.com',
+  'https://ledgerworkflow.com',
   'https://requisition-workflow.vercel.app',
   'http://localhost:5173',
   'http://localhost:3000'
