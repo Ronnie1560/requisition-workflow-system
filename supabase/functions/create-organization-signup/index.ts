@@ -111,6 +111,9 @@ const rollbackTransaction = async (supabaseAdmin: any, state: RollbackState) => 
       // Delete fiscal year settings if exists
       await supabaseAdmin.from('fiscal_year_settings').delete().eq('org_id', state.orgId)
 
+      // Delete seeded UOM types
+      await supabaseAdmin.from('uom_types').delete().eq('org_id', state.orgId)
+
       // Delete user profile
       if (state.userId) {
         await supabaseAdmin.from('users').delete().eq('id', state.userId)
@@ -494,7 +497,57 @@ serve(async (req) => {
       console.warn('Fiscal year settings creation skipped:', fiscalError)
     }
 
-    // Step 7: Send email verification email
+    // Step 7: Seed default UOM (Unit of Measure) types for the new organization
+    try {
+      const defaultUOMTypes = [
+        // Count
+        { code: 'PCS', name: 'Pieces', description: 'Individual units or pieces' },
+        { code: 'EA', name: 'Each', description: 'Each unit' },
+        { code: 'SET', name: 'Set', description: 'Set of items' },
+        { code: 'PKT', name: 'Packet', description: 'Packet or package' },
+        { code: 'BOX', name: 'Box', description: 'Box' },
+        { code: 'CTN', name: 'Carton', description: 'Carton' },
+        { code: 'DZ', name: 'Dozen', description: '12 pieces' },
+        // Weight
+        { code: 'KG', name: 'Kilogram', description: 'Weight in kilograms' },
+        { code: 'G', name: 'Gram', description: 'Weight in grams' },
+        { code: 'MT', name: 'Metric Ton', description: 'Weight in metric tons' },
+        { code: 'LB', name: 'Pound', description: 'Weight in pounds' },
+        // Volume
+        { code: 'L', name: 'Liter', description: 'Volume in liters' },
+        { code: 'ML', name: 'Milliliter', description: 'Volume in milliliters' },
+        { code: 'GAL', name: 'Gallon', description: 'Volume in gallons' },
+        // Length
+        { code: 'M', name: 'Meter', description: 'Length in meters' },
+        { code: 'CM', name: 'Centimeter', description: 'Length in centimeters' },
+        { code: 'MM', name: 'Millimeter', description: 'Length in millimeters' },
+        { code: 'FT', name: 'Feet', description: 'Length in feet' },
+        { code: 'IN', name: 'Inch', description: 'Length in inches' },
+        // Area
+        { code: 'SQM', name: 'Square Meter', description: 'Area in square meters' },
+        { code: 'SQFT', name: 'Square Feet', description: 'Area in square feet' },
+        // Services
+        { code: 'HR', name: 'Hour', description: 'Time in hours' },
+        { code: 'DAY', name: 'Day', description: 'Time in days' },
+        { code: 'MON', name: 'Month', description: 'Time in months' },
+        { code: 'SVC', name: 'Service', description: 'Service unit' },
+      ]
+
+      const { error: uomError } = await supabaseAdmin
+        .from('uom_types')
+        .insert(defaultUOMTypes.map(u => ({ ...u, org_id: orgId, is_active: true })))
+
+      if (uomError) {
+        console.error('UOM types seeding error:', uomError)
+        // Non-fatal: admin can add UOM types manually later
+      } else {
+        console.log(`Seeded ${defaultUOMTypes.length} default UOM types`)
+      }
+    } catch (uomSeedError) {
+      console.warn('UOM types seeding skipped:', uomSeedError)
+    }
+
+    // Step 8: Send email verification email
     if (RESEND_API_KEY) {
       // Generate email confirmation link
       const { data: confirmationData, error: confirmError } = await supabaseAdmin.auth.admin.generateLink({
