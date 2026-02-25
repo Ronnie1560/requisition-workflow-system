@@ -17,7 +17,8 @@ BEGIN
   SELECT id INTO v_default_org_id FROM organizations WHERE slug = 'default';
 
   IF v_default_org_id IS NULL THEN
-    RAISE EXCEPTION 'Default organization not found';
+    RAISE NOTICE 'No default organization found - skipping backfill (fresh database)';
+    RETURN;
   END IF;
 
   -- Backfill projects

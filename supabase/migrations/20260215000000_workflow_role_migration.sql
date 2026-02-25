@@ -94,9 +94,9 @@ GRANT SELECT ON user_organizations TO authenticated;
 -- STEP 4: Update helper functions to read from organization_members
 -- =====================================================
 
--- Drop old functions (different signatures)
-DROP FUNCTION IF EXISTS get_user_role();
-DROP FUNCTION IF EXISTS is_super_admin();
+-- Drop old functions (different signatures) - CASCADE to drop dependent objects
+DROP FUNCTION IF EXISTS get_user_role() CASCADE;
+DROP FUNCTION IF EXISTS is_super_admin() CASCADE;
 
 -- New get_user_role: reads from organization_members.workflow_role
 -- Falls back to users.role if no org membership found

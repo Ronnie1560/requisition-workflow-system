@@ -27,7 +27,9 @@ BEGIN
 
   -- Clean up any existing test data (in reverse dependency order)
   IF org_ids IS NOT NULL THEN
-    DELETE FROM project_accounts WHERE org_id = ANY(org_ids);
+    DELETE FROM project_accounts WHERE project_id IN (
+      SELECT id FROM projects WHERE org_id = ANY(org_ids)
+    );
     DELETE FROM requisitions WHERE org_id = ANY(org_ids);
     DELETE FROM items WHERE org_id = ANY(org_ids);
     DELETE FROM projects WHERE org_id = ANY(org_ids);
@@ -311,25 +313,23 @@ BEGIN
   -- TEST 6: Project Accounts Isolation (replaces expense accounts)
   -- =====================================================
 
-  -- Check if project_accounts table exists and has expense accounts data
+  -- Check if project_accounts table exists, has org_id column, and has expense accounts data
   IF EXISTS (
-    SELECT 1 FROM information_schema.tables t
-    WHERE t.table_name = 'project_accounts'
+    SELECT 1 FROM information_schema.columns c
+    WHERE c.table_name = 'project_accounts' AND c.column_name = 'org_id'
   ) AND EXISTS (
     SELECT 1 FROM expense_accounts LIMIT 1
   ) THEN
     -- Use project_accounts for isolation testing
-    INSERT INTO project_accounts (org_id, project_id, account_id, allocated_budget)
+    INSERT INTO project_accounts (project_id, account_id, budget_amount)
     VALUES (
-      org_a_id,
       project_a_id,
       (SELECT id FROM expense_accounts LIMIT 1),
       10000.00
     );
 
-    INSERT INTO project_accounts (org_id, project_id, account_id, allocated_budget)
+    INSERT INTO project_accounts (project_id, account_id, budget_amount)
     VALUES (
-      org_b_id,
       project_b_id,
       (SELECT id FROM expense_accounts LIMIT 1),
       20000.00

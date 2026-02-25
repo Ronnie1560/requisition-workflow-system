@@ -11,6 +11,7 @@
 DROP POLICY IF EXISTS "System can insert audit logs" ON audit_logs;
 DROP POLICY IF EXISTS "System can create audit logs" ON audit_logs;
 DROP POLICY IF EXISTS "authenticated can insert audit_logs" ON audit_logs;
+DROP POLICY IF EXISTS "Service role can insert audit logs" ON audit_logs;
 
 -- Create the restrictive service role policy
 CREATE POLICY "Service role can insert audit logs"
@@ -26,6 +27,7 @@ CREATE POLICY "Service role can insert audit logs"
 DROP POLICY IF EXISTS "System can insert notifications" ON notifications;
 DROP POLICY IF EXISTS "System can create notifications" ON notifications;
 DROP POLICY IF EXISTS "authenticated can insert notifications" ON notifications;
+DROP POLICY IF EXISTS "Service role can create notifications" ON notifications;
 
 -- Create the restrictive service role policy
 CREATE POLICY "Service role can create notifications"

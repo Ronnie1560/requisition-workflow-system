@@ -30,6 +30,8 @@ BEGIN
     UPDATE email_notifications
     SET org_id = first_org_id
     WHERE org_id IS NULL;
+  ELSE
+    DELETE FROM email_notifications WHERE org_id IS NULL;
   END IF;
 END $$;
 

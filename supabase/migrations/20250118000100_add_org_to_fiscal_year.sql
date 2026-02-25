@@ -29,6 +29,9 @@ BEGIN
     UPDATE fiscal_year_settings
     SET org_id = first_org_id
     WHERE org_id IS NULL;
+  ELSE
+    -- No organizations exist; delete orphan rows so NOT NULL can be set
+    DELETE FROM fiscal_year_settings WHERE org_id IS NULL;
   END IF;
 END $$;
 

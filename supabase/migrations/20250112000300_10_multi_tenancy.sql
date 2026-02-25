@@ -134,9 +134,14 @@ CREATE INDEX IF NOT EXISTS idx_user_project_assignments_org ON user_project_assi
 ALTER TABLE expense_accounts ADD COLUMN IF NOT EXISTS org_id UUID REFERENCES organizations(id);
 CREATE INDEX IF NOT EXISTS idx_expense_accounts_org ON expense_accounts(org_id);
 
--- Add org_id to vendors table
-ALTER TABLE vendors ADD COLUMN IF NOT EXISTS org_id UUID REFERENCES organizations(id);
-CREATE INDEX IF NOT EXISTS idx_vendors_org ON vendors(org_id);
+-- Add org_id to vendors table (if it exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'vendors' AND table_schema = 'public') THEN
+    ALTER TABLE vendors ADD COLUMN IF NOT EXISTS org_id UUID REFERENCES organizations(id);
+    CREATE INDEX IF NOT EXISTS idx_vendors_org ON vendors(org_id);
+  END IF;
+END $$;
 
 -- Add org_id to requisitions table
 ALTER TABLE requisitions ADD COLUMN IF NOT EXISTS org_id UUID REFERENCES organizations(id);
@@ -367,16 +372,16 @@ CREATE POLICY "Users can update own requisitions"
     AND (submitted_by = auth.uid() OR user_is_org_admin(org_id))
   );
 
--- VENDORS table
-DROP POLICY IF EXISTS "Users can view org vendors" ON vendors;
-CREATE POLICY "Users can view org vendors"
-  ON vendors FOR SELECT TO authenticated
-  USING (org_id IS NULL OR user_belongs_to_org(org_id));
-
-DROP POLICY IF EXISTS "Admins can manage org vendors" ON vendors;
-CREATE POLICY "Admins can manage org vendors"
-  ON vendors FOR ALL TO authenticated
-  USING (org_id IS NULL OR user_is_org_admin(org_id));
+-- VENDORS table (conditional - may not exist)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'vendors' AND table_schema = 'public') THEN
+    EXECUTE 'DROP POLICY IF EXISTS "Users can view org vendors" ON vendors';
+    EXECUTE 'CREATE POLICY "Users can view org vendors" ON vendors FOR SELECT TO authenticated USING (org_id IS NULL OR user_belongs_to_org(org_id))';
+    EXECUTE 'DROP POLICY IF EXISTS "Admins can manage org vendors" ON vendors';
+    EXECUTE 'CREATE POLICY "Admins can manage org vendors" ON vendors FOR ALL TO authenticated USING (org_id IS NULL OR user_is_org_admin(org_id))';
+  END IF;
+END $$;
 
 -- EXPENSE_ACCOUNTS table
 DROP POLICY IF EXISTS "Users can view org expense accounts" ON expense_accounts;
@@ -438,7 +443,7 @@ DECLARE
   tbl TEXT;
   tables TEXT[] := ARRAY[
     'users', 'projects', 'user_project_assignments', 'expense_accounts',
-    'vendors', 'requisitions', 'requisition_items', 'purchase_orders',
+    'requisitions', 'requisition_items', 'purchase_orders',
     'receipt_transactions', 'receipt_items', 'notifications',
     'approval_workflows', 'fiscal_year_settings', 'organization_settings'
   ];
@@ -599,7 +604,7 @@ BEGIN
     UPDATE projects SET org_id = v_default_org_id WHERE org_id IS NULL;
     UPDATE user_project_assignments SET org_id = v_default_org_id WHERE org_id IS NULL;
     UPDATE expense_accounts SET org_id = v_default_org_id WHERE org_id IS NULL;
-    UPDATE vendors SET org_id = v_default_org_id WHERE org_id IS NULL;
+    -- UPDATE vendors SET org_id = v_default_org_id WHERE org_id IS NULL; -- vendors table may not exist
     UPDATE requisitions SET org_id = v_default_org_id WHERE org_id IS NULL;
     UPDATE requisition_items SET org_id = v_default_org_id WHERE org_id IS NULL;
     UPDATE purchase_orders SET org_id = v_default_org_id WHERE org_id IS NULL;

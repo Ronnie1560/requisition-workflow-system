@@ -214,11 +214,13 @@ BEGIN
   END IF;
 END $$;
 
--- Allow platform admins to view all billing history
-CREATE POLICY "Platform admins can view all billing history"
-  ON billing_history FOR SELECT
-  TO authenticated
-  USING (is_platform_admin());
+-- Allow platform admins to view all billing history (if table exists)
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'billing_history' AND schemaname = 'public') THEN
+    EXECUTE 'CREATE POLICY "Platform admins can view all billing history" ON billing_history FOR SELECT TO authenticated USING (is_platform_admin())';
+  END IF;
+END $$;
 
 -- ============================================================================
 -- Platform admin helper functions (SECURITY DEFINER for cross-tenant ops)
