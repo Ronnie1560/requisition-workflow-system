@@ -30,7 +30,7 @@ const Dashboard = () => {
     loadProjects()
   }, [user, userRole, currentOrg, orgLoading])
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (retryCount = 0) => {
     if (!user || !userRole || !currentOrg) return
 
     setLoading(true)
@@ -40,10 +40,19 @@ const Dashboard = () => {
       if (err) throw err
       setDashboardData(data)
     } catch (err) {
+      // "No organization selected" usually means localStorage isn't populated yet
+      // (race condition on first login). Retry a few times before showing error.
+      if (err.message?.includes('No organization selected') && retryCount < 3) {
+        logger.debug('Dashboard: org not ready yet, retrying...', { retryCount })
+        setTimeout(() => loadDashboardData(retryCount + 1), 800 * (retryCount + 1))
+        return
+      }
       logger.error('Error loading dashboard:', err)
       setError(err.message || 'Failed to load dashboard data')
     } finally {
-      setLoading(false)
+      if (retryCount === 0 || !error) {
+        setLoading(false)
+      }
     }
   }
 

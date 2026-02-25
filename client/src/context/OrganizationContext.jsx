@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import PropTypes from 'prop-types'
 import { supabase } from '../lib/supabase'
 import { logger } from '../utils/logger'
@@ -44,6 +44,8 @@ export function OrganizationProvider({ children }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  // Ref to prevent concurrent fetchOrganizations calls (race condition on first login)
+  const isFetchingRef = useRef(false)
   // Version number that increments when org changes - components can use this to trigger refetches
   const [orgVersion, setOrgVersion] = useState(0)
 
@@ -51,6 +53,13 @@ export function OrganizationProvider({ children }) {
    * Fetch user's organizations
    */
   const fetchOrganizations = useCallback(async () => {
+    // Prevent concurrent calls — two overlapping fetches cause a race where
+    // loading flips false before orgs are set, making Dashboard see "no org"
+    if (isFetchingRef.current) {
+      logger.debug('[OrganizationContext] fetchOrganizations already in progress, skipping')
+      return
+    }
+    isFetchingRef.current = true
     try {
       setLoading(true)
       setError(null)
@@ -99,6 +108,7 @@ export function OrganizationProvider({ children }) {
       setError(err.message)
     } finally {
       setLoading(false)
+      isFetchingRef.current = false
     }
   }, [])
 
@@ -323,44 +333,48 @@ export function OrganizationProvider({ children }) {
 
   // Listen for auth state changes
   useEffect(() => {
+    let mounted = true
+
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session)
-      if (!session) {
+      if (!mounted) return
+      const authed = !!session
+      setIsAuthenticated(authed)
+      if (authed) {
+        fetchOrganizations()
+      } else {
         setLoading(false)
       }
     })
 
     // Subscribe to auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      const wasAuthenticated = isAuthenticated
+      if (!mounted) return
       const nowAuthenticated = !!session
-      
       setIsAuthenticated(nowAuthenticated)
-      
+
       // If user just signed out, clear org state
       if (event === 'SIGNED_OUT') {
         setOrganizations([])
         setCurrentOrg(null)
         localStorage.removeItem(SELECTED_ORG_KEY)
         setLoading(false)
+        isFetchingRef.current = false
+        return
       }
-      
-      // If user just signed in, fetch organizations
-      if (event === 'SIGNED_IN' && !wasAuthenticated) {
+
+      // Fetch orgs on sign-in or initial session event
+      // (Supabase v2+ fires INITIAL_SESSION instead of SIGNED_IN on first load)
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && nowAuthenticated) {
         fetchOrganizations()
       }
     })
 
-    return () => subscription.unsubscribe()
-  }, [isAuthenticated, fetchOrganizations])
-
-  // Load organizations when authenticated
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchOrganizations()
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
     }
-  }, [isAuthenticated, fetchOrganizations])
+  }, [fetchOrganizations]) // No isAuthenticated dep — avoids stale closure & double-subscribe
 
   // Check if user can manage org (org-level role: owner/admin/member)
   const canManageOrg = currentOrg?.member_role === 'owner' || currentOrg?.member_role === 'admin'
