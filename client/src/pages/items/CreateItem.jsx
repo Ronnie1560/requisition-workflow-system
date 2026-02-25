@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { Save, ArrowLeft, AlertCircle, CheckCircle, Loader, FilePlus } from 'lucide-react'
+import { Save, ArrowLeft, AlertCircle, CheckCircle, Loader, FilePlus, Plus, X } from 'lucide-react'
 import {
   createItem,
   updateItem,
   getItemById,
-  getAllUOMTypes
+  getAllUOMTypes,
+  createUOMType
 } from '../../services/api/items'
 import { getActiveCategories } from '../../services/api/categories'
 import { logger } from '../../utils/logger'
@@ -32,6 +33,9 @@ const CreateItem = () => {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [saveAction, setSaveAction] = useState('close') // 'close' or 'new'
+  const [showQuickAddUOM, setShowQuickAddUOM] = useState(false)
+  const [quickUOM, setQuickUOM] = useState({ code: '', name: '', description: '' })
+  const [quickUOMSaving, setQuickUOMSaving] = useState(false)
   const nameInputRef = useRef(null)
   const isEditMode = !!id
 
@@ -293,20 +297,77 @@ const CreateItem = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Default Unit of Measure *
                 </label>
-                <select
-                  name="default_uom_id"
-                  value={formData.default_uom_id}
-                  onChange={handleChange}
-                  required
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-                >
-                  <option value="">Select UOM</option>
-                  {uomTypes.map((uom) => (
-                    <option key={uom.id} value={uom.id}>
-                      {uom.name} ({uom.code})
-                    </option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    name="default_uom_id"
+                    value={formData.default_uom_id}
+                    onChange={handleChange}
+                    required
+                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                  >
+                    <option value="">Select UOM</option>
+                    {uomTypes.map((uom) => (
+                      <option key={uom.id} value={uom.id}>
+                        {uom.name} ({uom.code})
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowQuickAddUOM(true)}
+                    className="flex-shrink-0 inline-flex items-center px-2.5 py-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-indigo-600 transition-colors"
+                    title="Add new UOM"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Quick-add UOM inline form */}
+                {showQuickAddUOM && (
+                  <div className="mt-2 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-indigo-700">Quick Add UOM</span>
+                      <button type="button" onClick={() => setShowQuickAddUOM(false)} className="text-gray-400 hover:text-gray-600">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="Code (e.g. KG)"
+                        value={quickUOM.code}
+                        onChange={(e) => setQuickUOM(prev => ({ ...prev, code: e.target.value }))}
+                        className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none"
+                        maxLength={10}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Name (e.g. Kilogram)"
+                        value={quickUOM.name}
+                        onChange={(e) => setQuickUOM(prev => ({ ...prev, name: e.target.value }))}
+                        className="px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 outline-none"
+                      />
+                    </div>
+                    <div className="mt-2 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleQuickAddUOM}
+                        disabled={quickUOMSaving || !quickUOM.code.trim() || !quickUOM.name.trim()}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                      >
+                        {quickUOMSaving ? <Loader className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setShowQuickAddUOM(false); setQuickUOM({ code: '', name: '', description: '' }) }}
+                        className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Description */}

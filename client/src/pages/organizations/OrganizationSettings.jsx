@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-  Building2, Users, CreditCard, Settings, Calendar,
+  Building2, Users, CreditCard, Settings, Calendar, Ruler,
   Loader2, Save, Pencil, X, ExternalLink, AlertTriangle,
   CheckCircle2, Clock, TrendingUp, ArrowUpRight
 } from 'lucide-react'
@@ -12,6 +12,8 @@ import {
 } from '../../services/api/systemSettings'
 import { getOrganizationUsage, getBillingHistory, createPortalSession } from '../../services/api/billing'
 import { getPlanConfig, formatPrice, PLAN_ORDER } from '../../config/plans'
+
+const UOMManagement = lazy(() => import('../../components/organizations/UOMManagement'))
 
 /**
  * Organization Settings Page
@@ -203,6 +205,7 @@ export default function OrganizationSettings() {
 
   const tabs = [
     { id: 'general', label: 'General', icon: Settings },
+    { id: 'uom', label: 'Units of Measure', icon: Ruler },
     { id: 'fiscal', label: 'Fiscal Year', icon: Calendar },
     { id: 'billing', label: 'Billing', icon: CreditCard },
   ]
@@ -781,6 +784,13 @@ export default function OrganizationSettings() {
                   </div>
                 )}
               </div>
+            )}
+
+            {/* Units of Measure Tab */}
+            {activeTab === 'uom' && (
+              <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>}>
+                <UOMManagement />
+              </Suspense>
             )}
           </div>
         </div>

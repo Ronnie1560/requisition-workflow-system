@@ -60,6 +60,82 @@ export const createUOMType = async (uomData) => {
   }
 }
 
+/**
+ * Get all UOM types including inactive (for admin management)
+ */
+export const getAllUOMTypesAdmin = async () => {
+  try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    const { data, error } = await supabase
+      .from('uom_types')
+      .select('*')
+      .eq('org_id', orgId)
+      .order('code', { ascending: true })
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    logger.error('Error fetching all UOM types:', error)
+    return { data: null, error }
+  }
+}
+
+/**
+ * Update a UOM type
+ */
+export const updateUOMType = async (uomId, uomData) => {
+  try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    const { data, error } = await supabase
+      .from('uom_types')
+      .update(uomData)
+      .eq('id', uomId)
+      .eq('org_id', orgId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    logger.error('Error updating UOM type:', error)
+    return { data: null, error }
+  }
+}
+
+/**
+ * Toggle UOM type active/inactive
+ */
+export const toggleUOMType = async (uomId, isActive) => {
+  try {
+    const orgId = getCurrentOrgId()
+    if (!orgId) {
+      throw new Error('No organization selected')
+    }
+
+    const { data, error } = await supabase
+      .from('uom_types')
+      .update({ is_active: isActive })
+      .eq('id', uomId)
+      .eq('org_id', orgId)
+      .select()
+      .single()
+
+    if (error) throw error
+    return { data, error: null }
+  } catch (error) {
+    logger.error('Error toggling UOM type:', error)
+    return { data: null, error }
+  }
+}
+
 // =====================================================
 // ITEMS OPERATIONS
 // =====================================================
