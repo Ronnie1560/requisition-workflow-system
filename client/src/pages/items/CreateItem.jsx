@@ -52,9 +52,34 @@ const CreateItem = () => {
       const { data, error } = await getAllUOMTypes()
       if (error) throw error
       setUomTypes(data || [])
+      return data || []
     } catch (err) {
       logger.error('Error loading UOM types:', err)
       setError('Failed to load UOM types')
+      return []
+    }
+  }
+
+  const handleQuickAddUOM = async () => {
+    if (!quickUOM.code.trim() || !quickUOM.name.trim()) return
+    setQuickUOMSaving(true)
+    try {
+      const { data, error } = await createUOMType({
+        code: quickUOM.code.trim().toUpperCase(),
+        name: quickUOM.name.trim(),
+        description: quickUOM.description.trim() || null
+      })
+      if (error) throw error
+      await loadUOMTypes()
+      if (data?.id) {
+        setFormData(prev => ({ ...prev, default_uom_id: data.id }))
+      }
+      setQuickUOM({ code: '', name: '', description: '' })
+      setShowQuickAddUOM(false)
+    } catch (err) {
+      setError(err.message || 'Failed to create UOM')
+    } finally {
+      setQuickUOMSaving(false)
     }
   }
 
