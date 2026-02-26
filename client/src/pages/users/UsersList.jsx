@@ -331,9 +331,9 @@ const UsersList = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.role)}`}>
-                        {user.role === USER_ROLES.SUPER_ADMIN && <Shield className="w-3 h-3" />}
-                        {ROLE_LABELS[user.role] || user.role}
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(user.workflow_role || user.role)}`}>
+                        {(user.workflow_role || user.role) === USER_ROLES.SUPER_ADMIN && <Shield className="w-3 h-3" />}
+                        {ROLE_LABELS[user.workflow_role || user.role] || user.workflow_role || user.role}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">

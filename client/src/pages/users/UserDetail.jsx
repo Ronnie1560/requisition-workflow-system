@@ -67,7 +67,7 @@ const UserDetail = () => {
     setFormData({
       full_name: data.full_name || '',
       email: data.email || '',
-      role: data.role || '',
+      role: data.workflow_role || data.role || '',
       employee_id: data.employee_id || '',
       phone: data.phone || '',
       department: data.department || ''
@@ -131,7 +131,8 @@ const UserDetail = () => {
   }
 
   const handleUpdateRole = async () => {
-    if (formData.role === userData.role) {
+    const currentRole = userData.workflow_role || userData.role
+    if (formData.role === currentRole) {
       setError('No changes to role')
       return
     }
@@ -311,9 +312,9 @@ const UserDetail = () => {
             <p className="text-sm text-gray-600 mt-1">{userData.email}</p>
           </div>
           <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getRoleBadgeColor(userData.role)}`}>
+            <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium ${getRoleBadgeColor(userData.workflow_role || userData.role)}`}>
               <Shield className="w-4 h-4" />
-              {ROLE_LABELS[userData.role]}
+              {ROLE_LABELS[userData.workflow_role || userData.role]}
             </span>
             {userData.is_active ? (
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
@@ -574,7 +575,7 @@ const UserDetail = () => {
                   </select>
                 </div>
 
-                {formData.role !== userData.role && (
+                {formData.role !== (userData.workflow_role || userData.role) && (
                   <button
                     onClick={handleUpdateRole}
                     disabled={saving}

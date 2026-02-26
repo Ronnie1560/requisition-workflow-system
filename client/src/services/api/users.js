@@ -54,7 +54,7 @@ export const getAllUsers = async (filters = {}, forceRefresh = false) => {
 
     // Apply filters
     if (filters.role) {
-      query = query.eq('role', filters.role)
+      query = query.eq('workflow_role', filters.role) // Use per-org workflow_role, not global users.role
     }
     if (filters.is_active !== undefined) {
       query = query.eq('is_active', filters.is_active)
