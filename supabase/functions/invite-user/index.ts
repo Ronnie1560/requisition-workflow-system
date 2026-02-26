@@ -150,22 +150,220 @@ serve(async (req) => {
       )
     }
 
-    // Check if user already exists
+    // Check if user already exists in public.users
     const { data: existingUser } = await supabaseAdmin
       .from('users')
       .select('id, email')
       .eq('email', email)
       .single()
 
-    if (existingUser) {
+    // Also check auth.users (user may exist from another org signup)
+    const { data: authLookup } = await supabaseAdmin.auth.admin.listUsers()
+    const existingAuthUser = authLookup?.users?.find(
+      (u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase()
+    )
+
+    // ──────────────────────────────────────────────
+    // PATH A: User already exists → add to this org
+    // ──────────────────────────────────────────────
+    if (existingUser || existingAuthUser) {
+      const targetUserId = existingUser?.id || existingAuthUser?.id
+
+      // Check if already a member of THIS org
+      const { data: existingMembership } = await supabaseAdmin
+        .from('organization_members')
+        .select('id, is_active')
+        .eq('organization_id', profile.org_id)
+        .eq('user_id', targetUserId)
+        .single()
+
+      if (existingMembership && existingMembership.is_active) {
+        return new Response(
+          JSON.stringify({ error: 'This user is already a member of your organization' }),
+          {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 409,
+          }
+        )
+      }
+
+      const orgId = profile.org_id
+      const orgMemberRole = role === 'super_admin' ? 'admin' : 
+                            role === 'approver' ? 'admin' : 
+                            role === 'reviewer' ? 'admin' : 'member'
+
+      if (existingMembership && !existingMembership.is_active) {
+        // Re-activate existing membership
+        await supabaseAdmin
+          .from('organization_members')
+          .update({
+            is_active: true,
+            role: orgMemberRole,
+            workflow_role: role,
+            invited_by: user.id,
+            invited_at: new Date().toISOString(),
+            accepted_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existingMembership.id)
+      } else {
+        // Create new membership
+        const { error: memberError } = await supabaseAdmin
+          .from('organization_members')
+          .insert({
+            organization_id: orgId,
+            user_id: targetUserId,
+            role: orgMemberRole,
+            workflow_role: role,
+            invited_by: user.id,
+            invited_at: new Date().toISOString(),
+            accepted_at: new Date().toISOString(),
+            is_active: true,
+          })
+
+        if (memberError) {
+          console.error('Organization membership error:', memberError)
+          return new Response(
+            JSON.stringify({ error: 'Failed to add user to organization: ' + memberError.message }),
+            {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 500,
+            }
+          )
+        }
+      }
+
+      // If user doesn't have a public.users profile yet (edge case), create one
+      if (!existingUser && existingAuthUser) {
+        await supabaseAdmin
+          .from('users')
+          .insert({
+            id: existingAuthUser.id,
+            email: email,
+            full_name: fullName,
+            role: role,
+            is_active: true,
+            org_id: orgId,
+          })
+      }
+
+      // Assign to projects if specified
+      if (projects && projects.length > 0) {
+        const { data: validProjects } = await supabaseAdmin
+          .from('projects')
+          .select('id')
+          .eq('org_id', orgId)
+          .in('id', projects)
+
+        const validProjectIds = (validProjects || []).map((p: { id: string }) => p.id)
+
+        if (validProjectIds.length > 0) {
+          const assignments = validProjectIds.map((projectId: string) => ({
+            user_id: targetUserId,
+            project_id: projectId,
+            role: 'submitter',
+            assigned_by: user.id,
+            is_active: true,
+            org_id: orgId,
+          }))
+
+          // Use upsert to avoid duplicates
+          await supabaseAdmin
+            .from('user_project_assignments')
+            .upsert(assignments, { onConflict: 'user_id,project_id' })
+        }
+      }
+
+      // Send notification email to existing user
+      if (RESEND_API_KEY) {
+        const safeName = escapeHtml(existingUser ? fullName : (existingAuthUser?.user_metadata?.full_name || fullName))
+        const safeRole = escapeHtml(role.replace('_', ' ').toUpperCase())
+
+        const emailHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+    <h1 style="color: white; margin: 0; font-size: 24px;">You've been added to ${orgName}</h1>
+  </div>
+  
+  <div style="background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; border: 1px solid #e5e7eb; border-top: none;">
+    <p style="font-size: 16px;">Hello <strong>${safeName}</strong>,</p>
+
+    <p>You have been added to <strong>${orgName}</strong> with a new role.</p>
+
+    <div style="background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid #e5e7eb;">
+      <p style="margin: 0;"><strong>Organization:</strong> ${orgName}</p>
+      <p style="margin: 10px 0 0;"><strong>Your Role:</strong> ${safeRole}</p>
+    </div>
+    
+    <p>You can switch to this organization from the organization selector after logging in:</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+      <a href="${resolvedBaseUrl}/login" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Go to Dashboard</a>
+    </div>
+    
+    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
+    
+    <p style="color: #666; font-size: 12px; text-align: center;">
+      This notification was sent from ${orgName}.<br>
+      If you did not expect this, please contact the organization administrator.
+    </p>
+  </div>
+</body>
+</html>
+`
+        try {
+          const resendResponse = await fetch('https://api.resend.com/emails', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${RESEND_API_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              from: FROM_EMAIL,
+              to: [email],
+              subject: `You've been added to ${orgName}`,
+              html: emailHtml,
+            }),
+          })
+
+          if (!resendResponse.ok) {
+            console.error('Resend API error:', await resendResponse.text())
+          } else {
+            console.log('Notification email sent to existing user:', email)
+          }
+        } catch (emailError) {
+          console.error('Error sending email:', emailError)
+        }
+      }
+
       return new Response(
-        JSON.stringify({ error: 'User with this email already exists' }),
+        JSON.stringify({
+          success: true,
+          user: {
+            id: targetUserId,
+            email: email,
+            full_name: fullName,
+            role: role,
+          },
+          message: 'Existing user added to your organization',
+          existingUser: true,
+        }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 409,
+          status: 200,
         }
       )
     }
+
+    // ──────────────────────────────────────────────
+    // PATH B: Brand new user → create everything
+    // ──────────────────────────────────────────────
 
     // Generate a temporary password (user will reset on first login)
     const tempPassword = crypto.randomUUID().slice(0, 16) + 'A1!'
