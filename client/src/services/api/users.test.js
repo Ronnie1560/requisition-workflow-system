@@ -153,7 +153,7 @@ describe('Users API Service', () => {
 
       await getAllUsers({ role: 'admin' })
 
-      expect(mockEq).toHaveBeenCalledWith('role', 'admin')
+      expect(mockEq).toHaveBeenCalledWith('workflow_role', 'admin')
     })
 
     it('applies is_active filter', async () => {
