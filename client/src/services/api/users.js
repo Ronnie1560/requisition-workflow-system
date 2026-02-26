@@ -94,20 +94,12 @@ export const getUserById = async (userId) => {
       throw new Error('No organization selected')
     }
 
+    // Use the multi-org aware view so users belonging to multiple orgs are found
     const { data, error } = await supabase
-      .from('users')
-      .select(`
-        *,
-        project_assignments:user_project_assignments!user_project_assignments_user_id_fkey(
-          id,
-          role,
-          is_active,
-          assigned_at,
-          project:projects(id, code, name, budget)
-        )
-      `)
+      .from('users_with_assignments')
+      .select('*')
       .eq('id', userId)
-      .eq('org_id', orgId) // Filter by current organization
+      .eq('org_id', orgId) // Filter by current organization membership
       .single()
 
     if (error) throw error
@@ -263,11 +255,12 @@ export const updateUser = async (userId, updates) => {
       throw new Error('No organization selected')
     }
 
+    // Update global user profile fields (name, phone, department, etc.)
+    // org_id filter removed: user_id is unique, RLS enforces authorization
     const { data, error } = await supabase
       .from('users')
       .update(updates)
       .eq('id', userId)
-      .eq('org_id', orgId)
       .select()
       .single()
 
@@ -316,11 +309,12 @@ export const toggleUserStatus = async (userId, isActive) => {
       throw new Error('No organization selected')
     }
 
+    // Toggle global user active status
+    // org_id filter removed: user_id is unique, RLS enforces authorization
     const { data, error } = await supabase
       .from('users')
       .update({ is_active: isActive })
       .eq('id', userId)
-      .eq('org_id', orgId)
       .select()
       .single()
 
