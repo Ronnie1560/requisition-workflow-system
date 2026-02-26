@@ -43,7 +43,6 @@ export function OrganizationProvider({ children }) {
   const [currentOrg, setCurrentOrg] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
   // Ref to prevent concurrent fetchOrganizations calls (race condition on first login)
   const isFetchingRef = useRef(false)
   // Version number that increments when org changes - components can use this to trigger refetches
@@ -339,7 +338,6 @@ export function OrganizationProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!mounted) return
       const authed = !!session
-      setIsAuthenticated(authed)
       if (authed) {
         fetchOrganizations()
       } else {
@@ -351,7 +349,6 @@ export function OrganizationProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
       const nowAuthenticated = !!session
-      setIsAuthenticated(nowAuthenticated)
 
       // If user just signed out, clear org state
       if (event === 'SIGNED_OUT') {

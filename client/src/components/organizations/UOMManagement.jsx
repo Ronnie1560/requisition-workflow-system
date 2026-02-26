@@ -351,6 +351,7 @@ export default function UOMManagement() {
     </div>
   )
 
+  // eslint-disable-next-line no-unused-vars
   function renderGroup(label, items, Icon) {
     if (items.length === 0) return null
 
