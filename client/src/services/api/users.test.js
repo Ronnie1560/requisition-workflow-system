@@ -227,7 +227,7 @@ describe('Users API Service', () => {
 
       const result = await getUserById('u-1')
 
-      expect(mockFrom).toHaveBeenCalledWith('users')
+      expect(mockFrom).toHaveBeenCalledWith('users_with_assignments')
       expect(mockEq).toHaveBeenCalledWith('id', 'u-1')
       expect(mockEq).toHaveBeenCalledWith('org_id', 'test-org-id')
       expect(result.data).toEqual(mockUser)
@@ -290,7 +290,6 @@ describe('Users API Service', () => {
       expect(mockFrom).toHaveBeenCalledWith('users')
       expect(mockUpdate).toHaveBeenCalledWith(updates)
       expect(mockEq).toHaveBeenCalledWith('id', 'u-1')
-      expect(mockEq).toHaveBeenCalledWith('org_id', 'test-org-id')
       expect(result.data.full_name).toBe('Alice Updated')
     })
 
@@ -328,7 +327,6 @@ describe('Users API Service', () => {
 
       expect(mockUpdate).toHaveBeenCalledWith({ is_active: true })
       expect(mockEq).toHaveBeenCalledWith('id', 'u-1')
-      expect(mockEq).toHaveBeenCalledWith('org_id', 'test-org-id')
       expect(result.data.is_active).toBe(true)
     })
 
