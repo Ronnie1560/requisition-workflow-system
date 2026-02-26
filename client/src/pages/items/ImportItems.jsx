@@ -115,7 +115,7 @@ const ImportItems = () => {
     if (!name) return null
     const lower = name.toLowerCase().trim()
     const match = categories.find(c =>
-      c.name.toLowerCase() === lower || c.code?.toLowerCase() === lower
+      c.name.toLowerCase().trim() === lower || c.code?.toLowerCase().trim() === lower
     )
     return match?.id || null
   }
@@ -124,8 +124,8 @@ const ImportItems = () => {
     if (!name) return null
     const lower = name.toLowerCase().trim()
     const match = uomTypes.find(u =>
-      u.code.toLowerCase() === lower ||
-      u.name.toLowerCase() === lower
+      u.code.toLowerCase().trim() === lower ||
+      u.name.toLowerCase().trim() === lower
     )
     return match?.id || null
   }
