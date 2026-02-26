@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useOrganization } from '../../context/OrganizationContext'
+import { useWorkflowRole } from '../../hooks/useWorkflowRole'
 import NotificationCenter from '../notifications/NotificationCenter'
 import ToastContainer from '../notifications/ToastContainer'
 import OrganizationSwitcher from '../organizations/OrganizationSwitcher'
@@ -36,6 +37,7 @@ const MainLayout = () => {
   const [showReportsDialog, setShowReportsDialog] = useState(false)
   const { user, profile, signOut } = useAuth()
   const { currentOrg: _currentOrg, canManageOrg } = useOrganization()
+  const { isAdmin, workflowRole } = useWorkflowRole()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -62,10 +64,10 @@ const MainLayout = () => {
     { name: 'Settings', href: '/settings', icon: Settings }
   ]
 
-  // Filter navigation based on user role and org permissions
+  // Filter navigation based on per-org workflow role and org permissions
   const filteredNavigation = navigation.filter(item => {
     if (item.adminOnly) {
-      return profile?.role === 'super_admin'
+      return isAdmin
     }
     if (item.orgAdmin) {
       return canManageOrg
@@ -182,7 +184,7 @@ const MainLayout = () => {
                       </p>
                       <p className="text-xs text-gray-500">{profile?.email}</p>
                       <p className="text-xs text-indigo-600 mt-1 capitalize">
-                        {profile?.role?.replace('_', ' ')}
+                        {(workflowRole || '').replace('_', ' ')}
                       </p>
                     </div>
                     <Link
