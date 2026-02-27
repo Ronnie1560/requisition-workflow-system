@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import PropTypes from 'prop-types'
 import { Upload, File, X, AlertCircle, Loader } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { uploadAttachment, deleteAttachment } from '../../services/api/requisitions'
+import { uploadAttachment, deleteAttachment, getAttachmentDownloadUrl } from '../../services/api/requisitions'
 import { formatFileSize } from '../../utils/formatters'
 import { logger } from '../../utils/logger'
 
@@ -212,14 +212,19 @@ const FileUpload = ({ requisitionId, disabled }) => {
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <a
-                  href={attachment.file_path}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={async () => {
+                    const { url, error: dlError } = await getAttachmentDownloadUrl(attachment.file_path)
+                    if (dlError) {
+                      logger.error('Download failed:', dlError)
+                      return
+                    }
+                    window.open(url, '_blank')
+                  }}
                   className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
                 >
                   View
-                </a>
+                </button>
                 {!disabled && (
                   <button
                     onClick={() => handleDelete(attachment)}

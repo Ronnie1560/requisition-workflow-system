@@ -834,11 +834,8 @@ export const uploadAttachment = async (requisitionId, file) => {
 
     if (uploadError) throw uploadError
 
-    // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('requisition-attachments')
-      .getPublicUrl(fileName)
-
+    // Store the storage path (not a public URL) — we generate
+    // signed download URLs on demand since the bucket is private
     // Save to database
     const { data, error } = await supabase
       .from('attachments')
@@ -846,7 +843,7 @@ export const uploadAttachment = async (requisitionId, file) => {
         requisition_id: requisitionId,
         uploaded_by: (await supabase.auth.getUser()).data.user.id,
         file_name: file.name,
-        file_path: urlData.publicUrl,
+        file_path: fileName,
         file_size: file.size,
         file_type: file.type
       })
@@ -858,6 +855,35 @@ export const uploadAttachment = async (requisitionId, file) => {
   } catch (error) {
     logger.error('Error uploading attachment:', error)
     return { data: null, error }
+  }
+}
+
+/**
+ * Get a signed download URL for an attachment.
+ * Handles both legacy (full public URL) and new (storage path) formats.
+ * Signed URLs expire after 1 hour.
+ */
+export const getAttachmentDownloadUrl = async (filePath) => {
+  try {
+    // Extract the storage path from either format
+    let storagePath = filePath
+    // Legacy format: full URL like https://...supabase.co/storage/v1/object/public/requisition-attachments/uuid/file
+    if (filePath.includes('/storage/v1/object/')) {
+      const parts = filePath.split('/requisition-attachments/')
+      if (parts.length > 1) {
+        storagePath = parts[1]
+      }
+    }
+
+    const { data, error } = await supabase.storage
+      .from('requisition-attachments')
+      .createSignedUrl(storagePath, 3600) // 1 hour expiry
+
+    if (error) throw error
+    return { url: data.signedUrl, error: null }
+  } catch (error) {
+    logger.error('Error generating download URL:', error)
+    return { url: null, error }
   }
 }
 

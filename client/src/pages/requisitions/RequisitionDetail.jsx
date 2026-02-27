@@ -23,7 +23,8 @@ import {
   markAsReviewed,
   approveRequisition,
   rejectRequisition,
-  addComment
+  addComment,
+  getAttachmentDownloadUrl
 } from '../../services/api/requisitions'
 import { formatCurrency, formatDate } from '../../utils/formatters'
 import { STATUS_LABELS } from '../../utils/constants'
@@ -471,14 +472,20 @@ const RequisitionDetail = () => {
                     </p>
                   </div>
                 </div>
-                <a
-                  href={attachment.file_path}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={async () => {
+                    const { url, error } = await getAttachmentDownloadUrl(attachment.file_path)
+                    if (error) {
+                      logger.error('Download failed:', error)
+                      return
+                    }
+                    window.open(url, '_blank')
+                  }}
                   className="p-2 hover:bg-gray-200 rounded"
+                  title="Download"
                 >
                   <Download className="w-4 h-4 text-gray-600" />
-                </a>
+                </button>
               </div>
             ))}
           </div>
