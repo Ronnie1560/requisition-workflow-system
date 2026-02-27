@@ -40,34 +40,68 @@ export function RequisitionPrintDialog({ isOpen, onClose, requisition, organizat
       setIsGeneratingPDF(true)
       logger.info('[PrintDialog] Generating PDF...')
 
-      const element = printPreviewRef.current
-      if (!element) {
-        throw new Error('Preview element not found')
+      // html2canvas cannot capture iframe contents, so render the
+      // printable HTML into a temporary off-screen div instead.
+      const tempContainer = document.createElement('div')
+      tempContainer.style.position = 'absolute'
+      tempContainer.style.left = '-9999px'
+      tempContainer.style.top = '0'
+      tempContainer.style.width = '794px' // A4 at 96 DPI
+      tempContainer.innerHTML = generatePrintableHTML(requisition, organization)
+        // Strip the full HTML wrapper — extract just the body content
+        .replace(/^.*<body[^>]*>/is, '')
+        .replace(/<\/body>.*$/is, '')
+      document.body.appendChild(tempContainer)
+
+      // Copy <style> from the generated HTML into the container
+      const fullHTML = generatePrintableHTML(requisition, organization)
+      const styleMatch = fullHTML.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
+      if (styleMatch) {
+        const styleEl = document.createElement('style')
+        styleEl.textContent = styleMatch[1]
+        tempContainer.prepend(styleEl)
       }
 
-      // Generate canvas from HTML
-      const canvas = await html2canvas(element, {
-        scale: 2, // Higher quality
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 100))
+
+      const canvas = await html2canvas(tempContainer, {
+        scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        width: 794,
+        windowWidth: 794
       })
+
+      // Clean up temp element
+      document.body.removeChild(tempContainer)
 
       const imgData = canvas.toDataURL('image/png')
       const imgWidth = 210 // A4 width in mm
+      const pageHeight = 297 // A4 height in mm
       const imgHeight = (canvas.height * imgWidth) / canvas.width
 
-      // Create PDF
       const pdf = new jsPDF({
-        orientation: imgHeight > imgWidth ? 'portrait' : 'landscape',
+        orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
       })
 
-      // Add image to PDF
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight)
+      // Handle multi-page PDFs if content exceeds one page
+      let heightLeft = imgHeight
+      let position = 0
 
-      // Download
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+
+      while (heightLeft > 0) {
+        position -= pageHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+
       const filename = `requisition_${requisition.requisition_number || 'draft'}_${new Date().toISOString().split('T')[0]}.pdf`
       pdf.save(filename)
 
