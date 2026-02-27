@@ -513,25 +513,32 @@ const RequisitionDetail = () => {
           )}
         </div>
 
-        {/* Add Comment */}
-        <div className="border-t pt-4">
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Add a comment..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            rows="3"
-          />
-          <div className="mt-2 flex justify-end">
-            <button
-              onClick={handleAddComment}
-              disabled={addingComment || !newComment.trim()}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {addingComment ? 'Adding...' : 'Add Comment'}
-            </button>
+        {/* Add Comment - only for reviewer/approver/super_admin, and only while requisition is active */}
+        {(hasReviewerRole || hasApproverRole || isAdmin) &&
+         !['approved', 'rejected', 'cancelled', 'completed'].includes(requisition.status) ? (
+          <div className="border-t pt-4">
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Add a comment..."
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              rows="3"
+            />
+            <div className="mt-2 flex justify-end">
+              <button
+                onClick={handleAddComment}
+                disabled={addingComment || !newComment.trim()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {addingComment ? 'Adding...' : 'Add Comment'}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : ['approved', 'rejected', 'cancelled', 'completed'].includes(requisition.status) ? (
+          <div className="border-t pt-4">
+            <p className="text-gray-500 text-sm">Comments are closed for this requisition.</p>
+          </div>
+        ) : null}
       </div>
 
       {/* Review Actions (for Reviewers) */}
