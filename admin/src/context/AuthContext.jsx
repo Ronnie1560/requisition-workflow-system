@@ -131,10 +131,10 @@ export function AuthProvider({ children }) {
         setCachedAdmin(data)
 
         // Create admin session for tracking (best-effort, don't block)
-        supabase.rpc('create_admin_session', {
+        Promise.resolve(supabase.rpc('create_admin_session', {
           p_ip: null,
           p_user_agent: navigator.userAgent,
-        }).then(({ data: sid }) => {
+        })).then(({ data: sid }) => {
           if (sid) {
             setSessionId(sid)
             startKeepAlive(sid)
@@ -154,12 +154,16 @@ export function AuthProvider({ children }) {
 
   // Pre-login rate-limit check
   async function checkRateLimit(email) {
-    const { data, error } = await supabase.rpc('check_login_rate_limit', {
-      p_email: email,
-      p_ip: null,
-    })
-    if (error) return { allowed: true } // fail-open on error
-    return data
+    try {
+      const { data, error } = await supabase.rpc('check_login_rate_limit', {
+        p_email: email,
+        p_ip: null,
+      })
+      if (error) return { allowed: true } // fail-open on error
+      return data
+    } catch {
+      return { allowed: true } // fail-open on error
+    }
   }
 
   async function signIn(email, password) {
@@ -177,23 +181,27 @@ export function AuthProvider({ children }) {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) {
         // Record failed attempt
-        await supabase.rpc('record_login_attempt', {
-          p_email: email,
-          p_success: false,
-          p_ip: null,
-          p_user_agent: navigator.userAgent,
-          p_failure_reason: error.message,
-        }).catch(() => {})
+        try {
+          await supabase.rpc('record_login_attempt', {
+            p_email: email,
+            p_success: false,
+            p_ip: null,
+            p_user_agent: navigator.userAgent,
+            p_failure_reason: error.message,
+          })
+        } catch { /* best-effort */ }
         throw error
       }
 
       // Record successful attempt
-      await supabase.rpc('record_login_attempt', {
-        p_email: email,
-        p_success: true,
-        p_ip: null,
-        p_user_agent: navigator.userAgent,
-      }).catch(() => {})
+      try {
+        await supabase.rpc('record_login_attempt', {
+          p_email: email,
+          p_success: true,
+          p_ip: null,
+          p_user_agent: navigator.userAgent,
+        })
+      } catch { /* best-effort */ }
 
       return data
     } catch (err) {
@@ -215,7 +223,7 @@ export function AuthProvider({ children }) {
       // Invalidate admin session (best-effort, 3s max)
       if (sessionId) {
         await withTimeout(
-          supabase.rpc('invalidate_admin_session', { p_session_id: sessionId }).catch(() => {})
+          Promise.resolve(supabase.rpc('invalidate_admin_session', { p_session_id: sessionId })).catch(() => {})
         )
       }
       stopKeepAlive()
