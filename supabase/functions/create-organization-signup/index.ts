@@ -89,6 +89,9 @@ const isReservedSlug = (slug: string): boolean => {
 
 // Trial period duration in days
 const TRIAL_PERIOD_DAYS = 14
+// New orgs always start on the free plan. Paid plans are set only by
+// stripe-webhook after a verified payment; never trust a client-sent plan.
+const SIGNUP_PLAN = 'free'
 
 // Rollback helper to clean up created resources on error
 interface RollbackState {
@@ -205,7 +208,6 @@ serve(async (req) => {
       name: sanitizeInput(organization?.name, 100),
       slug: sanitizeSlug(organization?.slug, 50),
       email: organization?.email?.trim().toLowerCase().substring(0, 255) || '',
-      plan: organization?.plan || 'free'
     }
 
     const sanitizedAdmin = {
@@ -385,7 +387,7 @@ serve(async (req) => {
         name: sanitizedOrg.name,
         slug: sanitizedOrg.slug,
         email: sanitizedOrg.email || sanitizedAdmin.email,
-        plan: sanitizedOrg.plan,
+        plan: SIGNUP_PLAN,
         status: 'active',
         created_by: userId,
         trial_ends_at: trialEndsAt,
