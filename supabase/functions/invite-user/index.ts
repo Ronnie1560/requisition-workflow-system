@@ -4,6 +4,10 @@ import { requireOrgAdmin } from '../_shared/orgAdmin.ts'
 
 const WORKFLOW_ROLES = ['submitter', 'reviewer', 'approver', 'store_manager', 'super_admin']
 
+// Org role (owner/admin/member) controls org administration; approval
+// authority comes from workflow_role. Only super_admin administers the org.
+const orgRoleFor = (workflowRole: string) => workflowRole === 'super_admin' ? 'admin' : 'member'
+
 // Prevent HTML injection in email templates (org names, user names, etc.)
 const escapeHtml = (str: string): string =>
   str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -182,9 +186,7 @@ serve(async (req) => {
         )
       }
 
-      const orgMemberRole = role === 'super_admin' ? 'admin' : 
-                            role === 'approver' ? 'admin' : 
-                            role === 'reviewer' ? 'admin' : 'member'
+      const orgMemberRole = orgRoleFor(role)
 
       if (existingMembership && !existingMembership.is_active) {
         // Re-activate existing membership
@@ -412,11 +414,8 @@ serve(async (req) => {
 
       // Add user to organization_members table
       if (orgId) {
-        // Map user role to org member role (owner/admin/member)
-        const orgMemberRole = role === 'super_admin' ? 'admin' : 
-                              role === 'approver' ? 'admin' : 
-                              role === 'reviewer' ? 'admin' : 'member'
-        
+        const orgMemberRole = orgRoleFor(role)
+
         const { error: memberError } = await supabaseAdmin
           .from('organization_members')
           .insert({
