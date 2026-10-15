@@ -1,5 +1,8 @@
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
+import { requireOrgAdmin } from '../_shared/orgAdmin.ts'
+
+const WORKFLOW_ROLES = ['submitter', 'reviewer', 'approver', 'store_manager', 'super_admin']
 
 // Prevent HTML injection in email templates (org names, user names, etc.)
 const escapeHtml = (str: string): string =>
@@ -71,56 +74,38 @@ serve(async (req) => {
       )
     }
 
-    // Get inviter's profile including org_id
-    const { data: profile } = await supabaseClient
-      .from('users')
-      .select('role, org_id')
-      .eq('id', user.id)
-      .single()
+    // Get request body
+    const { email, fullName, role, projects, appOrigin, orgId: requestedOrgId } = await req.json()
 
-    if (!profile || !profile.org_id) {
+    // Verify inviter is an admin of the org they are acting in
+    // (membership-based; users.role / users.org_id are not trusted)
+    const adminCheck = await requireOrgAdmin(
+      supabaseAdmin,
+      user.id,
+      req.headers.get('Authorization'),
+      requestedOrgId,
+    )
+
+    if (!adminCheck.ok) {
       return new Response(
-        JSON.stringify({ error: 'Forbidden: You must belong to an organization to invite users' }),
+        JSON.stringify({ error: adminCheck.error }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403,
+          status: adminCheck.status,
         }
       )
     }
 
-    // Verify inviter has admin privileges in their organization
-    const { data: membership } = await supabaseAdmin
-      .from('organization_members')
-      .select('role')
-      .eq('organization_id', profile.org_id)
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single()
-
-    const isOrgAdmin = membership && ['admin', 'owner'].includes(membership.role)
-    const isSuperAdmin = profile.role === 'super_admin'
-
-    if (!isOrgAdmin && !isSuperAdmin) {
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: Organization admin access required' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403,
-        }
-      )
-    }
+    const orgId = adminCheck.orgId
 
     // Fetch the inviter's organization name for email personalization
     const { data: org } = await supabaseAdmin
       .from('organizations')
       .select('name')
-      .eq('id', profile.org_id)
+      .eq('id', orgId)
       .single()
 
     const orgName = escapeHtml(org?.name || 'Requisition Workflow System')
-
-    // Get request body
-    const { email, fullName, role, projects, appOrigin } = await req.json()
 
     // Use the frontend's origin if provided and allowed, otherwise fall back to APP_BASE_URL
     const resolvedBaseUrl = (appOrigin && ALLOWED_ORIGINS.includes(appOrigin))
@@ -131,6 +116,16 @@ serve(async (req) => {
     if (!email || !fullName || !role) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: email, fullName, role' }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        }
+      )
+    }
+
+    if (!WORKFLOW_ROLES.includes(role)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid role' }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
@@ -173,7 +168,7 @@ serve(async (req) => {
       const { data: existingMembership } = await supabaseAdmin
         .from('organization_members')
         .select('id, is_active')
-        .eq('organization_id', profile.org_id)
+        .eq('organization_id', orgId)
         .eq('user_id', targetUserId)
         .single()
 
@@ -187,7 +182,6 @@ serve(async (req) => {
         )
       }
 
-      const orgId = profile.org_id
       const orgMemberRole = role === 'super_admin' ? 'admin' : 
                             role === 'approver' ? 'admin' : 
                             role === 'reviewer' ? 'admin' : 'member'
@@ -392,9 +386,6 @@ serve(async (req) => {
 
     // Create user profile
     if (authData.user) {
-      // Use inviter's org_id (already fetched and validated above)
-      const orgId = profile.org_id
-
       const { error: profileError } = await supabaseAdmin
         .from('users')
         .insert({

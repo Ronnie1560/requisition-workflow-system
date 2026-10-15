@@ -180,7 +180,8 @@ export const inviteUser = async (inviteData) => {
         fullName,
         role,
         projects: projects || [],
-        appOrigin: window.location.origin
+        appOrigin: window.location.origin,
+        orgId: getCurrentOrgId()
       }
     })
 
@@ -219,7 +220,8 @@ export const resendInvitation = async (userId, email) => {
       body: {
         userId,
         email,
-        appOrigin: window.location.origin
+        appOrigin: window.location.origin,
+        orgId: getCurrentOrgId()
       }
     })
 

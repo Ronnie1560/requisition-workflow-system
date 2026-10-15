@@ -1,5 +1,6 @@
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
+import { requireOrgAdmin } from '../_shared/orgAdmin.ts'
 
 // Prevent HTML injection in email templates (org names, user names, etc.)
 const escapeHtml = (str: string): string =>
@@ -71,56 +72,38 @@ serve(async (req) => {
       )
     }
 
-    // Get inviter's profile including org_id
-    const { data: profile } = await supabaseClient
-      .from('users')
-      .select('role, org_id')
-      .eq('id', user.id)
-      .single()
+    // Get request body
+    const { userId, email, appOrigin, orgId: requestedOrgId } = await req.json()
 
-    if (!profile || !profile.org_id) {
+    // Verify inviter is an admin of the org they are acting in
+    // (membership-based; users.role / users.org_id are not trusted)
+    const adminCheck = await requireOrgAdmin(
+      supabaseAdmin,
+      user.id,
+      req.headers.get('Authorization'),
+      requestedOrgId,
+    )
+
+    if (!adminCheck.ok) {
       return new Response(
-        JSON.stringify({ error: 'Forbidden: You must belong to an organization' }),
+        JSON.stringify({ error: adminCheck.error }),
         {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403,
+          status: adminCheck.status,
         }
       )
     }
 
-    // Verify inviter has admin privileges in their organization
-    const { data: membership } = await supabaseAdmin
-      .from('organization_members')
-      .select('role, workflow_role')
-      .eq('organization_id', profile.org_id)
-      .eq('user_id', user.id)
-      .eq('is_active', true)
-      .single()
-
-    const isOrgAdmin = membership && ['admin', 'owner'].includes(membership.role)
-    const isSuperAdmin = membership?.workflow_role === 'super_admin' || profile.role === 'super_admin'
-
-    if (!isOrgAdmin && !isSuperAdmin) {
-      return new Response(
-        JSON.stringify({ error: 'Forbidden: Organization admin access required' }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 403,
-        }
-      )
-    }
+    const orgId = adminCheck.orgId
 
     // Fetch the inviter's organization name for email personalization
     const { data: org } = await supabaseAdmin
       .from('organizations')
       .select('name')
-      .eq('id', profile.org_id)
+      .eq('id', orgId)
       .single()
 
     const orgName = escapeHtml(org?.name || 'Requisition Workflow System')
-
-    // Get request body
-    const { userId, email, appOrigin } = await req.json()
 
     // Use the frontend's origin if provided and allowed, otherwise fall back to APP_BASE_URL
     const resolvedBaseUrl = (appOrigin && ALLOWED_ORIGINS.includes(appOrigin))
@@ -138,11 +121,10 @@ serve(async (req) => {
       )
     }
 
-    // Find the user by userId or email (scoped to inviter's organization)
+    // Find the user by userId or email
     let query = supabaseAdmin
       .from('users')
       .select('id, email, full_name, role')
-      .eq('org_id', profile.org_id)
 
     if (userId) {
       query = query.eq('id', userId)
@@ -150,9 +132,19 @@ serve(async (req) => {
       query = query.eq('email', email)
     }
 
-    const { data: existingUser, error: userLookupError } = await query.single()
+    const { data: existingUser, error: userLookupError } = await query.maybeSingle()
 
-    if (userLookupError || !existingUser) {
+    // Target must be a member of the inviter's active organization
+    const { data: targetMembership } = existingUser
+      ? await supabaseAdmin
+        .from('organization_members')
+        .select('workflow_role')
+        .eq('organization_id', orgId)
+        .eq('user_id', existingUser.id)
+        .maybeSingle()
+      : { data: null }
+
+    if (userLookupError || !existingUser || !targetMembership) {
       return new Response(
         JSON.stringify({ error: 'User not found' }),
         {
@@ -198,7 +190,7 @@ serve(async (req) => {
     const resetLink = resetData?.properties?.action_link || `${resolvedBaseUrl}/login`
     const safeName = escapeHtml(existingUser.full_name || '')
     const safeEmail = escapeHtml(existingUser.email)
-    const safeRole = escapeHtml(existingUser.role.replace('_', ' ').toUpperCase())
+    const safeRole = escapeHtml((targetMembership.workflow_role || existingUser.role).replace('_', ' ').toUpperCase())
 
     const emailHtml = `
 <!DOCTYPE html>
@@ -283,7 +275,7 @@ serve(async (req) => {
             id: existingUser.id,
             email: existingUser.email,
             full_name: existingUser.full_name,
-            role: existingUser.role,
+            role: targetMembership.workflow_role || existingUser.role,
           },
           message: 'Invitation email resent successfully',
           emailId: resendData.id,
