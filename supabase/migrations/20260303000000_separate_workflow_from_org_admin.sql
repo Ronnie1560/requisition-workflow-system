@@ -128,10 +128,8 @@ BEGIN
     AND user_id = p_user_id
     AND is_active = true;
 
-  -- Also keep users.role in sync (backwards compatibility)
-  UPDATE users
-  SET role = p_workflow_role
-  WHERE id = p_user_id;
+  -- users.role (global) is intentionally not updated: in multi-org a user
+  -- can have different roles per organization (matches production).
 END;
 $$;
 
