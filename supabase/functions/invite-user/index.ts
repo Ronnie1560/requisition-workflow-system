@@ -1,6 +1,7 @@
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
 import { requireOrgAdmin } from '../_shared/orgAdmin.ts'
+import { findAuthUserByEmail } from '../_shared/authUsers.ts'
 
 const WORKFLOW_ROLES = ['submitter', 'reviewer', 'approver', 'store_manager', 'super_admin']
 
@@ -157,10 +158,7 @@ serve(async (req) => {
       .single()
 
     // Also check auth.users (user may exist from another org signup)
-    const { data: authLookup } = await supabaseAdmin.auth.admin.listUsers()
-    const existingAuthUser = authLookup?.users?.find(
-      (u: { email?: string }) => u.email?.toLowerCase() === email.toLowerCase()
-    )
+    const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, email)
 
     // ──────────────────────────────────────────────
     // PATH A: User already exists → add to this org

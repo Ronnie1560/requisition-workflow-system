@@ -1,5 +1,6 @@
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
+import { findAuthUserByEmail } from '../_shared/authUsers.ts'
 
 /**
  * Edge Function: create-organization-signup
@@ -318,8 +319,7 @@ serve(async (req) => {
     }
 
     // Also check if email exists in auth.users (might be orphaned from previous failed signup)
-    const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers()
-    const existingAuthUser = authUsers?.users?.find(u => u.email === sanitizedAdmin.email)
+    const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, sanitizedAdmin.email)
     
     if (existingAuthUser) {
       // Check if this user has a profile - if not, it's an orphaned auth user we can delete

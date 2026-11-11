@@ -1,5 +1,6 @@
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
+import { listAllAuthUsers } from '../_shared/authUsers.ts'
 
 /**
  * Edge Function: cleanup-orphaned-signups
@@ -86,13 +87,20 @@ serve(async (req) => {
     // - Have not verified their email
     // - Were created before the cutoff date
     // - Are organization owners (created via signup flow)
-    const { data: authUsers, error: authListError } = await supabaseAdmin.auth.admin.listUsers()
+    // Collect every page before deleting anything (deleting while paging skips users)
+    let authUsers: Awaited<ReturnType<typeof listAllAuthUsers>> | null = null
+    let authListError: Error | null = null
+    try {
+      authUsers = await listAllAuthUsers(supabaseAdmin)
+    } catch (err) {
+      authListError = err as Error
+    }
 
-    if (authListError) {
+    if (authListError || !authUsers) {
       console.error('Error listing auth users:', authListError)
-      stats.errors.push(`Failed to list auth users: ${authListError.message}`)
+      stats.errors.push(`Failed to list auth users: ${authListError?.message}`)
     } else {
-      const unverifiedUsers = authUsers.users.filter(user => {
+      const unverifiedUsers = authUsers.filter(user => {
         const createdAt = new Date(user.created_at)
         const cutoff = new Date(cutoffDate)
         return !user.email_confirmed_at && createdAt < cutoff
