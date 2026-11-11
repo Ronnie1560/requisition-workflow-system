@@ -1,5 +1,6 @@
 import { serve } from 'http/server.ts'
 import { createClient } from 'supabase'
+import { findAuthUserByEmail } from '../_shared/authUsers.ts'
 
 /**
  * Edge Function: create-organization-signup
@@ -89,6 +90,9 @@ const isReservedSlug = (slug: string): boolean => {
 
 // Trial period duration in days
 const TRIAL_PERIOD_DAYS = 14
+// New orgs always start on the free plan. Paid plans are set only by
+// stripe-webhook after a verified payment; never trust a client-sent plan.
+const SIGNUP_PLAN = 'free'
 
 // Rollback helper to clean up created resources on error
 interface RollbackState {
@@ -205,7 +209,6 @@ serve(async (req) => {
       name: sanitizeInput(organization?.name, 100),
       slug: sanitizeSlug(organization?.slug, 50),
       email: organization?.email?.trim().toLowerCase().substring(0, 255) || '',
-      plan: organization?.plan || 'free'
     }
 
     const sanitizedAdmin = {
@@ -316,8 +319,7 @@ serve(async (req) => {
     }
 
     // Also check if email exists in auth.users (might be orphaned from previous failed signup)
-    const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers()
-    const existingAuthUser = authUsers?.users?.find(u => u.email === sanitizedAdmin.email)
+    const existingAuthUser = await findAuthUserByEmail(supabaseAdmin, sanitizedAdmin.email)
     
     if (existingAuthUser) {
       // Check if this user has a profile - if not, it's an orphaned auth user we can delete
@@ -385,7 +387,7 @@ serve(async (req) => {
         name: sanitizedOrg.name,
         slug: sanitizedOrg.slug,
         email: sanitizedOrg.email || sanitizedAdmin.email,
-        plan: sanitizedOrg.plan,
+        plan: SIGNUP_PLAN,
         status: 'active',
         created_by: userId,
         trial_ends_at: trialEndsAt,
